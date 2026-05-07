@@ -1,0 +1,18 @@
+# Build artifacts
+frontend/dist/
+frontend/src-tauri/target/
+frontend/src-tauri/binaries/backend-*
+
+# Dependencies
+node_modules/
+backend/.venv/
+__pycache__/
+*.pyc
+
+# Environment & Secrets
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
