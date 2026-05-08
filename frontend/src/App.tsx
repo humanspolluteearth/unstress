@@ -55,10 +55,11 @@ export const App: React.FC = () => {
       <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <div className="flex-1 flex flex-col w-full min-h-0 overflow-y-auto">
           <div className={clsx(
-            "flex-1 flex flex-col w-full pb-32",
+            "flex-1 flex flex-col w-full",
             !isBoard ? "max-w-7xl mx-auto px-6 md:px-8 lg:px-12 pt-8" : "min-h-full"
           )}>
             {renderPage()}
+            <div className="h-32 w-full shrink-0" />
           </div>
         </div>
       </main>
