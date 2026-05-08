@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Result } from '../../core/results';
+import { Result } from './results';
 
 interface WeeklySummary {
   finance: { total_transactions: number; total_volume: number };

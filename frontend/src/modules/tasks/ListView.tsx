@@ -24,7 +24,7 @@ export const ListView: React.FC<ListViewProps> = ({ onEdit }) => {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-card border rounded-none shadow-none">
+    <div className="flex-1 h-full overflow-y-auto bg-card border rounded-none shadow-none">
       <table className="w-full text-left border-collapse">
         <thead className="sticky top-0 bg-muted/50 backdrop-blur-sm border-b z-10">
           <tr>
@@ -36,9 +36,9 @@ export const ListView: React.FC<ListViewProps> = ({ onEdit }) => {
             <th className="px-6 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border/50">
+        <tbody className="">
           {tasks.map((task) => (
-            <tr key={task.id} className="hover:bg-muted/30 transition-colors group">
+            <tr key={task.id} className="hover:bg-muted/30 transition-colors group border-b border-border/50">
               <td className="px-6 py-4 whitespace-nowrap">
                 <CustomSelect
                   compact

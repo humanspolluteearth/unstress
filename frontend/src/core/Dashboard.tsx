@@ -3,7 +3,7 @@ import { useTaskStore } from '../tasks/useTaskStore';
 import { useHabitStore } from '../habits/useHabitStore';
 import { useGoalStore } from '../goals/useGoalStore';
 import { useScheduleStore } from '../schedules/useScheduleStore';
-import { useNavigationStore } from '../../core/useNavigationStore';
+import { useNavigationStore } from './useNavigationStore';
 
 const numberToWords = (num: number): string => {
   const words = [

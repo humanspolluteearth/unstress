@@ -14,13 +14,21 @@ const THEMES: Theme[] = ['light', 'dark', 'amoled', 'sepia'];
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
-    const saved = localStorage.getItem('theme') as Theme;
-    return THEMES.includes(saved) ? saved : 'light';
+    try {
+      const saved = localStorage.getItem('theme') as Theme;
+      return THEMES.includes(saved) ? saved : 'dark';
+    } catch {
+      return 'dark';
+    }
   });
 
   const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem('theme', newTheme);
+    try {
+      setThemeState(newTheme);
+      localStorage.setItem('theme', newTheme);
+    } catch (err) {
+      console.error('[Theme] Failed to persist theme:', err);
+    }
   };
 
   const cycleTheme = () => {
@@ -28,23 +36,34 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const currentIndex = THEMES.indexOf(prev);
       const nextIndex = (currentIndex + 1) % THEMES.length;
       const nextTheme = THEMES[nextIndex];
-      localStorage.setItem('theme', nextTheme);
+      try {
+        localStorage.setItem('theme', nextTheme);
+      } catch (err) {
+        console.error('[Theme] Failed to cycle theme:', err);
+      }
       return nextTheme;
     });
   };
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove('light', 'dark', 'amoled', 'sepia');
-    if (theme !== 'light') {
-      root.classList.add(theme);
-    }
-    
-    // Also update body background to prevent flickering during scroll/overscroll
-    const body = window.document.body;
-    body.classList.remove('light', 'dark', 'amoled', 'sepia');
-    if (theme !== 'light') {
-      body.classList.add(theme);
+    try {
+      const root = window.document.documentElement;
+      root.classList.remove('light', 'dark', 'amoled', 'sepia');
+      
+      // Default hardcoded background for safety
+      root.style.backgroundColor = theme === 'light' ? '#ffffff' : '#000000';
+
+      if (theme !== 'light') {
+        root.classList.add(theme);
+      }
+      
+      const body = window.document.body;
+      body.classList.remove('light', 'dark', 'amoled', 'sepia');
+      if (theme !== 'light') {
+        body.classList.add(theme);
+      }
+    } catch (err) {
+      console.error('[Theme] Kernel Error during injection:', err);
     }
   }, [theme]);
 

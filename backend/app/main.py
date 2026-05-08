@@ -32,7 +32,16 @@ if sys.platform != "win32":
     except ImportError:
         pass
 
+from datetime import datetime, timezone
+
 app = FastAPI(title="unstress Backend")
+
+@app.get("/system-time")
+async def get_system_time() -> Result[dict, str]:
+    """
+    Returns the current backend system time in ISO 8601 format.
+    """
+    return Result.ok({"time": datetime.now(timezone.utc).isoformat()})
 
 app.include_router(finance_router)
 app.include_router(actions_router)

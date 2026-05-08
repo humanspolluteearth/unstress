@@ -4,6 +4,7 @@ import { DailyGrid } from './DailyGrid';
 import { WeeklyGrid } from './WeeklyGrid';
 import { MonthlyGrid } from './MonthlyGrid';
 import { AddEventModal } from './AddEventModal';
+import { EventEditorModal } from './EventEditorModal';
 import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, AlertCircle, LayoutGrid, List, CalendarDays } from 'lucide-react';
 import { clsx } from 'clsx';
 import { listen } from '@tauri-apps/api/event';
@@ -11,26 +12,47 @@ import { listen } from '@tauri-apps/api/event';
 type ViewMode = 'Day' | 'Week' | 'Month';
 
 export const ScheduleGrid: React.FC = () => {
-  const { blocks, isLoading, fetchBlocks, markConflicts } = useScheduleStore();
+  const { blocks, isLoading, fetchBlocks, markConflicts, selectedBlockId, setSelectedBlockId, deleteBlock } = useScheduleStore();
   const [viewMode, setViewMode] = useState<ViewMode>('Day');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [conflictMsg, setConflictMsg] = useState<string | null>(null);
+
+  const selectedBlock = blocks.find(b => b.id === selectedBlockId) || null;
 
   useEffect(() => {
     fetchBlocks();
     
     // Listen for conflict events from backend
-    const unlisten = listen('SCHEDULE_CONFLICT_DETECTED', (event: any) => {
+    const unlistenConflict = listen('SCHEDULE_CONFLICT_DETECTED', (event: any) => {
       setConflictMsg(`Conflict detected for "${event.payload.new_event.title}"`);
       markConflicts(event.payload.conflicts);
       setTimeout(() => setConflictMsg(null), 6000);
     });
 
-    return () => {
-      unlisten.then(f => f());
+    // Listen for delete commands from Command Bar (custom event)
+    const handleCommandDelete = async () => {
+      const activeId = useScheduleStore.getState().selectedBlockId;
+      if (activeId) {
+        if (confirm('Delete active event?')) {
+          await deleteBlock(activeId);
+        }
+      }
     };
-  }, [fetchBlocks, markConflicts]);
+
+    window.addEventListener('command-delete-event', handleCommandDelete);
+
+    return () => {
+      unlistenConflict.then(f => f());
+      window.removeEventListener('command-delete-event', handleCommandDelete);
+    };
+  }, [fetchBlocks, markConflicts, deleteBlock]);
+
+  const handleEdit = (id: string) => {
+    setSelectedBlockId(id);
+    setIsEditModalOpen(true);
+  };
 
   const navigate = (direction: number) => {
     const newDate = new Date(currentDate);
@@ -40,16 +62,22 @@ export const ScheduleGrid: React.FC = () => {
     setCurrentDate(newDate);
   };
 
-  const renderView = () => {
+  const renderView = useMemo(() => {
     switch (viewMode) {
-      case 'Day': return <DailyGrid date={currentDate} />;
-      case 'Week': return <WeeklyGrid startDate={currentDate} />;
+      case 'Day': return <DailyGrid date={currentDate} onEdit={handleEdit} />;
+      case 'Week': return <WeeklyGrid startDate={currentDate} onEdit={handleEdit} />;
       case 'Month': return <MonthlyGrid year={currentDate.getFullYear()} month={currentDate.getMonth()} />;
     }
-  };
+  }, [viewMode, currentDate, handleEdit]);
 
   return (
-    <div className="p-6 space-y-6 flex flex-col flex-1 min-h-0 bg-background/50 overflow-auto relative">
+    <div 
+      className="p-6 space-y-6 flex flex-col flex-1 min-h-0 bg-background/50 overflow-auto relative"
+      onClick={(e) => {
+        // Only clear if we clicked the actual container background
+        if (e.target === e.currentTarget) setSelectedBlockId(null);
+      }}
+    >
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Schedule</h2>
@@ -88,7 +116,7 @@ export const ScheduleGrid: React.FC = () => {
           </div>
 
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsAddModalOpen(true)}
             className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-none text-sm font-semibold shadow-sm hover:bg-primary/90 transition-all active:scale-95"
           >
             <Plus size={18} /> Add Event
@@ -118,11 +146,16 @@ export const ScheduleGrid: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 relative">
+      <div className="flex-1 min-h-0 relative" onClick={(e) => e.stopPropagation()}>
         {renderView()}
       </div>
 
-      <AddEventModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <AddEventModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
+      <EventEditorModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        block={selectedBlock}
+      />
     </div>
   );
 };

@@ -2,7 +2,7 @@ from typing import List, Optional
 from pydantic import BaseModel, UUID4
 from app.core.results import Result
 from app.core.broker import broker, BaseEvent
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 import uuid
 
 class Habit(BaseModel):
@@ -149,7 +149,7 @@ class HabitsService:
                 action = "removed"
             else:
                 # Add log for now
-                found_habit.logs.append(datetime.utcnow().isoformat() + "Z")
+                found_habit.logs.append(datetime.now(timezone.utc).isoformat())
                 action = "added"
 
             # Publish HABIT_LOGGED Event (can be used for both add/remove or create separate undo event)

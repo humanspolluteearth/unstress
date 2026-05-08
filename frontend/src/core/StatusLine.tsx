@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTheme } from './ThemeContext';
 import { listen } from '@tauri-apps/api/event';
+import { invoke } from '@tauri-apps/api/core';
 
 interface StatusLineProps {
   pageTitle: string;
@@ -9,6 +10,58 @@ interface StatusLineProps {
 export const StatusLine: React.FC<StatusLineProps> = ({ pageTitle }) => {
   const { theme } = useTheme();
   const [lastEvent, setLastEvent] = useState<string>('System Ready');
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [syncError, setSyncError] = useState(false);
+
+  useEffect(() => {
+    const checkTimeSync = async () => {
+      try {
+        const frontendTime = new Date().getTime();
+        
+        // 1. Get Rust system time via Invoke
+        const rustResult: any = await invoke('get_system_time');
+        if (!rustResult.success) throw new Error("Rust time fetch failed");
+        const rustTime = new Date(rustResult.data).getTime();
+
+        // 2. Get FastAPI sidecar time
+        // Wait for port to be available
+        let port = (window as any).__BACKEND_PORT__;
+        let attempts = 0;
+        while (!port && attempts < 10) {
+          await new Promise(r => setTimeout(r, 500));
+          port = (window as any).__BACKEND_PORT__;
+          attempts++;
+        }
+
+        if (port) {
+          const resp = await fetch(`http://127.0.0.1:${port}/system-time`);
+          const sidecarResult = await resp.json();
+          if (sidecarResult.success) {
+            const sidecarTime = new Date(sidecarResult.data.time).getTime();
+            
+            const diffRust = Math.abs(frontendTime - rustTime);
+            const diffSidecar = Math.abs(frontendTime - sidecarTime);
+
+            if (diffRust > 60000 || diffSidecar > 60000) {
+              setSyncError(true);
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Time sync check failed:", e);
+      }
+    };
+
+    checkTimeSync();
+
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
 
   useEffect(() => {
     const eventTypes = [
@@ -38,8 +91,19 @@ export const StatusLine: React.FC<StatusLineProps> = ({ pageTitle }) => {
     };
   }, []);
 
+  const formatDate = (date: Date) => {
+    const pad = (num: number) => num.toString().padStart(2, '0');
+    const y = date.getFullYear();
+    const m = pad(date.getMonth() + 1);
+    const d = pad(date.getDate());
+    const hh = pad(date.getHours());
+    const mm = pad(date.getMinutes());
+    const ss = pad(date.getSeconds());
+    return `${y}-${m}-${d} | ${hh}:${mm}:${ss}`;
+  };
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-6 bg-muted/80 backdrop-blur-sm border-t border-border/50 flex items-center px-4 justify-between z-[100] pointer-events-none select-none">
+    <div className="fixed bottom-0 left-0 right-0 h-6 bg-black border-t border-primary/20 flex items-center px-4 justify-between z-[100] pointer-events-none select-none">
       <div className="flex items-center gap-4 text-[10px] font-mono text-muted-foreground uppercase tracking-widest font-medium">
         <div className="flex items-center gap-1.5">
           <span className="text-primary font-black">UNSTRESS</span>
@@ -51,10 +115,21 @@ export const StatusLine: React.FC<StatusLineProps> = ({ pageTitle }) => {
           <span className="opacity-30">|</span>
           <span className="truncate whitespace-nowrap">Last Event: {lastEvent}</span>
         </div>
+
+        {syncError && (
+          <div className="flex items-center gap-1.5 px-2 bg-destructive text-destructive-foreground animate-pulse">
+            <span className="font-bold">TIME_SYNC_ERROR</span>
+          </div>
+        )}
       </div>
 
       <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest font-medium flex items-center gap-4">
-         <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5">
+          <span className="text-primary font-bold">{formatDate(currentTime)}</span>
+          <span className="opacity-30">|</span>
+        </div>
+
+        <div className="flex items-center gap-1.5">
           <span>{theme}</span>
           <span className="opacity-30">|</span>
         </div>

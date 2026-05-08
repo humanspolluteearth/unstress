@@ -175,6 +175,32 @@ export class ActionService {
     }
   }
 
+  static async updateScheduleEvent(id: string, data: Partial<ScheduleEventCreate>): Promise<Result<any>> {
+    try {
+      const port = (window as any).__BACKEND_PORT__ || 8000;
+      const response = await fetch(`http://localhost:${port}/schedules/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    } catch (err) {
+      return { success: false, error: 'Failed to update event' };
+    }
+  }
+
+  static async deleteScheduleEvent(id: string): Promise<Result<any>> {
+    try {
+      const port = (window as any).__BACKEND_PORT__ || 8000;
+      const response = await fetch(`http://localhost:${port}/schedules/${id}`, {
+        method: 'DELETE',
+      });
+      return await response.json();
+    } catch (err) {
+      return { success: false, error: 'Failed to delete event' };
+    }
+  }
+
   static async getSchedules(): Promise<Result<any[]>> {
     try {
       const port = (window as any).__BACKEND_PORT__ || 8000;

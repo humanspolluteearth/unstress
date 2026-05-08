@@ -9,8 +9,8 @@ export const habitDefinitions = pgTable("habit_definitions", {
   title: varchar("title", { length: 255 }).notNull(),
   frequency: varchar("frequency", { length: 50 }).notNull(), // e.g., 'daily', 'weekly'
   goalId: uuid("goal_id"), // Optional reference to a Goals module (decoupled)
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 /**
@@ -23,5 +23,5 @@ export const habitLogs = pgTable("habit_logs", {
     .references(() => habitDefinitions.id, { onDelete: "cascade" })
     .notNull(),
   status: varchar("status", { length: 50 }).notNull(), // e.g., 'completed', 'missed', 'skipped'
-  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  timestamp: timestamp("timestamp", { withTimezone: true }).defaultNow().notNull(),
 });

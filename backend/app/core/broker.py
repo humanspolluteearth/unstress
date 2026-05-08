@@ -1,14 +1,31 @@
 from typing import Any, Callable, Dict, List, Type, Awaitable
-from pydantic import BaseModel, Field
-from datetime import datetime
+from pydantic import BaseModel, Field, validator
+from datetime import datetime, timezone
 import asyncio
 from app.core.results import Result
 
 class BaseEvent(BaseModel):
     """Base class for all internal events."""
     event_type: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     payload: Any
+
+    @validator('timestamp', pre=True)
+    def ensure_utc_aware(cls, v):
+        try:
+            if isinstance(v, str):
+                dt = datetime.fromisoformat(v.replace('Z', '+00:00'))
+            elif isinstance(v, datetime):
+                dt = v
+            else:
+                return v
+
+            if dt.tzinfo is None:
+                return dt.replace(tzinfo=timezone.utc)
+            return dt.astimezone(timezone.utc)
+        except Exception:
+            # Fallback to now if timestamp is corrupted, though usually we want to know
+            return datetime.now(timezone.utc)
 
 class EventBroker:
     def __init__(self):

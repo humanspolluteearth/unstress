@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Database, ShieldAlert, Cpu, RefreshCcw, Palette } from 'lucide-react';
-import { ActionService } from '../../core/ActionService';
+import { ActionService } from './ActionService';
 import { useSettingsStore } from './useSettingsStore';
-import { useTheme, Theme } from '../../core/ThemeContext';
+import { useTheme, Theme } from './ThemeContext';
 import { clsx } from 'clsx';
 
 export const SettingsPage: React.FC = () => {

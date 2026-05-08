@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from app.core.broker import broker, BaseEvent
@@ -29,7 +29,7 @@ class StatisticsService:
         Publishes a REPORT_GENERATED event.
         """
         try:
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             history = broker.get_history()
             
             # 1. Calculate Spending Trends

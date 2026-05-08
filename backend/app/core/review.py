@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any
 from app.core.broker import broker, BaseEvent
 from app.core.results import Result
@@ -10,7 +10,7 @@ class ReviewService:
         Generates a summary of activity from the last 7 days across all modules.
         """
         try:
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             seven_days_ago = now - timedelta(days=7)
             
             history = broker.get_history()

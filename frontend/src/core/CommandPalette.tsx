@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Command } from 'cmdk';
-import { Result } from '../../core/results';
+import { Result } from './results';
 import { SearchIcon, PlusIcon, CheckCircleIcon, WalletIcon, ActivityIcon } from 'lucide-react';
 
 interface SearchResult {
@@ -14,18 +14,24 @@ export const CommandPalette: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [initResult, setInitResult] = useState<Result<boolean, string>>({ success: true });
 
   // Toggle the menu when ⌘K or Ctrl+K is pressed
   useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((open) => !open);
-      }
-    };
+    try {
+      const down = (e: KeyboardEvent) => {
+        if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+          e.preventDefault();
+          setOpen((open) => !open);
+        }
+      };
 
-    document.addEventListener('keydown', down);
-    return () => document.removeEventListener('keydown', down);
+      document.addEventListener('keydown', down);
+      return () => document.removeEventListener('keydown', down);
+    } catch (err) {
+      console.error('[CommandPalette] Initialization Failed:', err);
+      setInitResult({ success: false, error: 'PALETTE_INIT_FAILURE' });
+    }
   }, []);
 
   useEffect(() => {
@@ -50,6 +56,11 @@ export const CommandPalette: React.FC = () => {
     const timer = setTimeout(fetchResults, 150); // Debounce
     return () => clearTimeout(timer);
   }, [search]);
+
+  if (!initResult.success) {
+    // Return null or minimal UI instead of crashing
+    return null;
+  }
 
   return (
     <Command.Dialog 

@@ -2,7 +2,7 @@ from typing import List, Optional, Dict
 from pydantic import BaseModel, UUID4
 from app.core.results import Result
 from app.core.broker import broker, BaseEvent
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import uuid
 
 class PostingCreate(BaseModel):
@@ -32,7 +32,7 @@ class FinanceService:
         Transaction(
             id="tx-1",
             description="Initial Capital",
-            date=datetime.now() - timedelta(days=30),
+            date=datetime.now(timezone.utc) - timedelta(days=30),
             postings=[
                 PostingCreate(account_id="acc-assets", amount=100000, memo="Cash Deposit"),
                 PostingCreate(account_id="acc-equity", amount=-100000, memo="Owner Investment")
@@ -43,7 +43,7 @@ class FinanceService:
         Transaction(
             id="tx-2",
             description="Lunch with Client",
-            date=datetime.now() - timedelta(days=2),
+            date=datetime.now(timezone.utc) - timedelta(days=2),
             postings=[
                 PostingCreate(account_id="acc-expenses", amount=4500, memo="Thai Food"),
                 PostingCreate(account_id="acc-assets", amount=-4500, memo="Debit Card")
@@ -54,7 +54,7 @@ class FinanceService:
         Transaction(
             id="tx-3",
             description="Software Subscription",
-            date=datetime.now() - timedelta(days=1),
+            date=datetime.now(timezone.utc) - timedelta(days=1),
             postings=[
                 PostingCreate(account_id="acc-expenses", amount=2000, memo="Monthly SaaS"),
                 PostingCreate(account_id="acc-assets", amount=-2000, memo="Auto-pay")
@@ -87,7 +87,7 @@ class FinanceService:
             new_tx = Transaction(
                 id=str(uuid.uuid4()),
                 description=data.description,
-                date=datetime.now(),
+                date=datetime.now(timezone.utc),
                 postings=data.postings,
                 tags=data.tags,
                 notes=data.notes,
@@ -118,7 +118,7 @@ class FinanceService:
         Calculates weekly and yearly spending summaries.
         """
         try:
-            now = datetime.now()
+            now = datetime.now(timezone.utc)
             
             # Weekly (last 7 days)
             weekly = []

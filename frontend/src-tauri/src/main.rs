@@ -1,10 +1,10 @@
-use tauri::{Manager, Runtime, WebviewWindow, WebviewUrl};
+use tauri::{Manager, Runtime};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::{CommandEvent, CommandChild};
 use serde::Serialize;
 use tauri::tray::{TrayIconBuilder, TrayIconEvent};
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 use std::process::Command;
 use std::time::Duration;
 
@@ -137,11 +137,19 @@ async fn handle_sidecar_startup<R: Runtime>(app_handle: tauri::AppHandle<R>) -> 
     ProcessResult::fail("Sidecar exited without reporting port".to_string())
 }
 
+use chrono::{DateTime, Utc};
+
+#[tauri::command]
+fn get_system_time() -> ProcessResult<String, String> {
+    let now: DateTime<Utc> = Utc::now();
+    ProcessResult::ok(now.to_rfc3339())
+}
+
 fn main() {
     tauri::Builder::default()
         .manage(SidecarState { child: Mutex::new(None) })
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![update_tray_summary, perform_backup])
+        .invoke_handler(tauri::generate_handler![update_tray_summary, perform_backup, get_system_time])
         .setup(|app| {
             let app_handle = app.handle().clone();
             
@@ -215,7 +223,7 @@ fn main() {
             if event.id() == "quit" {
                 // Trigger cleanup logic
                 let state = app.state::<SidecarState>();
-                if let Some(mut child) = state.child.lock().unwrap().take() {
+                if let Some(child) = state.child.lock().unwrap().take() {
                     let _ = child.kill();
                     println!("Sidecar process terminated via SIGTERM.");
                 }

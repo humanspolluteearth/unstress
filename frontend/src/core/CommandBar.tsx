@@ -11,7 +11,7 @@ const COMMAND_MAP: Record<string, string> = {
   't': 'tasks',
   's': 'schedule',
   'g': 'goals',
-  'd': 'dashboard',
+  'db': 'dashboard',
   'settings': 'settings',
 };
 
@@ -30,10 +30,12 @@ export const CommandBar: React.FC<CommandBarProps> = ({ onNavigate }) => {
           e.preventDefault();
           setIsVisible(true);
           setCommand(':');
+          window.dispatchEvent(new CustomEvent('command-bar-opened'));
         }
       } else if (e.key === 'Escape' && isVisible) {
         setIsVisible(false);
         setCommand('');
+        window.dispatchEvent(new CustomEvent('command-bar-closed'));
       }
     };
 
@@ -49,14 +51,19 @@ export const CommandBar: React.FC<CommandBarProps> = ({ onNavigate }) => {
 
   const handleExecute = () => {
     const cmd = command.startsWith(':') ? command.slice(1).trim() : command.trim();
-    const target = COMMAND_MAP[cmd];
     
-    if (target) {
-      onNavigate(target);
+    if (cmd === 'd' || cmd === 'delete') {
+      window.dispatchEvent(new CustomEvent('command-delete-event'));
+    } else {
+      const target = COMMAND_MAP[cmd];
+      if (target) {
+        onNavigate(target);
+      }
     }
     
     setIsVisible(false);
     setCommand('');
+    window.dispatchEvent(new CustomEvent('command-bar-closed'));
   };
 
   if (!isVisible) return null;

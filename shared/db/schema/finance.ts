@@ -10,8 +10,8 @@ export const accounts = pgTable("accounts", {
   name: varchar("name", { length: 255 }).notNull(),
   type: varchar("type", { length: 50 }).notNull(), // e.g., 'asset', 'liability', 'equity', 'revenue', 'expense'
   description: varchar("description", { length: 1000 }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 /**
@@ -22,9 +22,9 @@ export const accounts = pgTable("accounts", {
 export const transactions = pgTable("transactions", {
   id: uuid("id").primaryKey().defaultRandom(),
   description: varchar("description", { length: 1000 }).notNull(),
-  date: timestamp("date").defaultNow().notNull(),
+  date: timestamp("date", { withTimezone: true }).defaultNow().notNull(),
   metadata: varchar("metadata", { length: 2000 }), // For external IDs or JSON-like strings
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 /**
@@ -42,5 +42,5 @@ export const postings = pgTable("postings", {
     .notNull(),
   amount: integer("amount").notNull(), // Positive for debit, negative for credit (or vice versa depending on logic)
   memo: varchar("memo", { length: 255 }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });

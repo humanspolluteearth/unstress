@@ -1,71 +1,83 @@
-import React, { useState, useCallback } from 'react';
-import { FinanceLedger } from './modules/finance/FinanceLedger';
-import { Dashboard } from './modules/core/Dashboard';
-import { CommandPalette } from './modules/core/CommandPalette';
-import { CommandBar } from './core/CommandBar';
-import { TaskDashboard } from './modules/tasks/TaskDashboard';
-import { HabitChecklist } from './modules/habits/HabitChecklist';
-import { GoalDashboard } from './modules/goals/GoalDashboard';
-import { ScheduleGrid } from './modules/schedules/ScheduleGrid';
-import { SettingsPage } from './modules/core/SettingsPage';
-import { useKeyboardNavigation, PageId } from './core/useKeyboardNavigation';
-import { Result } from './core/results';
-import { StatusLine } from './core/StatusLine';
-import { clsx } from 'clsx';
+import React, { Suspense, lazy } from 'react';
 import { useNavigationStore } from './core/useNavigationStore';
+import { MainLayout } from './core/MainLayout';
+import { clsx } from 'clsx';
+
+// Lazy load modules
+const Dashboard = lazy(() => import('./core/Dashboard').then(m => ({ default: m.Dashboard })));
+const GoalDashboard = lazy(() => import('./modules/goals/GoalDashboard').then(m => ({ default: m.GoalDashboard })));
+const ScheduleGrid = lazy(() => import('./modules/schedules/ScheduleGrid').then(m => ({ default: m.ScheduleGrid })));
+const TaskDashboard = lazy(() => import('./modules/tasks/TaskDashboard').then(m => ({ default: m.TaskDashboard })));
+const HabitChecklist = lazy(() => import('./modules/habits/HabitChecklist').then(m => ({ default: m.HabitChecklist })));
+const FinanceLedger = lazy(() => import('./modules/finance/FinanceLedger').then(m => ({ default: m.FinanceLedger })));
+const SettingsPage = lazy(() => import('./core/SettingsPage').then(m => ({ default: m.SettingsPage })));
+
+const ModuleLoader = () => (
+  <div className="flex-1 flex flex-col items-center justify-center p-12 space-y-4 animate-pulse">
+    <div className="w-8 h-8 border-2 border-primary border-t-transparent animate-spin" />
+    <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">Loading Module...</div>
+  </div>
+);
+
+const SidecarHealthCheck: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const port = (window as any).__BACKEND_PORT__;
+  
+  if (!port) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center bg-background p-6 font-mono">
+        <div className="flex items-center gap-3 text-primary mb-4">
+          <div className="w-3 h-3 bg-primary rounded-full animate-ping" />
+          <h2 className="text-sm font-bold tracking-tighter uppercase">Connecting to Sidecar...</h2>
+        </div>
+        <p className="text-[10px] text-muted-foreground max-w-xs text-center leading-relaxed mb-6">
+          Waiting for the FastAPI backend bridge to initialize on localhost.
+        </p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 border border-primary text-primary text-[10px] font-bold uppercase hover:bg-primary/10 transition-all"
+        >
+          Force Reconnect
+        </button>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+};
 
 export const App: React.FC = () => {
-  const { activePage, navigate } = useNavigationStore();
-
-  useKeyboardNavigation(navigate);
-
+  const { activePage } = useNavigationStore();
   const isBoard = activePage === 'tasks' || activePage === 'schedule';
 
   const renderPage = () => {
-    // pageClass ensures scrollable pages grow (min-h-full) while boards stay pinned (flex-1)
     const pageClass = clsx(
       "animate-in slide-in-from-right-4 duration-300 flex-1 flex flex-col",
       isBoard ? "h-full min-h-0" : "min-h-full"
     );
 
-    switch (activePage) {
-      case 'dashboard':
-        return <div className={pageClass}><Dashboard /></div>;
-      case 'goals':
-        return <div className={pageClass}><GoalDashboard /></div>;
-      case 'schedule':
-        return <div className={pageClass}><ScheduleGrid /></div>;
-      case 'tasks':
-        return <div className={pageClass}><TaskDashboard /></div>;
-      case 'habits':
-        return <div className={pageClass}><HabitChecklist /></div>;
-      case 'finance':
-        return <div className={pageClass}><FinanceLedger /></div>;
-      case 'settings':
-        return <div className={pageClass}><SettingsPage /></div>;
-      default:
-        return <div className={pageClass}><Dashboard /></div>;
-    }
+    return (
+      <Suspense fallback={<ModuleLoader />}>
+        {(() => {
+          switch (activePage) {
+            case 'dashboard': return <div className={pageClass}><Dashboard /></div>;
+            case 'goals': return <div className={pageClass}><GoalDashboard /></div>;
+            case 'schedule': return <div className={pageClass}><ScheduleGrid /></div>;
+            case 'tasks': return <div className={pageClass}><TaskDashboard /></div>;
+            case 'habits': return <div className={pageClass}><HabitChecklist /></div>;
+            case 'finance': return <div className={pageClass}><FinanceLedger /></div>;
+            case 'settings': return <div className={pageClass}><SettingsPage /></div>;
+            default: return <div className={pageClass}><Dashboard /></div>;
+          }
+        })()}
+      </Suspense>
+    );
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden relative">
-      <CommandPalette />
-      
-      <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
-        <div className="flex-1 flex flex-col w-full min-h-0 overflow-y-auto">
-          <div className={clsx(
-            "flex-1 flex flex-col w-full",
-            !isBoard ? "max-w-7xl mx-auto px-6 md:px-8 lg:px-12 pt-8" : "min-h-full"
-          )}>
-            {renderPage()}
-            <div className="h-32 w-full shrink-0" />
-          </div>
-        </div>
-      </main>
-
-      <CommandBar onNavigate={(page) => navigate(page as PageId)} />
-      <StatusLine pageTitle={activePage} />
-    </div>
+    <SidecarHealthCheck>
+      <MainLayout activePage={activePage} isBoard={isBoard}>
+        {renderPage()}
+      </MainLayout>
+    </SidecarHealthCheck>
   );
 };

@@ -7,8 +7,8 @@ import { pgTable, uuid, varchar, timestamp } from "drizzle-orm/pg-core";
 export const events = pgTable("events", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: varchar("title", { length: 255 }).notNull(),
-  startTime: timestamp("start_time").notNull(),
-  endTime: timestamp("end_time").notNull(),
+  startTime: timestamp("start_time", { withTimezone: true }).notNull(),
+  endTime: timestamp("end_time", { withTimezone: true }).notNull(),
   goalId: uuid("goal_id"), // Optional reference to the Goals module
 });
 
@@ -18,7 +18,7 @@ export const events = pgTable("events", {
  */
 export const timeBlocks = pgTable("time_blocks", {
   id: uuid("id").primaryKey().defaultRandom(),
-  startTime: timestamp("start_time").notNull(),
-  endTime: timestamp("end_time").notNull(),
+  startTime: timestamp("start_time", { withTimezone: true }).notNull(),
+  endTime: timestamp("end_time", { withTimezone: true }).notNull(),
   label: varchar("label", { length: 255 }).notNull(),
 });

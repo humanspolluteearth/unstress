@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Result } from '../../core/results';
+import { Result } from './results';
 import { Activity, TrendingUp, TrendingDown, Info } from 'lucide-react';
 
 interface Metric {

@@ -2,8 +2,8 @@ import React from 'react';
 import { useScheduleStore } from './useScheduleStore';
 import { clsx } from 'clsx';
 
-export const MonthlyGrid: React.FC<{ year: number; month: number }> = ({ year, month }) => {
-  const { blocks } = useScheduleStore();
+export const MonthlyGrid: React.FC<{ year: number; month: number; onEdit?: (id: string) => void }> = ({ year, month, onEdit }) => {
+  const { blocks, selectedBlockId, setSelectedBlockId } = useScheduleStore();
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfMonth = new Date(year, month, 1).getDay();
@@ -36,17 +36,32 @@ export const MonthlyGrid: React.FC<{ year: number; month: number }> = ({ year, m
               {date.getDate()}
             </span>
             <div className="mt-4 space-y-0.5">
-              {dayBlocks.slice(0, 3).map(block => (
-                <div 
-                  key={block.id} 
-                  className={clsx(
-                    "text-[8px] px-1 rounded-none truncate border",
-                    block.is_conflict ? "bg-destructive/20 border-destructive text-destructive" : "bg-primary/5 border-primary/20 text-primary"
-                  )}
-                >
-                  {block.title}
-                </div>
-              ))}
+              {dayBlocks.slice(0, 3).map(block => {
+                const isSelected = selectedBlockId === block.id;
+                return (
+                  <div 
+                    key={block.id} 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isSelected) {
+                        onEdit?.(block.id);
+                      } else {
+                        setSelectedBlockId(block.id);
+                      }
+                    }}
+                    className={clsx(
+                      "text-[8px] px-1 rounded-none truncate border cursor-pointer transition-all",
+                      block.is_conflict 
+                        ? "bg-destructive/20 border-destructive text-destructive" 
+                        : isSelected
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-primary/5 border-primary/20 text-primary hover:bg-primary/10"
+                    )}
+                  >
+                    {block.title}
+                  </div>
+                );
+              })}
               {dayBlocks.length > 3 && (
                 <div className="text-[8px] text-muted-foreground pl-1">
                   + {dayBlocks.length - 3} more
