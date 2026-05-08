@@ -12,7 +12,7 @@ export const WeeklyGrid: React.FC<{ startDate: Date }> = ({ startDate }) => {
   });
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-background border rounded-none overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-0 bg-background border rounded-none overflow-hidden h-full">
       <div className="grid grid-cols-7 border-b bg-muted/30">
         {weekDays.map(day => (
           <div key={day.toISOString()} className="p-2 text-center border-r last:border-0">

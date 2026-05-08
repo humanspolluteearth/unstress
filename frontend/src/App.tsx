@@ -20,10 +20,13 @@ export const App: React.FC = () => {
   useKeyboardNavigation(navigate);
 
   const isBoard = activePage === 'tasks' || activePage === 'schedule';
-  const isScrollable = !isBoard && activePage !== 'dashboard'; // Dashboard is usually short but can grow
 
   const renderPage = () => {
-    const pageClass = "animate-in slide-in-from-right-4 duration-300 flex-1 flex flex-col min-h-0";
+    // pageClass ensures scrollable pages grow (min-h-full) while boards stay pinned (flex-1)
+    const pageClass = clsx(
+      "animate-in slide-in-from-right-4 duration-300 flex-1 flex flex-col",
+      isBoard ? "h-full min-h-0" : "min-h-full"
+    );
 
     switch (activePage) {
       case 'dashboard':
@@ -49,12 +52,17 @@ export const App: React.FC = () => {
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden relative">
       <CommandPalette />
       
-      <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <main className="flex-1 flex flex-col min-h-0">
         <div className={clsx(
           "flex-1 flex flex-col w-full min-h-0",
-          !isBoard ? "max-w-7xl mx-auto px-6 md:px-8 lg:px-12 pt-8 pb-32 overflow-y-auto" : "h-full overflow-hidden"
+          isBoard ? "overflow-hidden" : "overflow-y-auto"
         )}>
-          {renderPage()}
+          <div className={clsx(
+            "flex-1 flex flex-col w-full",
+            !isBoard && "max-w-7xl mx-auto px-6 md:px-8 lg:px-12 pt-8 pb-32"
+          )}>
+            {renderPage()}
+          </div>
         </div>
       </main>
 
