@@ -49,7 +49,7 @@ export const ScheduleGrid: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 flex flex-col flex-1 min-h-0 bg-background/50 overflow-hidden relative">
+    <div className="p-6 space-y-6 flex flex-col flex-1 min-h-0 bg-background/50 overflow-auto relative">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Schedule</h2>

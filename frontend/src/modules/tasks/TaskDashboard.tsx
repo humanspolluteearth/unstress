@@ -36,7 +36,7 @@ export const TaskDashboard: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 flex flex-col flex-1 min-h-0 bg-background/50 overflow-hidden">
+    <div className="p-6 space-y-6 flex flex-col flex-1 min-h-0 bg-background/50 overflow-auto">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Tasks</h2>

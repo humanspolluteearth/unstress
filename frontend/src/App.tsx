@@ -52,14 +52,11 @@ export const App: React.FC = () => {
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden relative">
       <CommandPalette />
       
-      <main className="flex-1 flex flex-col min-h-0">
-        <div className={clsx(
-          "flex-1 flex flex-col w-full min-h-0",
-          isBoard ? "overflow-hidden" : "overflow-y-auto"
-        )}>
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="flex-1 flex flex-col w-full min-h-0 overflow-y-auto">
           <div className={clsx(
             "flex-1 flex flex-col w-full",
-            !isBoard && "max-w-7xl mx-auto px-6 md:px-8 lg:px-12 pt-8 pb-32"
+            !isBoard ? "max-w-7xl mx-auto px-6 md:px-8 lg:px-12 pt-8 pb-32" : "min-h-full"
           )}>
             {renderPage()}
           </div>
