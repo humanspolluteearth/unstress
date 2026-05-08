@@ -14,6 +14,10 @@ To maximize efficiency for AI agents (Gemini, Cursor, Claude), the following sta
 * **Standard**: Barrel files are strictly forbidden; direct imports must be used (e.g., `import { Button } from './components/Button'`) [cite: 373, 377, 389, 520, 522, 527].
 * **Reasoning**: Barrel files bloat the AI context window and increase build times by up to 75% [cite: 375, 376, 490, 521].
 
+### 2.3 Mandatory Git Commits
+* **Standard**: After every logical modification or fix, the agent MUST stage and commit the changes to the git repository.
+* **Reasoning**: Ensures granular version control and allows for immediate recovery in case of regressions or errors during the development lifecycle.
+
 ## 3. Communication & Persistence
 ### 3.1 Event Broker Architecture
 * **Function**: Acts as the "nervous system," facilitating asynchronous, event-driven communication between modules to prevent circular dependencies [cite: 289, 290, 497, 498].

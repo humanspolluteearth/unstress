@@ -1,0 +1,18 @@
+{
+  "$schema": "../gen/schemas/capabilities.json",
+  "identifier": "main-capability",
+  "description": "Allow shell and sidecar execution",
+  "windows": ["main"],
+  "permissions": [
+    "shell:allow-spawn",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "binaries/backend",
+          "sidecar": true
+        }
+      ]
+    }
+  ]
+}

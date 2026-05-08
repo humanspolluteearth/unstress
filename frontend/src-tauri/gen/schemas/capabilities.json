@@ -1,1 +1,1 @@
-{}
+{"main-capability":{"identifier":"main-capability","description":"Allow shell and sidecar execution","local":true,"windows":["main"],"permissions":["shell:allow-spawn",{"identifier":"shell:allow-execute","allow":[{"name":"binaries/backend","sidecar":true}]}]}}

@@ -1,6 +1,7 @@
 from typing import Any, Callable, Dict, List, Type, Awaitable
 from pydantic import BaseModel, Field
 from datetime import datetime
+import asyncio
 from app.core.results import Result
 
 class BaseEvent(BaseModel):
@@ -13,6 +14,9 @@ class EventBroker:
     def __init__(self):
         # Maps event_type strings to a list of async handler functions
         self._listeners: Dict[str, List[Callable[[BaseEvent], Awaitable[None]]]] = {}
+        # In-memory history for the Review Service
+        self._history: List[BaseEvent] = []
+        self._max_history = 1000
 
     def subscribe(self, event_type: str, handler: Callable[[BaseEvent], Awaitable[None]]) -> Result[None, str]:
         """Registers a listener for a specific event type."""
@@ -27,6 +31,11 @@ class EventBroker:
     async def publish(self, event: BaseEvent) -> Result[None, str]:
         """Asynchronously publishes an event to all registered listeners."""
         try:
+            # Store in history
+            self._history.append(event)
+            if len(self._history) > self._max_history:
+                self._history.pop(0)
+
             if event.event_type in self._listeners:
                 # Execute all handlers concurrently
                 await asyncio.gather(
@@ -36,9 +45,9 @@ class EventBroker:
         except Exception as e:
             return Result.fail(f"Event publication failed for {event.event_type}: {str(e)}")
 
-# Global singleton instance for the Modular Monolith
-# Modules should NOT import this directly to subscribe (to avoid circular deps).
-# Instead, registration happens in the central startup sequence.
-broker = EventBroker()
+    def get_history(self) -> List[BaseEvent]:
+        """Returns the current event history."""
+        return self._history
 
-import asyncio # Needed for gather in publish
+# Global singleton instance for the Modular Monolith
+broker = EventBroker()

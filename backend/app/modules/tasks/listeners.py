@@ -16,10 +16,16 @@ async def handle_finance_transaction_added(event: BaseEvent) -> Result[None, str
             task_id = description.split("TASK_ID:")[1].split()[0]
             
             # 1. Logic to update Task Status
-            # In a real system, this would call TasksService.update_status(...)
             print(f"[Tasks Module] Detected funding for Task {task_id}. Updating status to 'Funded'.")
             
-            # 2. Return success via Result Pattern
+            # 2. Publish TASK_FUNDED event
+            from app.core.broker import broker
+            await broker.publish(BaseEvent(
+                event_type="TASK_FUNDED",
+                payload={"task_id": task_id}
+            ))
+
+            # 3. Return success via Result Pattern
             return Result.ok(None)
             
         return Result.ok(None) # Not a task-related transaction

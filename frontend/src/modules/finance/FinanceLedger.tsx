@@ -1,88 +1,182 @@
-import React, { useEffect } from 'react';
-import { useFinanceStore } from './useFinanceStore';
-import { Transaction } from './useFinanceStore';
+import React, { useEffect, useState } from 'react';
+import { Plus, Pencil, Trash2, Wallet, TrendingUp, TrendingDown, Calendar, CreditCard, Tag as TagIcon } from 'lucide-react';
+import { useFinanceStore, Transaction } from './useFinanceStore';
+import { TransactionModal } from './TransactionModal';
+import { ActionDispatcher } from '../../core/ActionDispatcher';
+import { clsx } from 'clsx';
 
 /**
- * FinanceLedger Component
- * Displays the double-entry ledger using Tailwind CSS.
- * Adheres to "No Barrel Imports" by importing directly from source files.
+ * Lean CSS Bar Chart Component
  */
+const CSSBarChart: React.FC<{ data: { label: string; value: number }[], title: string, color: string }> = ({ data, title, color }) => {
+  const maxValue = Math.max(...data.map(d => d.value), 1);
+  
+  return (
+    <div className="bg-card border rounded-2xl p-6 space-y-4 shadow-sm">
+      <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{title}</h3>
+      <div className="flex items-end justify-between h-32 gap-2 pt-4">
+        {data.map((item, idx) => (
+          <div key={idx} className="flex-1 flex flex-col items-center gap-2 group relative">
+            <div 
+              className={clsx("w-full rounded-t-sm transition-all duration-500", color)}
+              style={{ height: `${(item.value / maxValue) * 100}%` }}
+            >
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-foreground text-background text-[10px] px-1.5 py-0.5 rounded font-bold">
+                ${item.value.toFixed(0)}
+              </div>
+            </div>
+            <span className="text-[10px] font-mono text-muted-foreground uppercase">{item.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 export const FinanceLedger: React.FC = () => {
-  const { transactions, isLoading, error, fetchTransactions } = useFinanceStore();
+  const { transactions, weeklySummary, yearlySummary, isLoading, error, fetchTransactions, fetchSummaries } = useFinanceStore();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>();
 
   useEffect(() => {
     fetchTransactions();
-  }, [fetchTransactions]);
+    fetchSummaries();
+  }, []);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  const handleEdit = (tx: Transaction) => {
+    setEditingTransaction(tx);
+    setIsModalOpen(true);
+  };
 
-  if (error) {
-    return (
-      <div className="p-4 bg-destructive/10 text-destructive rounded-md border border-destructive/20">
-        <p className="font-medium">Error loading ledger</p>
-        <p className="text-sm">{error}</p>
-      </div>
-    );
-  }
+  const handleDelete = async (id: string) => {
+    if (confirm('Permanently remove this entry? Ledger balance will be recalculated.')) {
+      await ActionDispatcher.deleteTransaction(id);
+      fetchSummaries();
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingTransaction(undefined);
+    fetchSummaries();
+  };
 
   return (
-    <div className="space-y-6 p-6">
-      <header className="flex justify-between items-center">
+    <div className="space-y-10 animate-in fade-in duration-500">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Finance Ledger</h2>
-          <p className="text-muted-foreground">Double-entry transaction history.</p>
+          <h2 className="text-4xl font-black tracking-tighter">Finance</h2>
+          <p className="text-muted-foreground">Strategic capital allocation and automated ledgering.</p>
+        </div>
+        <div className="flex gap-3">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-black rounded-xl shadow-lg hover:shadow-primary/20 transition-all active:scale-95"
+          >
+            <Plus size={20} /> LOG TRANSACTION
+          </button>
         </div>
       </header>
 
-      <div className="rounded-md border">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/50 transition-colors">
-              <th className="h-10 px-4 text-left font-medium text-muted-foreground">Date</th>
-              <th className="h-10 px-4 text-left font-medium text-muted-foreground">Description</th>
-              <th className="h-10 px-4 text-right font-medium text-muted-foreground">Amount (Cents)</th>
-            </tr>
-          </thead>
-          <tbody className="[&_tr:last-child]:border-0">
-            {transactions.length === 0 ? (
-              <tr className="border-b transition-colors hover:bg-muted/50">
-                <td colSpan={3} className="p-4 text-center text-muted-foreground">
-                  No transactions found.
-                </td>
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <CSSBarChart data={weeklySummary} title="Weekly Spending" color="bg-red-500/80" />
+        <CSSBarChart data={yearlySummary} title="Yearly Overview" color="bg-blue-500/80" />
+      </div>
+
+      {/* Ledger Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
+            <Wallet size={20} className="text-primary" /> Double-Entry Ledger
+          </h3>
+          <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest bg-muted px-2 py-1 rounded">
+            Assets = Liabilities + Equity
+          </div>
+        </div>
+
+        <div className="rounded-2xl border bg-card overflow-hidden shadow-sm">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-muted/30 border-b">
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Transaction</th>
+                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Account Flow</th>
+                <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Amount</th>
+                <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Actions</th>
               </tr>
-            ) : (
-              transactions.map((tx) => (
-                <React.Fragment key={tx.id}>
-                  <tr className="border-b transition-colors hover:bg-muted/50 font-semibold bg-muted/20">
-                    <td className="p-4 align-middle">{new Date(tx.date).toLocaleDateString()}</td>
-                    <td className="p-4 align-middle">{tx.description}</td>
-                    <td className="p-4 align-middle text-right">
-                      {/* Total sum for the transaction header (should be 0 in double-entry) */}
-                      0
-                    </td>
-                  </tr>
-                  {tx.postings.map((posting) => (
-                    <tr key={posting.id} className="border-b transition-colors hover:bg-muted/50 text-xs text-muted-foreground">
-                      <td className="p-2 pl-8 align-middle" colSpan={2}>
-                        {posting.memo || `Account: ${posting.account_id}`}
+            </thead>
+            <tbody>
+              {transactions.length === 0 && !isLoading ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-20 text-center text-muted-foreground italic">
+                    The ledger is empty. Start by logging your first transaction.
+                  </td>
+                </tr>
+              ) : (
+                transactions.map((tx) => (
+                  <React.Fragment key={tx.id}>
+                    <tr className="group border-b hover:bg-muted/10 transition-colors">
+                      <td className="px-6 py-5 align-top">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm">{tx.description}</span>
+                            {tx.is_recurring && (
+                              <span className="text-[8px] bg-blue-500/10 text-blue-500 font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">Recurring</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                            <span className="flex items-center gap-1"><Calendar size={10} /> {new Date(tx.date).toLocaleDateString()}</span>
+                            {tx.tags.length > 0 && (
+                              <span className="flex items-center gap-1"><TagIcon size={10} /> {tx.tags.join(', ')}</span>
+                            )}
+                          </div>
+                        </div>
                       </td>
-                      <td className={`p-2 pr-4 align-middle text-right ${posting.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {posting.amount > 0 ? `+${posting.amount}` : posting.amount}
+                      <td className="px-6 py-5 align-top" colSpan={2}>
+                        <div className="space-y-2">
+                          {tx.postings.map((p, idx) => (
+                            <div key={idx} className="flex justify-between items-center text-xs">
+                              <span className="font-mono opacity-60 uppercase tracking-tighter">{p.account_id}</span>
+                              <span className={clsx(
+                                "font-bold",
+                                p.amount > 0 ? "text-green-500" : "text-red-500"
+                              )}>
+                                {p.amount > 0 ? '+' : ''}{(p.amount / 100).toFixed(2)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-6 py-5 align-top text-right">
+                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={() => handleEdit(tx)}
+                            className="p-2 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(tx.id)}
+                            className="p-2 hover:bg-destructive/10 rounded-lg text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  ))}
-                </React.Fragment>
-              ))
-            )}
-          </tbody>
-        </table>
+                  </React.Fragment>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      <TransactionModal 
+        isOpen={isModalOpen} 
+        onClose={handleCloseModal} 
+        transaction={editingTransaction} 
+      />
     </div>
   );
 };
