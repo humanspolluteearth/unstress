@@ -25,6 +25,7 @@ interface HabitState {
   fetchHabits: () => Promise<Result<Habit[], string>>;
   createHabit: (habit: Omit<Habit, 'id' | 'logs'>) => Promise<Result<Habit, string>>;
   logHabit: (habitId: string, value: number) => Promise<Result<any, string>>;
+  updateHabitLog: (habitId: string, value: number) => Promise<Result<any, string>>;
   deleteHabit: (habitId: string) => Promise<Result<any, string>>;
   updateHabit: (habitId: string, data: Partial<Habit>) => Promise<Result<any, string>>;
   calculateStreak: (habit: Habit) => number;
@@ -86,6 +87,24 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       return result;
     } catch (err) {
       return { success: false, error: 'Failed to log' };
+    }
+  },
+
+  updateHabitLog: async (habitId, value) => {
+    try {
+      const port = (window as any).__BACKEND_PORT__ || 8000;
+      const response = await fetch(`http://localhost:${port}/habits/log`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ habit_id: habitId, value }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        get().fetchHabits();
+      }
+      return result;
+    } catch (err) {
+      return { success: false, error: 'Failed to update log' };
     }
   },
 

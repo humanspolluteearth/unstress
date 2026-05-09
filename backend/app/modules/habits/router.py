@@ -24,3 +24,7 @@ async def delete_habit(habit_id: str) -> Result[dict, str]:
 @router.post("/log")
 async def add_habit_log(data: HabitLogCreate) -> Result[dict, str]:
     return await HabitsService.add_habit_log(data)
+
+@router.put("/log")
+async def update_habit_log(data: HabitLogCreate) -> Result[dict, str]:
+    return await HabitsService.update_habit_log(data)

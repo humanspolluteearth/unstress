@@ -215,3 +215,53 @@ class HabitsService:
 
         except Exception as e:
             return Result.fail(f"Internal error while logging habit: {str(e)}")
+
+    @staticmethod
+    async def update_habit_log(data: HabitLogCreate) -> Result[dict, str]:
+        """
+        Updates the daily total for a habit. 
+        Replaces all logs for today with a single new value.
+        """
+        try:
+            today_str = date.today().isoformat()
+            found_habit = None
+            for habit in HabitsService._habits:
+                if habit.id == data.habit_id:
+                    found_habit = habit
+                    break
+            
+            if not found_habit:
+                return Result.fail("Habit not found")
+
+            # Remove all logs for today
+            found_habit.logs = [l for l in found_habit.logs if not l.timestamp.startswith(today_str)]
+            
+            # Add the new replacement log
+            found_habit.logs.append(HabitLog(
+                timestamp=datetime.now(timezone.utc).isoformat(),
+                value=data.value
+            ))
+
+            # Calculate total points for today
+            points = HabitsService._calculate_daily_points(found_habit, today_str)
+
+            # Publish HABIT_LOGGED Event
+            event = BaseEvent(
+                event_type="HABIT_LOGGED",
+                payload={
+                    "habit_id": data.habit_id,
+                    "value": data.value,
+                    "daily_points": points,
+                    "is_update": True
+                }
+            )
+            await broker.publish(event)
+
+            return Result.ok({
+                "habit_id": data.habit_id,
+                "daily_points": points,
+                "status": "updated"
+            })
+
+        except Exception as e:
+            return Result.fail(f"Internal error while updating habit log: {str(e)}")
