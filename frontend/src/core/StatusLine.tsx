@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useTheme } from './ThemeContext';
 import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
+import { getBaseUrl } from './apiConfig';
 
 interface StatusLineProps {
   pageTitle: string;
@@ -34,7 +35,8 @@ export const StatusLine: React.FC<StatusLineProps> = ({ pageTitle }) => {
         }
 
         if (port) {
-          const resp = await fetch(`http://127.0.0.1:${port}/system-time`);
+          const baseUrl = getBaseUrl();
+          const resp = await fetch(`${baseUrl}/system-time`);
           const sidecarResult = await resp.json();
           if (sidecarResult.success) {
             const sidecarTime = new Date(sidecarResult.data.time).getTime();

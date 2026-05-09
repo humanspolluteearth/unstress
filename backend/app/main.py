@@ -58,7 +58,7 @@ async def get_system_time() -> Result[dict, str]:
     """
     return Result.ok({"time": datetime.now(timezone.utc).isoformat()})
 
-app.include_router(goals_router)
+app.include_router(goals_router, prefix="/api")
 app.include_router(finance_router)
 app.include_router(actions_router)
 app.include_router(habits_router)

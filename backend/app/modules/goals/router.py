@@ -5,7 +5,7 @@ from app.core.dispatcher import ActionDispatcher
 from pydantic import UUID4
 from typing import List, Any
 
-router = APIRouter(prefix="/api/goals", tags=["goals"])
+router = APIRouter(prefix="/goals", tags=["goals"])
 
 @router.get("")
 @router.get("/")
