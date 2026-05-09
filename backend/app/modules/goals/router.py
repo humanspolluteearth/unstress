@@ -7,6 +7,10 @@ from typing import List, Any
 
 router = APIRouter(prefix="/goals", tags=["goals"])
 
+@router.get("/health")
+async def goals_health():
+    return {"status": "goals_router_mounted"}
+
 @router.get("")
 async def get_goals() -> Result[List[Goal], str]:
     return await GoalService.get_goals()
