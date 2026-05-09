@@ -26,10 +26,21 @@ import { clsx } from 'clsx';
 type ViewType = 'daily' | 'weekly' | 'monthly';
 
 export const HabitChecklist: React.FC = () => {
-  const { habits, fetchHabits, logHabit, createHabit, calculateStreak, deleteHabit } = useHabitStore();
+  const { habits, fetchHabits, logHabit, createHabit, calculateStreak, deleteHabit, weeklyInsight, setWeeklyInsight } = useHabitStore();
   const [view, setView] = useState<ViewType>('daily');
   const [isAdding, setIsAdding] = useState(false);
   const [logValues, setLogValues] = useState<Record<string, number>>({});
+  const [isEditingInsight, setIsEditingInsight] = useState(false);
+  const [insightValue, setInsightValue] = useState(weeklyInsight);
+
+  useEffect(() => {
+    setInsightValue(weeklyInsight);
+  }, [weeklyInsight]);
+
+  const handleInsightSave = () => {
+    setWeeklyInsight(insightValue);
+    setIsEditingInsight(false);
+  };
 
   useEffect(() => {
     fetchHabits();
@@ -106,7 +117,7 @@ export const HabitChecklist: React.FC = () => {
         const dayLogs = h.logs.filter(dl => dl.timestamp.startsWith(d));
         return dayLogs.reduce((s, dl) => s + dl.value, 0) >= h.impossible_threshold;
       }).length;
-    }, 0), // Note: this is a bit oversimplified as it counts logs not unique days, but works for now
+    }, 0), 
     mostConsistent: habits.sort((a, b) => calculateStreak(b) - calculateStreak(a))[0]?.title || 'None'
   };
 
@@ -116,11 +127,6 @@ export const HabitChecklist: React.FC = () => {
         const streak = calculateStreak(habit);
         const dailyTotal = habit.logs.filter(l => l.timestamp.startsWith(today)).reduce((acc, l) => acc + l.value, 0);
         const points = calculatePoints(habit, today);
-        const getFill = (start: number, end: number) => {
-          if (dailyTotal >= end) return '100%';
-          if (dailyTotal <= start) return '0%';
-          return `${((dailyTotal - start) / (end - start)) * 100}%`;
-        };
 
         return (
           <div key={habit.id} className={clsx("group bg-card border p-4 transition-all duration-300 flex flex-col md:flex-row md:items-center gap-6", points > 0 ? "border-primary/40" : "hover:border-primary/20")}>
@@ -157,7 +163,6 @@ export const HabitChecklist: React.FC = () => {
                   const isFilling = dailyTotal > range.s && dailyTotal < range.e;
                   const fillWidth = isAchieved ? '100%' : isFilling ? `${((dailyTotal - range.s) / (range.e - range.s)) * 100}%` : '0%';
                   
-                  // Use solid primary for achieved, tiered for current/remaining
                   const opacity = isAchieved ? 1 : [0.4, 0.6, 0.8, 1][range.i];
                   
                   return (
@@ -250,11 +255,32 @@ export const HabitChecklist: React.FC = () => {
               <Zap size={16} />
               <span className="text-xs font-black uppercase tracking-widest">Weekly Insight</span>
             </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {weeklyStats.totalPoints > 50 
-                ? "Excellent momentum! You are operating at peak performance levels." 
-                : "Steady progress. Focus on hitting 'Normal' thresholds more consistently."}
-            </p>
+            {isEditingInsight ? (
+              <textarea
+                value={insightValue}
+                onChange={(e) => setInsightValue(e.target.value)}
+                onBlur={handleInsightSave}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleInsightSave();
+                  }
+                  if (e.key === 'Escape') {
+                    setIsEditingInsight(false);
+                    setInsightValue(weeklyInsight);
+                  }
+                }}
+                autoFocus
+                className="w-full bg-transparent border-none outline-none text-xs text-muted-foreground leading-relaxed resize-none h-24 font-sans"
+              />
+            ) : (
+              <p 
+                onClick={() => setIsEditingInsight(true)}
+                className="text-xs text-muted-foreground leading-relaxed cursor-pointer hover:text-foreground transition-colors"
+              >
+                {weeklyInsight}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -262,13 +288,14 @@ export const HabitChecklist: React.FC = () => {
   };
 
   const renderMonthly = () => {
-    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-    const firstDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getDay();
-    const monthName = new Date().toLocaleDateString(undefined, { month: 'long' });
+    const now = new Date();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+    const monthName = now.toLocaleDateString(undefined, { month: 'long' });
     
     const monthlyPoints = Array.from({ length: daysInMonth }).map((_, i) => {
-      const d = new Date(new Date().getFullYear(), new Date().getMonth(), i + 1);
-      const dStr = d.toISOString().split('T')[0];
+      const d = new Date(now.getFullYear(), now.getMonth(), i + 1);
+      const dStr = d.toLocaleDateString('en-CA');
       return habits.reduce((acc, h) => acc + calculatePoints(h, dStr), 0);
     });
     

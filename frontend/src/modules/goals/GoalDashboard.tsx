@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { clsx } from 'clsx';
-import { Plus, X, ChevronRight } from 'lucide-react';
+import { Plus, X, ChevronRight, Edit3, Eye } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 export type GoalType = 'weekly' | 'monthly' | 'yearly';
 
@@ -20,6 +21,7 @@ const MOCK_GOALS: Goal[] = [
 export const GoalDashboard: React.FC = () => {
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [filter, setFilter] = useState<GoalType | 'all'>('all');
+  const [isEditing, setIsEditing] = useState(false);
 
   const filteredGoals = filter === 'all' 
     ? MOCK_GOALS 
@@ -53,7 +55,7 @@ export const GoalDashboard: React.FC = () => {
           {filteredGoals.map((goal) => (
             <div
               key={goal.id}
-              onClick={() => setSelectedGoal(goal)}
+              onClick={() => { setSelectedGoal(goal); setIsEditing(false); }}
               className={clsx(
                 "p-4 border cursor-pointer flex items-center justify-between transition-colors",
                 selectedGoal?.id === goal.id ? "bg-muted/50 border-primary" : "hover:border-primary/50"
@@ -75,18 +77,29 @@ export const GoalDashboard: React.FC = () => {
           <>
             <header className="p-6 border-b flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-widest">Editor</span>
-              <button onClick={() => setSelectedGoal(null)} className="text-muted-foreground hover:text-foreground">
-                <X size={16} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setIsEditing(!isEditing)} className="text-muted-foreground hover:text-foreground">
+                  {isEditing ? <Eye size={16} /> : <Edit3 size={16} />}
+                </button>
+                <button onClick={() => setSelectedGoal(null)} className="text-muted-foreground hover:text-foreground">
+                  <X size={16} />
+                </button>
+              </div>
             </header>
-            <div className="flex-1 p-6">
+            <div className="flex-1 p-6 overflow-y-auto">
               <h2 className="text-xl font-bold mb-4">{selectedGoal.name}</h2>
-              <textarea
-                readOnly={false}
-                value={selectedGoal.description}
-                onChange={(e) => setSelectedGoal({ ...selectedGoal, description: e.target.value })}
-                className="w-full h-full bg-transparent border-none outline-none resize-none font-mono text-sm"
-              />
+              {isEditing ? (
+                <textarea
+                  readOnly={false}
+                  value={selectedGoal.description}
+                  onChange={(e) => setSelectedGoal({ ...selectedGoal, description: e.target.value })}
+                  className="w-full h-full bg-transparent border-none outline-none resize-none font-mono text-sm"
+                />
+              ) : (
+                <div className="prose prose-sm prose-invert max-w-none text-muted-foreground">
+                  <ReactMarkdown>{selectedGoal.description}</ReactMarkdown>
+                </div>
+              )}
             </div>
           </>
         )}

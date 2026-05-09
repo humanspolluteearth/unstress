@@ -6,7 +6,7 @@ import { pgTable, uuid, varchar, timestamp, integer, real } from "drizzle-orm/pg
  */
 export const habitDefinitions = pgTable("habit_definitions", {
   id: uuid("id").primaryKey().defaultRandom(),
-  title: varchar("title", { length: 255 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
   frequency: varchar("frequency", { length: 50 }).notNull(), // e.g., 'daily', 'weekly'
   unit: varchar("unit", { length: 20 }).default("rep").notNull(),
   two_min_threshold: integer("two_min_threshold").notNull().default(0),

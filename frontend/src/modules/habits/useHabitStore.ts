@@ -20,6 +20,7 @@ export interface Habit {
 
 interface HabitState {
   habits: Habit[];
+  weeklyInsight: string;
   isLoading: boolean;
   error: string | null;
   fetchHabits: () => Promise<Result<Habit[], string>>;
@@ -28,11 +29,13 @@ interface HabitState {
   updateHabitLog: (habitId: string, value: number) => Promise<Result<any, string>>;
   deleteHabit: (habitId: string) => Promise<Result<any, string>>;
   updateHabit: (habitId: string, data: Partial<Habit>) => Promise<Result<any, string>>;
+  setWeeklyInsight: (insight: string) => void;
   calculateStreak: (habit: Habit) => number;
 }
 
 export const useHabitStore = create<HabitState>((set, get) => ({
   habits: [],
+  weeklyInsight: "Steady progress. Focus on hitting 'Normal' thresholds more consistently.",
   isLoading: false,
   error: null,
 
@@ -82,13 +85,16 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       });
       const result = await response.json();
       if (result.success) {
-        // Optimistic local update
+        // Optimistic local update using LOCAL time
         const currentHabits = get().habits;
+        const now = new Date();
+        const localISO = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString();
+
         const updatedHabits = currentHabits.map(h => {
           if (h.id === habitId) {
             return {
               ...h,
-              logs: [...h.logs, { timestamp: new Date().toISOString(), value }]
+              logs: [...h.logs, { timestamp: localISO, value }]
             };
           }
           return h;
@@ -115,6 +121,9 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       if (result.success) {
         // Optimistic local update to ensure immediate UI sync
         const today = new Date().toLocaleDateString('en-CA');
+        const now = new Date();
+        const localISO = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString();
+        
         const currentHabits = get().habits;
         const updatedHabits = currentHabits.map(h => {
           if (h.id === habitId) {
@@ -122,7 +131,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
             const filteredLogs = h.logs.filter(l => !l.timestamp.startsWith(today));
             return {
               ...h,
-              logs: [...filteredLogs, { timestamp: new Date().toISOString(), value }]
+              logs: [...filteredLogs, { timestamp: localISO, value }]
             };
           }
           return h;
@@ -170,6 +179,8 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       return { success: false, error: 'Failed to update' };
     }
   },
+
+  setWeeklyInsight: (insight: string) => set({ weeklyInsight: insight }),
 
   calculateStreak: (habit: Habit) => {
     if (habit.logs.length === 0) return 0;

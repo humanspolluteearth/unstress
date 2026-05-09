@@ -11,7 +11,7 @@ class HabitLog(BaseModel):
 
 class Habit(BaseModel):
     id: str
-    title: str
+    name: str
     frequency: str # 'daily', 'weekly', 'monthly'
     unit: str = 'rep' # 'rep' or 'min'
     two_min_threshold: int
@@ -23,7 +23,7 @@ class Habit(BaseModel):
     logs: List[HabitLog] = []
 
 class HabitCreate(BaseModel):
-    title: str
+    name: str
     frequency: str
     unit: str = 'rep'
     two_min_threshold: int
