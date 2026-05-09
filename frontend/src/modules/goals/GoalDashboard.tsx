@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { clsx } from 'clsx';
-import { Plus, X, ChevronRight, Edit3, Eye } from 'lucide-react';
+import { Plus, X, ChevronRight, Edit3, Eye, LayoutGrid, BarChart3, CalendarDays, Trophy } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 export type GoalType = 'weekly' | 'monthly' | 'yearly';
