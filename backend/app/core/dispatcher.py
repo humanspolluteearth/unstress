@@ -3,6 +3,7 @@ from pydantic import BaseModel, UUID4
 from app.core.results import Result
 from app.modules.finance.service import FinanceService, TransactionCreate
 from app.modules.habits.service import HabitsService, HabitLogCreate
+from app.modules.goals.service import GoalService, GoalCreate
 from app.core.broker import broker, BaseEvent
 
 class TaskCreate(BaseModel):
@@ -162,6 +163,21 @@ class ActionDispatcher:
     @staticmethod
     async def dispatch_habit_log(data: HabitLogCreate) -> Result[dict, str]:
         return await HabitsService.add_habit_log(data)
+
+    @staticmethod
+    async def dispatch_goal_creation(data: GoalCreate) -> Result[dict, str]:
+        """
+        Dispatches goal creation to GoalService and publishes event.
+        """
+        result = await GoalService.create_goal(data)
+        if result.success:
+            # Publish event for other modules
+            await broker.publish(BaseEvent(
+                event_type="GOAL_CREATED",
+                payload=result.data.model_dump() if hasattr(result.data, "model_dump") else result.data
+            ))
+            return Result.ok(result.data)
+        return result
 
     @staticmethod
     async def reset_module(module_name: str) -> Result[dict, str]:

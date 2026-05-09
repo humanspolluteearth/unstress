@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { Plus, X, Edit3, Eye, LayoutGrid, BarChart3, CalendarDays, Trophy } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { GoalCard } from './GoalCard';
+import { GoalCreateModal } from './GoalCreateModal';
 
 export type GoalType = 'weekly' | 'monthly' | 'yearly';
 
@@ -13,61 +14,43 @@ export interface Goal {
   description: string;
   is_current_focus: boolean;
   progress: number;
+  parent_id?: string;
   parentName?: string;
-  priority: 'low' | 'med' | 'high';
-  category: string;
-  deadline: string;
+  priority?: 'low' | 'med' | 'high';
+  category?: string;
+  deadline?: string;
 }
 
-const MOCK_GOALS: Goal[] = [
-  { 
-    id: '1', 
-    name: 'Master AI Orchestration', 
-    type: 'yearly', 
-    description: '# Yearly Goal\nFocus on modular monolith architecture.',
-    is_current_focus: true,
-    progress: 45,
-    priority: 'high',
-    category: 'Engineering',
-    deadline: '2026-12-31'
-  },
-  { 
-    id: '2', 
-    name: 'Optimize Frontend Latency', 
-    type: 'monthly', 
-    description: '# Monthly Goal\nReduce bundle size by 20%.',
-    is_current_focus: false,
-    progress: 75,
-    priority: 'med',
-    category: 'Performance',
-    deadline: '2026-06-15',
-    parentName: 'Master AI Orchestration'
-  },
-  { 
-    id: '3', 
-    name: 'Implement Goal System', 
-    type: 'weekly', 
-    description: '# Weekly Goal\nComplete backend router and schema.',
-    is_current_focus: true,
-    progress: 20,
-    priority: 'high',
-    category: 'Feature',
-    deadline: '2026-05-17',
-    parentName: 'Optimize Frontend Latency'
-  },
-];
-
 export const GoalDashboard: React.FC = () => {
-  const [goals, setGoals] = useState<Goal[]>(MOCK_GOALS);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [filter, setFilter] = useState<GoalType | 'all'>('all');
   const [isEditing, setIsEditing] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const fetchGoals = async () => {
+    try {
+      const port = (window as any).__BACKEND_PORT__ || 8000;
+      const response = await fetch(`http://localhost:${port}/goals/`);
+      const result = await response.json();
+      if (result.success) {
+        setGoals(result.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch goals:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchGoals();
+  }, []);
 
   const filteredGoals = filter === 'all' 
     ? goals 
     : goals.filter(g => g.type === filter);
 
   const handleToggleFocus = (goalId: string) => {
+    // In a real app, this would hit the API
     setGoals(prev => {
       const targetGoal = prev.find(g => g.id === goalId);
       if (!targetGoal) return prev;
@@ -89,14 +72,20 @@ export const GoalDashboard: React.FC = () => {
   // Keyboard Shortcuts
   useEffect(() => {
     const handleGlobalKeys = (e: KeyboardEvent) => {
-      if (!selectedGoal) return;
-
       if (e.key === 'Escape') {
-        setSelectedGoal(null);
+        if (selectedGoal) {
+          setSelectedGoal(null);
+        }
       }
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
         e.preventDefault();
-        // Force save logic here (currently local state handles it, but in future would hit API)
+        setIsCreateModalOpen(true);
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 's' && selectedGoal) {
+        e.preventDefault();
+        // Force save logic here
         setIsEditing(false);
       }
     };
@@ -139,9 +128,6 @@ export const GoalDashboard: React.FC = () => {
               </button>
             ))}
           </div>
-          <button className="flex items-center gap-2 bg-white text-black px-4 py-2 rounded-none text-xs font-black uppercase tracking-widest shadow-sm hover:bg-white/90 transition-all active:scale-95">
-            <Plus size={16} /> Add Goal
-          </button>
         </div>
       </header>
 
@@ -158,6 +144,18 @@ export const GoalDashboard: React.FC = () => {
                 onToggleFocus={handleToggleFocus}
               />
             ))}
+            {filteredGoals.length === 0 && (
+              <div className="h-64 border border-dashed border-white/10 flex flex-col items-center justify-center gap-4">
+                <Trophy size={48} className="text-white/5" />
+                <p className="text-white/20 text-xs font-black uppercase tracking-widest">No goals established in this tier</p>
+                <button 
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all border border-white/10"
+                >
+                  Establish First Goal
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -201,6 +199,22 @@ export const GoalDashboard: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Floating Action Button */}
+      <button 
+        onClick={() => setIsCreateModalOpen(true)}
+        className="fixed bottom-12 right-12 z-50 flex items-center gap-2 bg-white text-black px-6 py-3 rounded-none text-xs font-black uppercase tracking-[0.3em] shadow-[0_0_50px_rgba(255,255,255,0.2)] hover:bg-primary hover:scale-105 transition-all active:scale-95 group"
+      >
+        <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" /> Establish Goal
+      </button>
+
+      <GoalCreateModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => fetchGoals()}
+        existingGoals={goals.map(g => ({ id: g.id, name: g.name }))}
+      />
     </div>
   );
 };
+

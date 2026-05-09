@@ -70,6 +70,7 @@ export const StatusLine: React.FC<StatusLineProps> = ({ pageTitle }) => {
       'FINANCE_TRANSACTION_ADDED',
       'HABIT_LOGGED',
       'HABIT_UPDATED',
+      'GOAL_CREATED',
       'GOAL_UPDATE',
       'SCHEDULE_CONFLICT_DETECTED',
       'GOAL_FOCUS_CHANGED',

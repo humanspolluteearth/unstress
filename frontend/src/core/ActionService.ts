@@ -29,6 +29,13 @@ export interface HabitLogCreate {
   value: number;
 }
 
+export interface GoalCreate {
+  name: string;
+  description?: string;
+  type: string;
+  parent_id?: string;
+}
+
 export interface ScheduleEventCreate {
   title: string;
   start_time: string;
@@ -60,6 +67,10 @@ export class ActionService {
 
   static async createTransaction(data: TransactionCreate): Promise<Result<any>> {
     return this.post('/finance/transaction', data);
+  }
+
+  static async createGoal(data: GoalCreate): Promise<Result<any>> {
+    return this.post('/goals/goal', data);
   }
 
   static async createTask(data: TaskCreate): Promise<Result<any>> {

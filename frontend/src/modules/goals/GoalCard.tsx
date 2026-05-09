@@ -67,23 +67,29 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
       {/* Metadata Row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 px-1.5 py-0.5 border border-white/10 bg-white/5 rounded-none">
-            <span className={clsx(
-              "w-1 h-1 rounded-full",
-              goal.priority === 'high' ? "bg-red-500" : goal.priority === 'med' ? "bg-yellow-500" : "bg-green-500"
-            )} />
-            <span className="text-[9px] font-black uppercase text-white/60 tracking-widest">{goal.priority}</span>
-          </div>
+          {goal.priority && (
+            <div className="flex items-center gap-1 px-1.5 py-0.5 border border-white/10 bg-white/5 rounded-none">
+              <span className={clsx(
+                "w-1 h-1 rounded-full",
+                goal.priority === 'high' ? "bg-red-500" : goal.priority === 'med' ? "bg-yellow-500" : "bg-green-500"
+              )} />
+              <span className="text-[9px] font-black uppercase text-white/60 tracking-widest">{goal.priority}</span>
+            </div>
+          )}
           
-          <div className="flex items-center gap-1 text-white/40">
-            <Tag size={10} />
-            <span className="text-[9px] font-bold uppercase tracking-tight">{goal.category}</span>
-          </div>
+          {goal.category && (
+            <div className="flex items-center gap-1 text-white/40">
+              <Tag size={10} />
+              <span className="text-[9px] font-bold uppercase tracking-tight">{goal.category}</span>
+            </div>
+          )}
 
-          <div className="flex items-center gap-1 text-white/40">
-            <Calendar size={10} />
-            <span className="text-[9px] font-bold uppercase tracking-tight">{goal.deadline}</span>
-          </div>
+          {goal.deadline && (
+            <div className="flex items-center gap-1 text-white/40">
+              <Calendar size={10} />
+              <span className="text-[9px] font-bold uppercase tracking-tight">{goal.deadline}</span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
