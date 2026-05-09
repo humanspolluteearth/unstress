@@ -144,11 +144,24 @@ export const HabitChecklist: React.FC = () => {
               </div>
               <div className="grid grid-cols-4 gap-1 h-2">
                 {[0, habit.two_min_threshold, habit.normal_threshold, habit.hard_threshold].map((start, i) => {
-                  const end = [habit.two_min_threshold, habit.normal_threshold, habit.hard_threshold, habit.impossible_threshold][i];
+                  const thresholds = [habit.two_min_threshold, habit.normal_threshold, habit.hard_threshold, habit.impossible_threshold];
+                  const end = thresholds[i];
                   const opacity = [40, 60, 80, 100][i];
+                  const isAchieved = dailyTotal >= end;
+                  
                   return (
                     <div key={i} className="relative bg-muted overflow-hidden">
-                      <div className={clsx("h-full transition-all duration-500", `bg-primary/${opacity}`)} style={{ width: getFill(start, end) }} />
+                      <div 
+                        className={clsx(
+                          "h-full transition-all duration-500", 
+                          `bg-primary/${opacity}`,
+                          isAchieved && "shadow-[0_0_10px_rgba(var(--primary),0.5)] brightness-125"
+                        )} 
+                        style={{ 
+                          width: getFill(start, end),
+                          boxShadow: isAchieved ? '0 0 8px hsl(var(--primary) / 0.6)' : 'none'
+                        }} 
+                      />
                     </div>
                   );
                 })}
