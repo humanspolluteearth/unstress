@@ -5,6 +5,8 @@
   "windows": ["main"],
   "permissions": [
     "shell:allow-spawn",
+    "core:event:allow-listen",
+    "core:event:default",
     {
       "identifier": "shell:allow-execute",
       "allow": [

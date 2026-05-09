@@ -31,7 +31,7 @@ export const GoalDashboard: React.FC = () => {
   const fetchGoals = async () => {
     try {
       const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/goals/`);
+      const response = await fetch(`http://127.0.0.1:${port}/goals/`);
       const result = await response.json();
       if (result.success) {
         setGoals(result.data);

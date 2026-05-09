@@ -48,7 +48,7 @@ export class ActionService {
   private static async post<T, R>(path: string, data: T): Promise<Result<R>> {
     try {
       const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/actions${path}`, {
+      const response = await fetch(`http://127.0.0.1:${port}/actions${path}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -80,7 +80,7 @@ export class ActionService {
   static async updateTask(id: string, data: TaskCreate): Promise<Result<any>> {
     try {
       const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/actions/tasks/task/${id}`, {
+      const response = await fetch(`http://127.0.0.1:${port}/actions/tasks/task/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ export class ActionService {
   static async deleteTask(id: string): Promise<Result<any>> {
     try {
       const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/actions/tasks/task/${id}`, {
+      const response = await fetch(`http://127.0.0.1:${port}/actions/tasks/task/${id}`, {
         method: 'DELETE',
       });
       return await response.json();
@@ -108,7 +108,7 @@ export class ActionService {
   static async updateTaskStatus(id: string, status: string): Promise<Result<any>> {
     try {
       const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/actions/tasks/task/${id}/status?status=${status}`, {
+      const response = await fetch(`http://127.0.0.1:${port}/actions/tasks/task/${id}/status?status=${status}`, {
         method: 'PATCH',
       });
       return await response.json();
@@ -124,7 +124,7 @@ export class ActionService {
   static async deleteHabit(id: string): Promise<Result<any>> {
     try {
       const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/habits/${id}`, {
+      const response = await fetch(`http://127.0.0.1:${port}/habits/${id}`, {
         method: 'DELETE',
       });
       return await response.json();
@@ -136,7 +136,7 @@ export class ActionService {
   static async updateTransaction(id: string, data: TransactionCreate): Promise<Result<any>> {
     try {
       const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/finance/transactions/${id}`, {
+      const response = await fetch(`http://127.0.0.1:${port}/finance/transactions/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -150,7 +150,7 @@ export class ActionService {
   static async deleteTransaction(id: string): Promise<Result<any>> {
     try {
       const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/finance/transactions/${id}`, {
+      const response = await fetch(`http://127.0.0.1:${port}/finance/transactions/${id}`, {
         method: 'DELETE',
       });
       return await response.json();
@@ -175,7 +175,7 @@ export class ActionService {
   static async createScheduleEvent(data: ScheduleEventCreate): Promise<Result<any>> {
     try {
       const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/schedules/`, {
+      const response = await fetch(`http://127.0.0.1:${port}/schedules/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -189,7 +189,7 @@ export class ActionService {
   static async updateScheduleEvent(id: string, data: Partial<ScheduleEventCreate>): Promise<Result<any>> {
     try {
       const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/schedules/${id}`, {
+      const response = await fetch(`http://127.0.0.1:${port}/schedules/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -203,7 +203,7 @@ export class ActionService {
   static async deleteScheduleEvent(id: string): Promise<Result<any>> {
     try {
       const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/schedules/${id}`, {
+      const response = await fetch(`http://127.0.0.1:${port}/schedules/${id}`, {
         method: 'DELETE',
       });
       return await response.json();
@@ -215,7 +215,7 @@ export class ActionService {
   static async getSchedules(): Promise<Result<any[]>> {
     try {
       const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/schedules/`);
+      const response = await fetch(`http://127.0.0.1:${port}/schedules/`);
       return await response.json();
     } catch (err) {
       return { success: false, error: 'Failed to fetch schedules' };
