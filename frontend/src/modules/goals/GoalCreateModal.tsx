@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trophy, Plus } from 'lucide-react';
+import { X, Trophy, Target, LayoutGrid, BarChart3, CalendarDays, AlertCircle, Plus } from 'lucide-react';
 import { ActionService, GoalCreate } from '../../core/ActionService';
+import { CustomSelect } from '../../core/CustomSelect';
 import { clsx } from 'clsx';
 
 interface GoalCreateModalProps {
@@ -17,6 +18,7 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
   const [description, setDescription] = useState('');
   const [initialTasks, setInitialTasks] = useState<string[]>(['']);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -34,6 +36,7 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
     if (e) e.preventDefault();
     if (!name.trim()) return;
 
+    setError(null);
     setIsSubmitting(true);
     const data: GoalCreate = {
       name,
@@ -63,7 +66,7 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
       setDescription('');
       setInitialTasks(['']);
     } else {
-      console.error('Failed to create goal:', result.error);
+      setError(result.error || 'Failed to create goal');
     }
     setIsSubmitting(false);
   };
@@ -75,26 +78,43 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
     setInitialTasks(updated);
   };
 
+  const tierOptions = [
+    { label: 'Weekly', value: 'weekly', icon: <BarChart3 size={14} /> },
+    { label: 'Monthly', value: 'monthly', icon: <CalendarDays size={14} /> },
+    { label: 'Yearly', value: 'yearly', icon: <Trophy size={14} /> },
+  ];
+
+  const goalOptions = [
+    { label: 'No parent goal', value: '' },
+    ...existingGoals.map(g => ({ label: g.name, value: g.id }))
+  ];
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-neutral-900 border border-white/20 w-full max-w-lg shadow-2xl flex flex-col max-h-[90vh]">
-        <header className="p-4 border-b border-white/10 flex items-center justify-between bg-black">
-          <div className="flex items-center gap-2">
-            <Trophy size={16} className="text-primary" />
-            <span className="text-xs font-black uppercase tracking-widest text-white">Create New Goal</span>
-          </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+      <div className="bg-card border rounded-none shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between p-4 border-b">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+             <Trophy size={18} className="text-primary" />
+             Establish New Goal
+          </h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X size={20} />
           </button>
-        </header>
+        </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto">
-          {/* Title */}
+        <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto">
+          {error && (
+            <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive text-sm rounded-none border border-destructive/20">
+              <AlertCircle size={16} />
+              {error}
+            </div>
+          )}
+
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Goal Title</label>
+            <label className="text-sm font-medium">Goal Title</label>
             <input
               autoFocus
-              type="text"
+              required
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => {
@@ -103,69 +123,47 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
                   handleSubmit();
                 }
               }}
-              className="w-full bg-black border border-white/10 p-3 text-white outline-none focus:border-primary transition-colors"
-              placeholder="What do you want to achieve?"
-              required
+              className="w-full bg-muted/50 border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+              placeholder="What is your north star?"
             />
           </div>
 
-          {/* Type & Parent */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Tier</label>
-              <div className="flex bg-black border border-white/10 p-1">
-                {(['weekly', 'monthly', 'yearly'] as const).map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setType(t)}
-                    className={clsx(
-                      "flex-1 py-1.5 text-[9px] font-black uppercase tracking-wider transition-all",
-                      type === t ? "bg-white text-black" : "text-white/40 hover:text-white"
-                    )}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Parent Goal (Optional)</label>
-              <select
-                value={parentId}
-                onChange={(e) => setParentId(e.target.value)}
-                className="w-full bg-black border border-white/10 p-2.5 text-white text-xs outline-none focus:border-primary transition-colors appearance-none"
-              >
-                <option value="">None</option>
-                {existingGoals.map(g => (
-                  <option key={g.id} value={g.id}>{g.name}</option>
-                ))}
-              </select>
-            </div>
+            <CustomSelect
+              label="Tier"
+              value={type}
+              onChange={setType}
+              options={tierOptions}
+            />
+            <CustomSelect
+              label="Parent Goal (Optional)"
+              icon={<Target size={14} />}
+              value={parentId}
+              onChange={setParentId}
+              options={goalOptions}
+              placeholder="No parent goal"
+            />
           </div>
 
-          {/* Description */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Description (Markdown)</label>
+            <label className="text-sm font-medium">Description (Markdown)</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-black border border-white/10 p-3 text-white text-sm outline-none focus:border-primary transition-colors h-24 resize-none"
-              placeholder="Detailed objectives..."
+              className="w-full bg-muted/50 border rounded-none px-3 py-2 text-sm min-h-[100px] focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
+              placeholder="Detailed objectives and success criteria..."
             />
           </div>
 
-          {/* Initial Tasks */}
-          <div className="space-y-3">
+          <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
-              <label className="text-[10px] font-black uppercase tracking-widest text-white/40">Initial Tasks</label>
+              <label className="text-sm font-medium">Initial Action Items</label>
               <button
                 type="button"
                 onClick={handleAddTaskField}
-                className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline"
+                className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline flex items-center gap-1"
               >
-                + Add Task
+                <Plus size={10} /> Add Item
               </button>
             </div>
             <div className="space-y-2">
@@ -175,8 +173,8 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
                     type="text"
                     value={task}
                     onChange={(e) => handleTaskChange(idx, e.target.value)}
-                    className="flex-1 bg-black/50 border border-white/5 p-2 text-xs text-white outline-none focus:border-white/20 transition-colors"
-                    placeholder={`Task ${idx + 1}`}
+                    className="flex-1 bg-muted/30 border border-border/50 rounded-none px-3 py-1.5 text-sm focus:outline-none focus:border-primary/50 transition-colors"
+                    placeholder={`Action ${idx + 1}...`}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
@@ -188,32 +186,36 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
                     <button
                       type="button"
                       onClick={() => setInitialTasks(initialTasks.filter((_, i) => i !== idx))}
-                      className="text-white/20 hover:text-white transition-colors"
+                      className="text-muted-foreground hover:text-destructive transition-colors"
                     >
-                      <X size={14} />
+                      <X size={16} />
                     </button>
                   )}
                 </div>
               ))}
             </div>
           </div>
-        </form>
 
-        <footer className="p-4 border-t border-white/10 bg-black flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => handleSubmit()}
-            disabled={isSubmitting || !name.trim()}
-            className="px-8 py-2 bg-white text-black text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? 'Creating...' : 'Establish Goal'}
-          </button>
-        </footer>
+          <div className="flex justify-end gap-3 pt-4 border-t mt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-none transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting || !name.trim()}
+              className={clsx(
+                "px-6 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-none shadow-sm transition-all hover:bg-primary/90",
+                (isSubmitting || !name.trim()) && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              {isSubmitting ? 'Establishing...' : 'Establish Goal'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
