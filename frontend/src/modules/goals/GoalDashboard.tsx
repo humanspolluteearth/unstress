@@ -4,6 +4,7 @@ import { Plus, X, Edit3, Eye, LayoutGrid, BarChart3, CalendarDays, Trophy } from
 import ReactMarkdown from 'react-markdown';
 import { GoalCard } from './GoalCard';
 import { GoalCreateModal } from './GoalCreateModal';
+import { getBaseUrl, API_ENDPOINTS } from '../../core/apiConfig';
 
 export type GoalType = 'weekly' | 'monthly' | 'yearly';
 
@@ -30,8 +31,8 @@ export const GoalDashboard: React.FC = () => {
 
   const fetchGoals = async () => {
     try {
-      const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://127.0.0.1:${port}/goals`);
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.GOALS}`);
       const result = await response.json();
       if (result.success) {
         setGoals(result.data);
@@ -216,4 +217,3 @@ export const GoalDashboard: React.FC = () => {
     </div>
   );
 };
-

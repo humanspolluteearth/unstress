@@ -1,11 +1,12 @@
 import { ActionService, GoalCreate } from '../../core/ActionService';
 import { Result } from '../../core/results';
+import { getBaseUrl, API_ENDPOINTS } from '../../core/apiConfig';
 
 export class GoalService {
   static async createGoal(data: GoalCreate): Promise<Result<any>> {
-    const port = (window as any).__BACKEND_PORT__ || 8000;
     try {
-      const response = await fetch(`http://127.0.0.1:${port}/goals/establish`, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.GOALS}/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -19,9 +20,9 @@ export class GoalService {
   }
 
   static async getGoals(): Promise<Result<any[]>> {
-    const port = (window as any).__BACKEND_PORT__ || 8000;
     try {
-      const response = await fetch(`http://127.0.0.1:${port}/goals`);
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.GOALS}`);
       return await response.json();
     } catch (err) {
       return { success: false, error: 'Network error' };
