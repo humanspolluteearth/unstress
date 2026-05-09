@@ -165,19 +165,25 @@ class ActionDispatcher:
         return await HabitsService.add_habit_log(data)
 
     @staticmethod
-    async def dispatch_goal_creation(data: GoalCreate) -> Result[dict, str]:
+    async def dispatch_goal_creation(data: GoalCreate) -> Result[Any, str]:
         """
         Dispatches goal creation to GoalService and publishes event.
         """
-        result = await GoalService.create_goal(data)
-        if result.success:
-            # Publish event for other modules
-            await broker.publish(BaseEvent(
-                event_type="GOAL_CREATED",
-                payload=result.data.model_dump() if hasattr(result.data, "model_dump") else result.data
-            ))
-            return Result.ok(result.data)
-        return result
+        try:
+            result = await GoalService.create_goal(data)
+            if result.success:
+                # result.data is already a dict from model_dump()
+                await broker.publish(BaseEvent(
+                    event_type="GOAL_CREATED",
+                    payload=result.data
+                ))
+                return Result.ok({
+                    "status": "created",
+                    "data": result.data
+                })
+            return result
+        except Exception as e:
+            return Result.fail(f"Dispatcher Error: {str(e)}")
 
     @staticmethod
     async def reset_module(module_name: str) -> Result[dict, str]:

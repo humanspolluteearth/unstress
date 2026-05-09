@@ -4,6 +4,7 @@ from app.modules.finance.service import TransactionCreate
 from app.modules.habits.service import HabitLogCreate
 from app.modules.goals.service import GoalCreate
 from app.core.results import Result
+from typing import Any
 
 router = APIRouter(prefix="/actions", tags=["actions"])
 
@@ -12,7 +13,7 @@ async def create_transaction(data: TransactionCreate) -> Result[dict, str]:
     return await ActionDispatcher.dispatch_finance_transaction(data)
 
 @router.post("/goals/goal")
-async def create_goal(data: GoalCreate) -> Result[dict, str]:
+async def create_goal(data: GoalCreate) -> Result[Any, str]:
     return await ActionDispatcher.dispatch_goal_creation(data)
 
 @router.post("/tasks/task")

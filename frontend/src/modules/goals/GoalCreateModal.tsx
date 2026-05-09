@@ -57,15 +57,20 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
       fetchGoals();
 
       // Create initial tasks if any
-      const createdGoal = result.data as any;
-      for (const taskTitle of initialTasks) {
-        if (taskTitle.trim()) {
-          await ActionService.createTask({
-            title: taskTitle.trim(),
-            goal_id: createdGoal.id,
-          });
+      // Based on dispatcher.py, result.data is { status: "created", data: GoalDict }
+      const createdGoal = result.data.data || result.data;
+      
+      if (createdGoal && createdGoal.id) {
+        for (const taskTitle of initialTasks) {
+          if (taskTitle.trim()) {
+            await ActionService.createTask({
+              title: taskTitle.trim(),
+              goal_id: createdGoal.id,
+            });
+          }
         }
       }
+
       onSuccess(createdGoal);
       onClose();
       // Reset state
@@ -75,6 +80,7 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
       setDescription('');
       setInitialTasks(['']);
     } else {
+      console.error('[GOAL_CREATE_FAILURE]', result);
       setError(result.error || 'Failed to create goal');
     }
     setIsSubmitting(false);

@@ -33,24 +33,28 @@ class GoalService:
         return Result.ok(GoalService._goals)
 
     @staticmethod
-    async def create_goal(data: GoalCreate) -> Result[Goal, str]:
-        if not data.name:
-            return Result.fail("Missing Field: Name")
-        
-        valid_types = ['weekly', 'monthly', 'yearly']
-        normalized_type = data.type.lower()
-        if normalized_type not in valid_types:
-            return Result.fail(f"Invalid Type: {data.type}. Must be one of {valid_types}")
+    async def create_goal(data: GoalCreate) -> Result[Any, str]:
+        try:
+            if not data.name or data.name.strip() == "":
+                return Result.fail("Missing Field: Name")
+            
+            valid_types = ['weekly', 'monthly', 'yearly']
+            normalized_type = data.type.lower()
+            if normalized_type not in valid_types:
+                return Result.fail(f"Invalid Type: {data.type}. Must be one of {valid_types}")
 
-        new_goal = Goal(
-            id=uuid.uuid4(),
-            name=data.name,
-            description=data.description,
-            type=normalized_type,
-            parent_id=data.parent_id
-        )
-        GoalService._goals.append(new_goal)
-        return Result.ok(new_goal)
+            new_goal = Goal(
+                id=uuid.uuid4(),
+                name=data.name.strip(),
+                description=data.description,
+                type=normalized_type,
+                parent_id=data.parent_id
+            )
+            GoalService._goals.append(new_goal)
+            # Return model_dump to ensure serialization works within the Result dict
+            return Result.ok(new_goal.model_dump())
+        except Exception as e:
+            return Result.fail(f"Internal Error in GoalService: {str(e)}")
 
     @staticmethod
     async def update_goal(goal_id: UUID4, data: GoalUpdate) -> Result[Goal, str]:
