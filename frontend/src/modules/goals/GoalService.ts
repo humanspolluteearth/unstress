@@ -6,7 +6,7 @@ export class GoalService {
   static async createGoal(data: GoalCreate): Promise<Result<any>> {
     try {
       const baseUrl = getBaseUrl();
-      const url = `${baseUrl}${API_ENDPOINTS.GOALS}/`;
+      const url = `${baseUrl}${API_ENDPOINTS.GOALS}`;
       console.log(`[GoalService] Establishing goal at: ${url}`, data);
       const response = await fetch(url, {
         method: 'POST',

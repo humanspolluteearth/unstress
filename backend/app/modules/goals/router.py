@@ -5,15 +5,13 @@ from app.core.dispatcher import ActionDispatcher
 from pydantic import UUID4
 from typing import List, Any
 
-router = APIRouter(prefix="/api/goals", tags=["goals"])
+router = APIRouter(prefix="/goals", tags=["goals"])
 
 @router.get("")
-@router.get("/")
 async def get_goals() -> Result[List[Goal], str]:
     return await GoalService.get_goals()
 
 @router.post("")
-@router.post("/")
 async def create_goal(data: GoalCreate) -> Result[Any, str]:
     return await ActionDispatcher.dispatch_goal_creation(data)
 

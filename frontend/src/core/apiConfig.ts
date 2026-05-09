@@ -14,7 +14,7 @@ export const getBackendPort = (): number => {
 };
 
 export const getBaseUrl = (): string => {
-  return `http://localhost:${getBackendPort()}`;
+  return `http://127.0.0.1:${getBackendPort()}`;
 };
 
 export const API_ENDPOINTS = {
