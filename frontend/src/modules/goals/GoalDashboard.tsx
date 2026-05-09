@@ -60,7 +60,7 @@ export const GoalDashboard: React.FC = () => {
         </div>
       </header>
 
-      <div className="flex flex-1 min-h-0 overflow-hidden border">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* List Panel */}
         <div className={clsx("flex flex-col transition-all duration-300 ease-in-out", selectedGoal ? "w-2/3" : "w-full")}>
           <div className="flex-1 overflow-y-auto p-6 space-y-2">
