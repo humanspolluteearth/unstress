@@ -63,7 +63,7 @@ export const GoalDashboard: React.FC = () => {
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* List Panel */}
         <div className={clsx("flex flex-col transition-all duration-300 ease-in-out", selectedGoal ? "w-2/3" : "w-full")}>
-          <div className="flex-1 overflow-y-auto p-6 space-y-2">
+          <div className="flex-1 overflow-y-auto space-y-2">
             {filteredGoals.map((goal) => (
               <div
                 key={goal.id}
@@ -88,7 +88,7 @@ export const GoalDashboard: React.FC = () => {
           {selectedGoal && (
             <>
               <header className="p-4 border-b flex items-center justify-between">
-                <span className="text-xs font-black uppercase tracking-widest">Editor</span>
+                <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Editor</span>
                 <div className="flex items-center gap-2">
                   <button onClick={() => setIsEditing(!isEditing)} className="text-muted-foreground hover:text-foreground p-1">
                     {isEditing ? <Eye size={16} /> : <Edit3 size={16} />}
