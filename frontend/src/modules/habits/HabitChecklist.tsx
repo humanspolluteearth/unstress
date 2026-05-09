@@ -118,7 +118,7 @@ export const HabitChecklist: React.FC = () => {
         return dayLogs.reduce((s, dl) => s + dl.value, 0) >= h.impossible_threshold;
       }).length;
     }, 0), 
-    mostConsistent: habits.sort((a, b) => calculateStreak(b) - calculateStreak(a))[0]?.title || 'None'
+    mostConsistent: habits.sort((a, b) => calculateStreak(b) - calculateStreak(a))[0]?.name || 'None'
   };
 
   const renderDaily = () => (
@@ -133,7 +133,7 @@ export const HabitChecklist: React.FC = () => {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
-                  <h3 className="font-bold text-base leading-tight group-hover:text-primary transition-colors truncate">{habit.title}</h3>
+                  <h3 className="font-bold text-base leading-tight group-hover:text-primary transition-colors truncate">{habit.name}</h3>
                   <span className="text-[10px] font-black bg-muted px-1.5 py-0.5 rounded-none uppercase tracking-widest text-muted-foreground">{streak}D Streak</span>
                 </div>
                 <div className="flex items-center gap-4">

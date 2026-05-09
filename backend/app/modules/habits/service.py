@@ -34,7 +34,7 @@ class HabitCreate(BaseModel):
     level: Optional[int] = 0
 
 class HabitUpdate(BaseModel):
-    title: Optional[str] = None
+    name: Optional[str] = None
     frequency: Optional[str] = None
     unit: Optional[str] = None
     two_min_threshold: Optional[int] = None
@@ -53,7 +53,7 @@ class HabitsService:
     _habits: List[Habit] = [
         Habit(
             id="h-1",
-            title="Drink Water",
+            name="Drink Water",
             frequency="daily",
             unit="rep",
             two_min_threshold=1,
@@ -64,7 +64,7 @@ class HabitsService:
         ),
         Habit(
             id="h-2",
-            title="Deep Work",
+            name="Deep Work",
             frequency="daily",
             unit="min",
             two_min_threshold=2,
@@ -105,15 +105,15 @@ class HabitsService:
         """Creates a new habit definition."""
         try:
             # Domain Validation
-            if not data.title or len(data.title.strip()) == 0:
-                return Result.fail("VALIDATION_ERROR: Habit title is required.")
+            if not data.name or len(data.name.strip()) == 0:
+                return Result.fail("VALIDATION_ERROR: Habit name is required.")
             
             if data.two_min_threshold < 0 or data.normal_threshold < 0:
                 return Result.fail("VALIDATION_ERROR: Thresholds cannot be negative.")
 
             new_habit = Habit(
                 id=str(uuid.uuid4()),
-                title=data.title,
+                name=data.name,
                 frequency=data.frequency,
                 unit=data.unit,
                 two_min_threshold=data.two_min_threshold,
@@ -141,7 +141,7 @@ class HabitsService:
         try:
             for habit in HabitsService._habits:
                 if habit.id == habit_id:
-                    if data.title: habit.title = data.title
+                    if data.name: habit.name = data.name
                     if data.frequency: habit.frequency = data.frequency
                     if data.unit: habit.unit = data.unit
                     if data.two_min_threshold is not None: habit.two_min_threshold = data.two_min_threshold

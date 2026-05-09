@@ -60,7 +60,7 @@ export const Dashboard: React.FC = () => {
     return upcoming.length > 0 ? upcoming[0] : todayEvents.sort((a: any, b: any) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())[0];
   }, [blocks]);
 
-  const currentFocus = useMemo(() => goals.find((g: any) => g.is_focus)?.title || "Clear Horizon", [goals]);
+  const currentFocus = useMemo(() => goals.find((g: any) => g.is_current_focus)?.name || "Clear Horizon", [goals]);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center space-y-6 animate-in fade-in duration-1000">

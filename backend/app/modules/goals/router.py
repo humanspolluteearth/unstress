@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.modules.goals.service import GoalService, GoalCreate, Goal
+from app.modules.goals.service import GoalService, GoalCreate, Goal, GoalUpdate
 from app.core.results import Result
 from pydantic import UUID4
 from typing import List

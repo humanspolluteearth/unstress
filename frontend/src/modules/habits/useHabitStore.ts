@@ -8,7 +8,7 @@ export interface HabitLog {
 
 export interface Habit {
   id: string;
-  title: string;
+  name: string;
   frequency: 'daily' | 'weekly' | 'monthly';
   unit: 'rep' | 'min';
   two_min_threshold: number;

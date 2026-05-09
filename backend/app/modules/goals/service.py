@@ -1,10 +1,7 @@
-from typing import List, Optional
-from pydantic import BaseModel, UUID4
-from app.core.results import Result
-
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, UUID4
 from app.core.results import Result
+import uuid
 
 class Goal(BaseModel):
     id: UUID4
@@ -15,6 +12,12 @@ class Goal(BaseModel):
     parent_id: Optional[UUID4] = None
     metadata: Dict[str, Any] = {}
     progress: float = 0.0
+
+class GoalCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    type: str
+    parent_id: Optional[UUID4] = None
 
 class GoalUpdate(BaseModel):
     name: Optional[str] = None
@@ -28,6 +31,18 @@ class GoalService:
     @staticmethod
     async def get_goals() -> Result[List[Goal], str]:
         return Result.ok(GoalService._goals)
+
+    @staticmethod
+    async def create_goal(data: GoalCreate) -> Result[Goal, str]:
+        new_goal = Goal(
+            id=uuid.uuid4(),
+            name=data.name,
+            description=data.description,
+            type=data.type,
+            parent_id=data.parent_id
+        )
+        GoalService._goals.append(new_goal)
+        return Result.ok(new_goal)
 
     @staticmethod
     async def update_goal(goal_id: UUID4, data: GoalUpdate) -> Result[Goal, str]:
