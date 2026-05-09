@@ -143,21 +143,27 @@ export const HabitChecklist: React.FC = () => {
                 </div>
               </div>
               <div className="grid grid-cols-4 gap-1 h-2">
-                {[0, habit.two_min_threshold, habit.normal_threshold, habit.hard_threshold].map((start, i) => {
-                  const thresholds = [habit.two_min_threshold, habit.normal_threshold, habit.hard_threshold, habit.impossible_threshold];
-                  const end = thresholds[i];
-                  const isAchieved = points > i;
-                  // Achieved bars are solid, unachieved have tiered opacity
-                  const opacity = isAchieved ? 100 : [40, 60, 80, 100][i];
+                {[
+                  { s: 0, e: habit.two_min_threshold, i: 0 },
+                  { s: habit.two_min_threshold, e: habit.normal_threshold, i: 1 },
+                  { s: habit.normal_threshold, e: habit.hard_threshold, i: 2 },
+                  { s: habit.hard_threshold, e: habit.impossible_threshold, i: 3 },
+                ].map((range) => {
+                  const isAchieved = dailyTotal >= range.e;
+                  const isFilling = dailyTotal > range.s && dailyTotal < range.e;
+                  const fillWidth = isAchieved ? '100%' : isFilling ? `${((dailyTotal - range.s) / (range.e - range.s)) * 100}%` : '0%';
+                  
+                  // Use solid primary for achieved, tiered for current/remaining
+                  const opacity = isAchieved ? 1 : [0.4, 0.6, 0.8, 1][range.i];
                   
                   return (
-                    <div key={i} className="relative bg-muted overflow-hidden">
+                    <div key={range.i} className="relative bg-muted overflow-hidden h-full">
                       <div 
-                        className={clsx(
-                          "h-full transition-all duration-500", 
-                          `bg-primary/${opacity}`
-                        )} 
-                        style={{ width: getFill(start, end) }} 
+                        className="h-full transition-all duration-500 bg-primary" 
+                        style={{ 
+                          width: fillWidth,
+                          opacity: opacity
+                        }} 
                       />
                     </div>
                   );
