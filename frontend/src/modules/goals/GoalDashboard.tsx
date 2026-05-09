@@ -105,29 +105,36 @@ export const GoalDashboard: React.FC = () => {
     <div className="p-6 space-y-6 flex flex-col flex-1 min-h-0 bg-background/50 overflow-auto relative">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-white">Goals</h2>
-          <p className="text-white/40 text-sm">Define your north star. Navigate with precision.</p>
+          <h2 className="text-2xl font-bold tracking-tight">Goals</h2>
+          <p className="text-muted-foreground text-sm">Define your north star. Navigate with precision.</p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-black p-1 rounded-none border border-white/10">
+          <div className="flex items-center bg-muted/50 p-1 rounded-none border">
             {(['all', 'weekly', 'monthly', 'yearly'] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setFilter(t)}
                 className={clsx(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-none text-[10px] font-black uppercase tracking-widest transition-all",
-                  filter === t ? "bg-white text-black" : "text-white/40 hover:text-white"
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-medium transition-all uppercase tracking-wider",
+                  filter === t ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                {t === 'all' && <LayoutGrid size={12} />}
-                {t === 'weekly' && <BarChart3 size={12} />}
-                {t === 'monthly' && <CalendarDays size={12} />}
-                {t === 'yearly' && <Trophy size={12} />}
+                {t === 'all' && <LayoutGrid size={14} />}
+                {t === 'weekly' && <BarChart3 size={14} />}
+                {t === 'monthly' && <CalendarDays size={14} />}
+                {t === 'yearly' && <Trophy size={14} />}
                 <span>{t}</span>
               </button>
             ))}
           </div>
+
+          <button 
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-none text-sm font-semibold shadow-sm hover:bg-primary/90 transition-all active:scale-95"
+          >
+            <Plus size={18} /> Establish Goal
+          </button>
         </div>
       </header>
 
@@ -199,14 +206,6 @@ export const GoalDashboard: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Floating Action Button */}
-      <button 
-        onClick={() => setIsCreateModalOpen(true)}
-        className="fixed bottom-12 right-12 z-50 flex items-center gap-2 bg-white text-black px-6 py-3 rounded-none text-xs font-black uppercase tracking-[0.3em] shadow-[0_0_50px_rgba(255,255,255,0.2)] hover:bg-primary hover:scale-105 transition-all active:scale-95 group"
-      >
-        <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" /> Establish Goal
-      </button>
 
       <GoalCreateModal 
         isOpen={isCreateModalOpen} 
