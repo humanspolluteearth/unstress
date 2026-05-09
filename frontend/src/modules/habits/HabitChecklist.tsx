@@ -171,8 +171,18 @@ export const HabitChecklist: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-              <input type="number" value={logValues[habit.id] || ''} onChange={(e) => setLogValues({ ...logValues, [habit.id]: parseFloat(e.target.value) || 0 })} placeholder={habit.unit === 'rep' ? 'Reps' : 'Mins'} className="w-20 bg-muted/50 border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-center" />
-              <button onClick={() => handleLog(habit.id)} className="p-2 bg-primary text-primary-foreground border border-primary hover:bg-primary/90 transition-all active:scale-95"><CheckCircle2 size={20} /></button>
+              <input 
+                type="number" 
+                value={logValues[habit.id] || ''} 
+                onChange={(e) => setLogValues({ ...logValues, [habit.id]: parseFloat(e.target.value) || 0 })} 
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleLog(habit.id);
+                  }
+                }}
+                placeholder={habit.unit === 'rep' ? 'Reps' : 'Mins'} 
+                className="w-24 bg-muted/50 border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-center appearance-none" 
+              />
               <button onClick={() => deleteHabit(habit.id)} className="p-2 text-muted-foreground/20 hover:text-destructive transition-colors"><Trash2 size={18} /></button>
             </div>
           </div>
