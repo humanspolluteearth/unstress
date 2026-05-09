@@ -82,7 +82,9 @@ export const GoalDashboard: React.FC = () => {
             <div className="flex-1 p-6">
               <h2 className="text-xl font-bold mb-4">{selectedGoal.name}</h2>
               <textarea
+                readOnly={false}
                 value={selectedGoal.description}
+                onChange={(e) => setSelectedGoal({ ...selectedGoal, description: e.target.value })}
                 className="w-full h-full bg-transparent border-none outline-none resize-none font-mono text-sm"
               />
             </div>
