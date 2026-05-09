@@ -69,10 +69,6 @@ export class ActionService {
     return this.post('/finance/transaction', data);
   }
 
-  static async createGoal(data: GoalCreate): Promise<Result<any>> {
-    return this.post('/goals/goal', data);
-  }
-
   static async createTask(data: TaskCreate): Promise<Result<any>> {
     return this.post('/tasks/task', data);
   }
