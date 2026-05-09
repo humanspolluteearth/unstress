@@ -1,5 +1,4 @@
-import { pgTable, uuid, varchar, text, boolean, primaryKey } from "drizzle-orm/pg-core";
-import { tasks } from "./tasks";
+import { pgTable, uuid, varchar, text, boolean, primaryKey, jsonb } from "drizzle-orm/pg-core";
 
 /**
  * GOALS Table
@@ -12,6 +11,9 @@ export const goals = pgTable("goals", {
   type: varchar("type", { length: 20 }).notNull(), // 'weekly', 'monthly', 'yearly'
   is_current_focus: boolean("is_current_focus").default(false).notNull(),
   parent_id: uuid("parent_id").references(() => goals.id),
+  metadata: jsonb("metadata").default({}),
+});
+
 });
 
 /**

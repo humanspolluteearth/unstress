@@ -10,9 +10,9 @@ router = APIRouter(prefix="/goals", tags=["goals"])
 async def get_goals() -> Result[List[Goal], str]:
     return await GoalService.get_goals()
 
-@router.post("/")
-async def create_goal(data: GoalCreate) -> Result[Goal, str]:
-    return await GoalService.create_goal(data)
+@router.patch("/{goal_id}")
+async def update_goal(goal_id: UUID4, data: GoalUpdate) -> Result[Goal, str]:
+    return await GoalService.update_goal(goal_id, data)
 
 @router.get("/{goal_id}/progress")
 async def get_goal_progress(goal_id: UUID4) -> Result[float, str]:
