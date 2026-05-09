@@ -1,19 +1,21 @@
 import { create } from 'zustand';
 import { Result } from '../../core/results';
 import { listen } from '@tauri-apps/api/event';
+import { ActionService, GoalCreate } from '../../core/ActionService';
 
-export type GoalTier = 'Yearly' | 'Monthly' | 'Weekly';
+export type GoalTier = 'weekly' | 'monthly' | 'yearly';
 
 export interface Goal {
   id: string;
-  title: string;
-  target: number;
-  current: number;
-  unit: 'cents' | 'tasks' | 'percentage';
-  goal_type: 'finance' | 'task' | 'manual';
-  tier: GoalTier;
-  is_focus: boolean;
-  linked_id?: string;
+  name: string;
+  type: GoalTier;
+  description: string;
+  is_current_focus: boolean;
+  progress: number;
+  parent_id?: string;
+  priority?: 'low' | 'med' | 'high';
+  category?: string;
+  deadline?: string;
 }
 
 interface GoalState {
@@ -21,7 +23,7 @@ interface GoalState {
   isLoading: boolean;
   error: string | null;
   fetchGoals: () => Promise<Result<Goal[], string>>;
-  createGoal: (goal: Omit<Goal, 'id' | 'current' | 'is_focus'>) => Promise<Result<Goal, string>>;
+  createGoal: (goal: GoalCreate) => Promise<Result<Goal, string>>;
   setFocus: (goalId: string) => Promise<Result<Goal, string>>;
   adjustProgress: (goalId: string, current: number) => Promise<Result<Goal, string>>;
   setupListeners: () => Promise<void>;
@@ -52,13 +54,7 @@ export const useGoalStore = create<GoalState>((set, get) => ({
 
   createGoal: async (data) => {
     try {
-      const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/goals/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const result = await response.json();
+      const result = await ActionService.createGoal(data);
       if (result.success) {
         get().fetchGoals();
       }

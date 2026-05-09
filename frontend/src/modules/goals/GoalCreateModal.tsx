@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Trophy, Target, LayoutGrid, BarChart3, CalendarDays, AlertCircle, Plus } from 'lucide-react';
-import { ActionService, GoalCreate } from '../../core/ActionService';
+import { ActionService } from '../../core/ActionService';
+import { GoalService } from './GoalService';
+import { useGoalStore } from './useGoalStore';
 import { CustomSelect } from '../../core/CustomSelect';
 import { clsx } from 'clsx';
 
@@ -12,6 +14,7 @@ interface GoalCreateModalProps {
 }
 
 export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClose, onSuccess, existingGoals }) => {
+  const { fetchGoals } = useGoalStore();
   const [name, setName] = useState('');
   const [type, setType] = useState<'weekly' | 'monthly' | 'yearly'>('weekly');
   const [parentId, setParentId] = useState<string>('');
@@ -34,21 +37,27 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim()) {
+       setError("Missing Field: Name");
+       return;
+    }
 
     setError(null);
     setIsSubmitting(true);
-    const data: GoalCreate = {
+    const data = {
       name,
       type,
-      description,
-      parent_id: parentId || undefined,
+      description: description || undefined,
+      parent_id: (parentId && parentId !== "") ? parentId : null,
     };
 
-    const result = await ActionService.createGoal(data);
+    const result = await GoalService.createGoal(data as any);
     if (result.success) {
+      // Refresh store
+      fetchGoals();
+
       // Create initial tasks if any
-      const createdGoal = result.data;
+      const createdGoal = result.data as any;
       for (const taskTitle of initialTasks) {
         if (taskTitle.trim()) {
           await ActionService.createTask({
@@ -90,7 +99,7 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
       <div className="bg-card border rounded-none shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="text-lg font-semibold flex items-center gap-2">
