@@ -146,22 +146,18 @@ export const HabitChecklist: React.FC = () => {
                 {[0, habit.two_min_threshold, habit.normal_threshold, habit.hard_threshold].map((start, i) => {
                   const thresholds = [habit.two_min_threshold, habit.normal_threshold, habit.hard_threshold, habit.impossible_threshold];
                   const end = thresholds[i];
-                  // Cumulative logic: all bars up to the achieved points level glow
                   const isAchieved = points > i;
+                  // Achieved bars are solid, unachieved have tiered opacity
                   const opacity = isAchieved ? 100 : [40, 60, 80, 100][i];
                   
                   return (
-                    <div key={i} className="relative bg-muted">
+                    <div key={i} className="relative bg-muted overflow-hidden">
                       <div 
                         className={clsx(
                           "h-full transition-all duration-500", 
-                          `bg-primary/${opacity}`,
-                          isAchieved && "brightness-150 saturate-150"
+                          `bg-primary/${opacity}`
                         )} 
-                        style={{ 
-                          width: getFill(start, end),
-                          boxShadow: isAchieved ? '0 0 10px hsl(var(--primary) / 0.8)' : 'none',
-                        }} 
+                        style={{ width: getFill(start, end) }} 
                       />
                     </div>
                   );
