@@ -44,7 +44,7 @@ export const Dashboard: React.FC = () => {
   
   const habitStats = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
-    const completed = habits.filter((h: any) => h.logs.some((l: string) => l.startsWith(today))).length;
+    const completed = habits.filter((h: any) => h.logs.some((l: any) => l.timestamp.startsWith(today))).length;
     return { leftWord: numberToWords(habits.length - completed) };
   }, [habits]);
 

@@ -1,9 +1,13 @@
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, UUID4
 from app.core.results import Result
 from app.core.broker import broker, BaseEvent
 from datetime import datetime, date, timezone
 import uuid
+
+class HabitLog(BaseModel):
+    timestamp: str
+    value: float
 
 class Habit(BaseModel):
     id: str
@@ -14,7 +18,9 @@ class Habit(BaseModel):
     normal_threshold: int
     hard_threshold: int
     impossible_threshold: int
-    logs: List[Dict[str, float]] = [] # [{"timestamp": "...", "value": 10.0}]
+    points: int = 0
+    level: int = 0
+    logs: List[HabitLog] = []
 
 class HabitCreate(BaseModel):
     title: str
@@ -24,6 +30,8 @@ class HabitCreate(BaseModel):
     normal_threshold: int
     hard_threshold: int
     impossible_threshold: int
+    points: Optional[int] = 0
+    level: Optional[int] = 0
 
 class HabitUpdate(BaseModel):
     title: Optional[str] = None
@@ -33,6 +41,8 @@ class HabitUpdate(BaseModel):
     normal_threshold: Optional[int] = None
     hard_threshold: Optional[int] = None
     impossible_threshold: Optional[int] = None
+    points: Optional[int] = None
+    level: Optional[int] = None
 
 class HabitLogCreate(BaseModel):
     habit_id: str
@@ -50,7 +60,7 @@ class HabitsService:
             normal_threshold=4,
             hard_threshold=8,
             impossible_threshold=12,
-            logs=[{"timestamp": "2026-05-07T10:00:00Z", "value": 8.0}]
+            logs=[HabitLog(timestamp="2026-05-07T10:00:00Z", value=8.0)]
         ),
         Habit(
             id="h-2",
@@ -61,7 +71,7 @@ class HabitsService:
             normal_threshold=60,
             hard_threshold=120,
             impossible_threshold=240,
-            logs=[{"timestamp": "2026-05-05T18:00:00Z", "value": 90.0}]
+            logs=[HabitLog(timestamp="2026-05-05T18:00:00Z", value=90.0)]
         )
     ]
 
@@ -69,7 +79,7 @@ class HabitsService:
     def _calculate_daily_points(habit: Habit, log_date: str) -> int:
         """Calculates total points for a specific date for a given habit."""
         # Sum all values for the given day
-        daily_total = sum(log["value"] for log in habit.logs if log["timestamp"].startswith(log_date))
+        daily_total = sum(log.value for log in habit.logs if log.timestamp.startswith(log_date))
         
         points = 0
         if daily_total >= habit.impossible_threshold:
@@ -94,6 +104,13 @@ class HabitsService:
     async def create_habit(data: HabitCreate) -> Result[Habit, str]:
         """Creates a new habit definition."""
         try:
+            # Domain Validation
+            if not data.title or len(data.title.strip()) == 0:
+                return Result.fail("VALIDATION_ERROR: Habit title is required.")
+            
+            if data.two_min_threshold < 0 or data.normal_threshold < 0:
+                return Result.fail("VALIDATION_ERROR: Thresholds cannot be negative.")
+
             new_habit = Habit(
                 id=str(uuid.uuid4()),
                 title=data.title,
@@ -103,12 +120,20 @@ class HabitsService:
                 normal_threshold=data.normal_threshold,
                 hard_threshold=data.hard_threshold,
                 impossible_threshold=data.impossible_threshold,
+                points=data.points or 0,
+                level=data.level or 0,
                 logs=[]
             )
+            
+            # Simulate Database Latency/Checks
+            # In a real scenario, this is where a Postgres 'Undefined Column' or 'Type Mismatch' would be caught
             HabitsService._habits.append(new_habit)
+            
             return Result.ok(new_habit)
         except Exception as e:
-            return Result.fail(str(e))
+            # Capture specific error signatures for AI/Log parsing
+            error_detail = f"DB_ERROR: {str(e)}" if "database" in str(e).lower() else f"INTERNAL_ERROR: {str(e)}"
+            return Result.fail(error_detail)
 
     @staticmethod
     async def update_habit(habit_id: str, data: HabitUpdate) -> Result[dict, str]:
@@ -123,6 +148,8 @@ class HabitsService:
                     if data.normal_threshold is not None: habit.normal_threshold = data.normal_threshold
                     if data.hard_threshold is not None: habit.hard_threshold = data.hard_threshold
                     if data.impossible_threshold is not None: habit.impossible_threshold = data.impossible_threshold
+                    if data.points is not None: habit.points = data.points
+                    if data.level is not None: habit.level = data.level
                     return Result.ok({"id": habit_id, "status": "updated"})
             return Result.fail("Habit not found")
         except Exception as e:
@@ -160,10 +187,10 @@ class HabitsService:
                 return Result.fail("Habit not found")
 
             # Add new log
-            found_habit.logs.append({
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "value": data.value
-            })
+            found_habit.logs.append(HabitLog(
+                timestamp=datetime.now(timezone.utc).isoformat(),
+                value=data.value
+            ))
 
             # Calculate total points for today
             points = HabitsService._calculate_daily_points(found_habit, today_str)

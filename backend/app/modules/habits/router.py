@@ -1,15 +1,16 @@
 from fastapi import APIRouter
-from app.modules.habits.service import HabitsService, HabitUpdate, HabitLogCreate, HabitCreate
+from app.modules.habits.service import HabitsService, HabitUpdate, HabitLogCreate, HabitCreate, Habit
 from app.core.results import Result
+from typing import List
 
 router = APIRouter(prefix="/habits", tags=["habits"])
 
 @router.get("/")
-async def get_habits() -> Result[list, str]:
+async def get_habits() -> Result[List[Habit], str]:
     return await HabitsService.get_habits()
 
 @router.post("/")
-async def create_habit(data: HabitCreate) -> Result[dict, str]:
+async def create_habit(data: HabitCreate) -> Result[Habit, str]:
     return await HabitsService.create_habit(data)
 
 @router.put("/{habit_id}")

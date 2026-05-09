@@ -32,9 +32,24 @@ if sys.platform != "win32":
     except ImportError:
         pass
 
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from datetime import datetime, timezone
 
 app = FastAPI(title="unstress Backend")
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    """
+    Catch Pydantic validation errors and return them in the Result pattern.
+    """
+    return JSONResponse(
+        status_code=422,
+        content={
+            "success": False,
+            "error": f"VALIDATION_ERROR: {exc.errors()}"
+        }
+    )
 
 @app.get("/system-time")
 async def get_system_time() -> Result[dict, str]:

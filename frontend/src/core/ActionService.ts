@@ -26,7 +26,7 @@ export interface TaskCreate {
 
 export interface HabitLogCreate {
   habit_id: string;
-  status: string;
+  value: number;
 }
 
 export interface ScheduleEventCreate {
