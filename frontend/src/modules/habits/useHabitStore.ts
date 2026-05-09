@@ -64,7 +64,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       });
       const result: Result<Habit, string> = await response.json();
       if (result.success) {
-        get().fetchHabits();
+        await get().fetchHabits();
       }
       return result;
     } catch (err) {
@@ -82,7 +82,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       });
       const result = await response.json();
       if (result.success) {
-        get().fetchHabits();
+        await get().fetchHabits();
       }
       return result;
     } catch (err) {
@@ -100,7 +100,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       });
       const result = await response.json();
       if (result.success) {
-        get().fetchHabits();
+        await get().fetchHabits();
       }
       return result;
     } catch (err) {
@@ -116,7 +116,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       });
       const result = await response.json();
       if (result.success) {
-        get().fetchHabits();
+        await get().fetchHabits();
       }
       return result;
     } catch (err) {
@@ -134,7 +134,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       });
       const result = await response.json();
       if (result.success) {
-        get().fetchHabits();
+        await get().fetchHabits();
       }
       return result;
     } catch (err) {
@@ -150,29 +150,29 @@ export const useHabitStore = create<HabitState>((set, get) => ({
     const sortedDates = Array.from(logDates).sort((a, b) => b.localeCompare(a));
     
     let streak = 0;
-    const now = new Date();
-    const today = now.toISOString().split('T')[0];
-    
-    now.setDate(now.getDate() - 1);
-    const yesterday = now.toISOString().split('T')[0];
-    
+    const today = new Date().toLocaleDateString('en-CA');
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = yesterdayDate.toLocaleDateString('en-CA');
+
     let currentDateStr = sortedDates[0];
-    
+
     // If last log is not today or yesterday, streak is broken
     if (currentDateStr !== today && currentDateStr !== yesterday) return 0;
-    
+
     streak = 1;
     let curr = new Date(currentDateStr);
-    
+
     while (true) {
       curr.setDate(curr.getDate() - 1);
-      const d = curr.toISOString().split('T')[0];
+      const d = curr.toLocaleDateString('en-CA');
       if (logDates.has(d)) {
         streak++;
       } else {
         break;
       }
     }
+
     
     return streak;
   }

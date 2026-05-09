@@ -29,6 +29,7 @@ export const HabitChecklist: React.FC = () => {
   const { habits, fetchHabits, logHabit, createHabit, calculateStreak, deleteHabit } = useHabitStore();
   const [view, setView] = useState<ViewType>('daily');
   const [isAdding, setIsAdding] = useState(false);
+  const [logValues, setLogValues] = useState<Record<string, number>>({});
 
   useEffect(() => {
     fetchHabits();
@@ -55,8 +56,18 @@ export const HabitChecklist: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [fetchHabits]);
 
+  const handleLog = async (id: string) => {
+    const value = logValues[id] || 0;
+    if (value <= 0) return;
+    
+    const result = await logHabit(id, value);
+    if (result.success) {
+      setLogValues({ ...logValues, [id]: 0 });
+    }
+  };
+
   const filteredHabits = habits.filter(h => h.frequency === 'daily' || h.frequency === view);
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toLocaleDateString('en-CA'); // Local YYYY-MM-DD
 
   const calculatePoints = (habit: Habit, dateStr: string) => {
     const logs = habit.logs.filter(l => l.timestamp.startsWith(dateStr));
@@ -77,7 +88,7 @@ export const HabitChecklist: React.FC = () => {
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(now.getDate() - i);
-      const dStr = d.toISOString().split('T')[0];
+      const dStr = d.toLocaleDateString('en-CA');
       const points = habits.reduce((acc, h) => acc + calculatePoints(h, dStr), 0);
       data.push({ date: dStr, points, label: d.toLocaleDateString(undefined, { weekday: 'short' }) });
     }
@@ -164,6 +175,18 @@ export const HabitChecklist: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center gap-3 shrink-0">
+              <input 
+                type="number" 
+                value={logValues[habit.id] || ''} 
+                onChange={(e) => setLogValues({ ...logValues, [habit.id]: parseFloat(e.target.value) || 0 })} 
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleLog(habit.id);
+                  }
+                }}
+                placeholder={habit.unit === 'rep' ? 'Reps' : 'Mins'} 
+                className="w-24 bg-muted/50 border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-center appearance-none" 
+              />
               <button onClick={() => deleteHabit(habit.id)} className="p-2 text-muted-foreground/20 hover:text-destructive transition-colors"><Trash2 size={18} /></button>
             </div>
           </div>

@@ -186,9 +186,9 @@ class HabitsService:
             if not found_habit:
                 return Result.fail("Habit not found")
 
-            # Add new log
+            # Add new log using LOCAL time for consistency with daily tracking
             found_habit.logs.append(HabitLog(
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now().isoformat(),
                 value=data.value
             ))
 
@@ -236,9 +236,9 @@ class HabitsService:
             # Remove all logs for today
             found_habit.logs = [l for l in found_habit.logs if not l.timestamp.startswith(today_str)]
             
-            # Add the new replacement log
+            # Add the new replacement log using LOCAL time
             found_habit.logs.append(HabitLog(
-                timestamp=datetime.now(timezone.utc).isoformat(),
+                timestamp=datetime.now().isoformat(),
                 value=data.value
             ))
 
