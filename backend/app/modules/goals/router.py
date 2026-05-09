@@ -11,7 +11,7 @@ router = APIRouter(prefix="/goals", tags=["goals"])
 async def get_goals() -> Result[List[Goal], str]:
     return await GoalService.get_goals()
 
-@router.post("")
+@router.post("/establish")
 async def create_goal(data: GoalCreate) -> Result[Any, str]:
     return await ActionDispatcher.dispatch_goal_creation(data)
 
