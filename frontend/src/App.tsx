@@ -20,16 +20,31 @@ const ModuleLoader = () => (
 );
 
 const SidecarHealthCheck: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const port = (window as any).__BACKEND_PORT__;
+  const [port, setPort] = React.useState<number | null>((window as any).__BACKEND_PORT__);
   
+  React.useEffect(() => {
+    if (port) return;
+
+    // Poll for the port being injected by Rust eval
+    const interval = setInterval(() => {
+      const p = (window as any).__BACKEND_PORT__;
+      if (p) {
+        setPort(p);
+        clearInterval(interval);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [port]);
+
   if (!port) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-background p-6 font-mono">
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-black p-6 font-mono text-white">
         <div className="flex items-center gap-3 text-primary mb-4">
           <div className="w-3 h-3 bg-primary rounded-full animate-ping" />
           <h2 className="text-sm font-bold tracking-tighter uppercase">Connecting to Sidecar...</h2>
         </div>
-        <p className="text-[10px] text-muted-foreground max-w-xs text-center leading-relaxed mb-6">
+        <p className="text-[10px] text-zinc-400 max-w-xs text-center leading-relaxed mb-6">
           Waiting for the FastAPI backend bridge to initialize on localhost.
         </p>
         <button 

@@ -1,14 +1,21 @@
 import { create } from 'zustand';
 import { Result } from '../../core/results';
 
+export interface HabitLog {
+  timestamp: string;
+  value: number;
+}
+
 export interface Habit {
   id: string;
   title: string;
   frequency: 'daily' | 'weekly' | 'monthly';
-  target: number;
-  habit_type: 'reps' | 'timed';
-  duration_minutes?: number;
-  logs: string[]; // ISO timestamps
+  unit: 'rep' | 'min';
+  two_min_threshold: number;
+  normal_threshold: number;
+  hard_threshold: number;
+  impossible_threshold: number;
+  logs: HabitLog[];
 }
 
 interface HabitState {
@@ -17,7 +24,7 @@ interface HabitState {
   error: string | null;
   fetchHabits: () => Promise<Result<Habit[], string>>;
   createHabit: (habit: Omit<Habit, 'id' | 'logs'>) => Promise<Result<Habit, string>>;
-  logHabit: (habitId: string) => Promise<Result<any, string>>;
+  logHabit: (habitId: string, value: number) => Promise<Result<any, string>>;
   deleteHabit: (habitId: string) => Promise<Result<any, string>>;
   updateHabit: (habitId: string, data: Partial<Habit>) => Promise<Result<any, string>>;
   calculateStreak: (habit: Habit) => number;
@@ -64,13 +71,15 @@ export const useHabitStore = create<HabitState>((set, get) => ({
     }
   },
 
-  logHabit: async (habitId) => {
+  logHabit: async (habitId, value) => {
     try {
-      const { ActionDispatcher } = await import('../../core/ActionDispatcher');
-      const result = await ActionDispatcher.createHabitLog({
-        habit_id: habitId,
-        status: 'completed'
+      const port = (window as any).__BACKEND_PORT__ || 8000;
+      const response = await fetch(`http://localhost:${port}/habits/log`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ habit_id: habitId, value }),
       });
+      const result = await response.json();
       if (result.success) {
         get().fetchHabits();
       }
@@ -82,8 +91,11 @@ export const useHabitStore = create<HabitState>((set, get) => ({
 
   deleteHabit: async (habitId) => {
     try {
-      const { ActionDispatcher } = await import('../../core/ActionDispatcher');
-      const result = await ActionDispatcher.deleteHabit(habitId);
+      const port = (window as any).__BACKEND_PORT__ || 8000;
+      const response = await fetch(`http://localhost:${port}/habits/${habitId}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
       if (result.success) {
         get().fetchHabits();
       }
@@ -114,32 +126,31 @@ export const useHabitStore = create<HabitState>((set, get) => ({
   calculateStreak: (habit: Habit) => {
     if (habit.logs.length === 0) return 0;
     
-    // Sort logs descending
-    const sortedLogs = [...habit.logs]
-      .map(l => new Date(l))
-      .sort((a, b) => b.getTime() - a.getTime());
+    // Group logs by date
+    const logDates = new Set(habit.logs.map(l => l.timestamp.split('T')[0]));
+    const sortedDates = Array.from(logDates).sort((a, b) => b.localeCompare(a));
     
     let streak = 0;
     const now = new Date();
-    now.setHours(0, 0, 0, 0);
+    const today = now.toISOString().split('T')[0];
     
-    let currentDate = new Date(sortedLogs[0]);
-    currentDate.setHours(0, 0, 0, 0);
+    now.setDate(now.getDate() - 1);
+    const yesterday = now.toISOString().split('T')[0];
+    
+    let currentDateStr = sortedDates[0];
     
     // If last log is not today or yesterday, streak is broken
-    const diff = (now.getTime() - currentDate.getTime()) / (1000 * 3600 * 24);
-    if (diff > 1) return 0;
+    if (currentDateStr !== today && currentDateStr !== yesterday) return 0;
     
     streak = 1;
-    for (let i = 1; i < sortedLogs.length; i++) {
-      const prevDate = new Date(sortedLogs[i]);
-      prevDate.setHours(0, 0, 0, 0);
-      
-      const dayDiff = (currentDate.getTime() - prevDate.getTime()) / (1000 * 3600 * 24);
-      if (dayDiff === 1) {
+    let curr = new Date(currentDateStr);
+    
+    while (true) {
+      curr.setDate(curr.getDate() - 1);
+      const d = curr.toISOString().split('T')[0];
+      if (logDates.has(d)) {
         streak++;
-        currentDate = prevDate;
-      } else if (dayDiff > 1) {
+      } else {
         break;
       }
     }

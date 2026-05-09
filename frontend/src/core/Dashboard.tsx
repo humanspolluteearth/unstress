@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useTaskStore } from '../tasks/useTaskStore';
-import { useHabitStore } from '../habits/useHabitStore';
-import { useGoalStore } from '../goals/useGoalStore';
-import { useScheduleStore } from '../schedules/useScheduleStore';
+import { useTaskStore } from '../modules/tasks/useTaskStore';
+import { useHabitStore } from '../modules/habits/useHabitStore';
+import { useGoalStore } from '../modules/goals/useGoalStore';
+import { useScheduleStore } from '../modules/schedules/useScheduleStore';
 import { useNavigationStore } from './useNavigationStore';
 
 const numberToWords = (num: number): string => {
@@ -40,27 +40,27 @@ export const Dashboard: React.FC = () => {
     fetchBlocks();
   }, []);
 
-  const taskCountWord = useMemo(() => numberToWords(tasks.filter(t => t.status !== 'Done').length), [tasks]);
+  const taskCountWord = useMemo(() => numberToWords(tasks.filter((t: any) => t.status !== 'Done').length), [tasks]);
   
   const habitStats = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
-    const completed = habits.filter(h => h.logs.some(l => l.startsWith(today))).length;
+    const completed = habits.filter((h: any) => h.logs.some((l: string) => l.startsWith(today))).length;
     return { leftWord: numberToWords(habits.length - completed) };
   }, [habits]);
 
   const nextEvent = useMemo(() => {
     const now = new Date();
     const todayStr = now.toDateString();
-    const todayEvents = blocks.filter(b => new Date(b.start_time).toDateString() === todayStr);
+    const todayEvents = blocks.filter((b: any) => new Date(b.start_time).toDateString() === todayStr);
     
     const upcoming = todayEvents
-      .filter(b => new Date(b.start_time) > now)
-      .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+      .filter((b: any) => new Date(b.start_time) > now)
+      .sort((a: any, b: any) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
-    return upcoming.length > 0 ? upcoming[0] : todayEvents.sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())[0];
+    return upcoming.length > 0 ? upcoming[0] : todayEvents.sort((a: any, b: any) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime())[0];
   }, [blocks]);
 
-  const currentFocus = useMemo(() => goals.find(g => g.is_focus)?.title || "Clear Horizon", [goals]);
+  const currentFocus = useMemo(() => goals.find((g: any) => g.is_focus)?.title || "Clear Horizon", [goals]);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center space-y-6 animate-in fade-in duration-1000">

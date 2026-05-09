@@ -26,10 +26,10 @@ export const HabitDetailModal: React.FC<HabitDetailModalProps> = ({ habit, isOpe
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-background border rounded-lg shadow-lg w-full max-w-md overflow-hidden flex flex-col">
+      <div className="bg-background border rounded-none shadow-lg w-full max-w-md overflow-hidden flex flex-col">
         <div className="p-4 border-b flex justify-between items-center">
           <h3 className="text-lg font-semibold">Habit Settings</h3>
-          <button onClick={onClose} className="p-1 hover:bg-muted rounded-full">
+          <button onClick={onClose} className="p-1 hover:bg-muted rounded-none">
             <X size={20} />
           </button>
         </div>
@@ -40,7 +40,7 @@ export const HabitDetailModal: React.FC<HabitDetailModalProps> = ({ habit, isOpe
             <input
               type="text"
               required
-              className="w-full bg-background border rounded px-3 py-2 text-sm"
+              className="w-full bg-background border rounded-none px-3 py-2 text-sm"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -49,7 +49,7 @@ export const HabitDetailModal: React.FC<HabitDetailModalProps> = ({ habit, isOpe
           <div>
             <label className="text-sm font-medium mb-1 block">Frequency</label>
             <select
-              className="w-full bg-background border rounded px-3 py-2 text-sm"
+              className="w-full bg-background border rounded-none px-3 py-2 text-sm"
               value={frequency}
               onChange={(e) => setFrequency(e.target.value as any)}
             >
@@ -64,7 +64,7 @@ export const HabitDetailModal: React.FC<HabitDetailModalProps> = ({ habit, isOpe
               type="number"
               required
               min="1"
-              className="w-full bg-background border rounded px-3 py-2 text-sm"
+              className="w-full bg-background border rounded-none px-3 py-2 text-sm"
               value={target}
               onChange={(e) => setTarget(parseInt(e.target.value) || 1)}
             />
@@ -74,13 +74,13 @@ export const HabitDetailModal: React.FC<HabitDetailModalProps> = ({ habit, isOpe
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium hover:bg-muted rounded"
+              className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-none border"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded hover:bg-primary/90"
+              className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-none hover:bg-primary/90"
             >
               Save Changes
             </button>

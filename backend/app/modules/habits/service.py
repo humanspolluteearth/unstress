@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel, UUID4
 from app.core.results import Result
 from app.core.broker import broker, BaseEvent
@@ -9,58 +9,78 @@ class Habit(BaseModel):
     id: str
     title: str
     frequency: str # 'daily', 'weekly', 'monthly'
-    target: int # e.g., 5 times per week
-    habit_type: str = 'reps' # 'reps' or 'timed'
-    duration_minutes: Optional[int] = None
-    logs: List[str] = []
+    unit: str = 'rep' # 'rep' or 'min'
+    two_min_threshold: int
+    normal_threshold: int
+    hard_threshold: int
+    impossible_threshold: int
+    logs: List[Dict[str, float]] = [] # [{"timestamp": "...", "value": 10.0}]
 
 class HabitCreate(BaseModel):
     title: str
     frequency: str
-    target: int
-    habit_type: str = 'reps'
-    duration_minutes: Optional[int] = None
+    unit: str = 'rep'
+    two_min_threshold: int
+    normal_threshold: int
+    hard_threshold: int
+    impossible_threshold: int
 
 class HabitUpdate(BaseModel):
     title: Optional[str] = None
     frequency: Optional[str] = None
-    target: Optional[int] = None
-    habit_type: Optional[str] = None
-    duration_minutes: Optional[int] = None
+    unit: Optional[str] = None
+    two_min_threshold: Optional[int] = None
+    normal_threshold: Optional[int] = None
+    hard_threshold: Optional[int] = None
+    impossible_threshold: Optional[int] = None
 
 class HabitLogCreate(BaseModel):
     habit_id: str
-    status: str
+    value: float # reps or minutes
 
 class HabitsService:
-    # In-memory storage
+    # In-memory storage updated for progression model
     _habits: List[Habit] = [
         Habit(
             id="h-1",
             title="Drink Water",
             frequency="daily",
-            target=8,
-            habit_type="reps",
-            logs=["2026-05-07T10:00:00Z", "2026-05-06T09:00:00Z"]
+            unit="rep",
+            two_min_threshold=1,
+            normal_threshold=4,
+            hard_threshold=8,
+            impossible_threshold=12,
+            logs=[{"timestamp": "2026-05-07T10:00:00Z", "value": 8.0}]
         ),
         Habit(
             id="h-2",
             title="Deep Work",
             frequency="daily",
-            target=1,
-            habit_type="timed",
-            duration_minutes=90,
-            logs=["2026-05-05T18:00:00Z"]
-        ),
-        Habit(
-            id="h-3",
-            title="Gym",
-            frequency="weekly",
-            target=3,
-            habit_type="reps",
-            logs=[]
+            unit="min",
+            two_min_threshold=2,
+            normal_threshold=60,
+            hard_threshold=120,
+            impossible_threshold=240,
+            logs=[{"timestamp": "2026-05-05T18:00:00Z", "value": 90.0}]
         )
     ]
+
+    @staticmethod
+    def _calculate_daily_points(habit: Habit, log_date: str) -> int:
+        """Calculates total points for a specific date for a given habit."""
+        # Sum all values for the given day
+        daily_total = sum(log["value"] for log in habit.logs if log["timestamp"].startswith(log_date))
+        
+        points = 0
+        if daily_total >= habit.impossible_threshold:
+            points = 4
+        elif daily_total >= habit.hard_threshold:
+            points = 3
+        elif daily_total >= habit.normal_threshold:
+            points = 2
+        elif daily_total >= habit.two_min_threshold:
+            points = 1
+        return points
 
     @staticmethod
     async def get_habits() -> Result[List[Habit], str]:
@@ -78,9 +98,11 @@ class HabitsService:
                 id=str(uuid.uuid4()),
                 title=data.title,
                 frequency=data.frequency,
-                target=data.target,
-                habit_type=data.habit_type,
-                duration_minutes=data.duration_minutes,
+                unit=data.unit,
+                two_min_threshold=data.two_min_threshold,
+                normal_threshold=data.normal_threshold,
+                hard_threshold=data.hard_threshold,
+                impossible_threshold=data.impossible_threshold,
                 logs=[]
             )
             HabitsService._habits.append(new_habit)
@@ -96,9 +118,11 @@ class HabitsService:
                 if habit.id == habit_id:
                     if data.title: habit.title = data.title
                     if data.frequency: habit.frequency = data.frequency
-                    if data.target: habit.target = data.target
-                    if data.habit_type: habit.habit_type = data.habit_type
-                    if data.duration_minutes: habit.duration_minutes = data.duration_minutes
+                    if data.unit: habit.unit = data.unit
+                    if data.two_min_threshold is not None: habit.two_min_threshold = data.two_min_threshold
+                    if data.normal_threshold is not None: habit.normal_threshold = data.normal_threshold
+                    if data.hard_threshold is not None: habit.hard_threshold = data.hard_threshold
+                    if data.impossible_threshold is not None: habit.impossible_threshold = data.impossible_threshold
                     return Result.ok({"id": habit_id, "status": "updated"})
             return Result.fail("Habit not found")
         except Exception as e:
@@ -120,59 +144,47 @@ class HabitsService:
             return Result.fail(str(e))
 
     @staticmethod
-    async def toggle_habit_log(habit_id: str) -> Result[dict, str]:
+    async def add_habit_log(data: HabitLogCreate) -> Result[dict, str]:
         """
-        Toggles a habit log for the current day.
-        If already logged today, removes it. Otherwise, adds it.
+        Adds a new log entry and returns daily points earned.
         """
         try:
             today_str = date.today().isoformat()
             found_habit = None
             for habit in HabitsService._habits:
-                if habit.id == habit_id:
+                if habit.id == data.habit_id:
                     found_habit = habit
                     break
             
             if not found_habit:
                 return Result.fail("Habit not found")
 
-            # Check if logged today
-            today_log_index = -1
-            for i, log in enumerate(found_habit.logs):
-                if log.startswith(today_str):
-                    today_log_index = i
-                    break
-            
-            if today_log_index >= 0:
-                # Remove today's log
-                found_habit.logs.pop(today_log_index)
-                action = "removed"
-            else:
-                # Add log for now
-                found_habit.logs.append(datetime.now(timezone.utc).isoformat())
-                action = "added"
+            # Add new log
+            found_habit.logs.append({
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "value": data.value
+            })
 
-            # Publish HABIT_LOGGED Event (can be used for both add/remove or create separate undo event)
+            # Calculate total points for today
+            points = HabitsService._calculate_daily_points(found_habit, today_str)
+
+            # Publish HABIT_LOGGED Event
             event = BaseEvent(
                 event_type="HABIT_LOGGED",
                 payload={
-                    "habit_id": habit_id,
-                    "action": action,
-                    "status": "completed" if action == "added" else "undone"
+                    "habit_id": data.habit_id,
+                    "value": data.value,
+                    "daily_points": points
                 }
             )
             
             await broker.publish(event)
 
             return Result.ok({
-                "status": action,
-                "habit_id": habit_id
+                "habit_id": data.habit_id,
+                "daily_points": points,
+                "status": "logged"
             })
 
         except Exception as e:
-            return Result.fail(f"Internal error while toggling habit: {str(e)}")
-
-    @staticmethod
-    async def add_habit_log(data: HabitLogCreate) -> Result[dict, str]:
-        """Legacy support for direct logging, now redirects to toggle if needed or just appends."""
-        return await HabitsService.toggle_habit_log(data.habit_id)
+            return Result.fail(f"Internal error while logging habit: {str(e)}")

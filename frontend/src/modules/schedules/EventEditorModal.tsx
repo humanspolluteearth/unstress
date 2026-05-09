@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useScheduleStore, TimeBlock } from './useScheduleStore';
 import { X, Calendar, Clock, RefreshCw, AlertCircle, Trash2 } from 'lucide-react';
 import { CustomSelect } from '../../core/CustomSelect';

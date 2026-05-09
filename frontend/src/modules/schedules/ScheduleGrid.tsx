@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useScheduleStore } from './useScheduleStore';
 import { DailyGrid } from './DailyGrid';
 import { WeeklyGrid } from './WeeklyGrid';
@@ -147,7 +147,7 @@ export const ScheduleGrid: React.FC = () => {
       </div>
 
       <div className="flex-1 min-h-0 relative" onClick={(e) => e.stopPropagation()}>
-        {renderView()}
+        {renderView}
       </div>
 
       <AddEventModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
