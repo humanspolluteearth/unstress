@@ -62,7 +62,7 @@ export const GoalDashboard: React.FC = () => {
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* List Panel */}
-        <div className={clsx("flex flex-col transition-all duration-300 ease-in-out", selectedGoal ? "w-2/3" : "w-full")}>
+        <div className={clsx("flex flex-col transition-all duration-300 ease-in-out", selectedGoal ? "flex-1" : "w-full")}>
           <div className="flex-1 overflow-y-auto space-y-2">
             {filteredGoals.map((goal) => (
               <div
@@ -84,7 +84,7 @@ export const GoalDashboard: React.FC = () => {
         </div>
 
         {/* Markdown Editor Panel */}
-        <div className={clsx("border-l bg-card transition-all duration-300 ease-in-out flex flex-col", selectedGoal ? "w-1/3 opacity-100" : "w-0 opacity-0 overflow-hidden")}>
+        <div className={clsx("bg-card transition-all duration-300 ease-in-out flex flex-col", selectedGoal ? "w-1/3 border ml-6 opacity-100" : "w-0 opacity-0 overflow-hidden border-0 ml-0")}>
           {selectedGoal && (
             <>
               <header className="p-4 border-b flex items-center justify-between">
