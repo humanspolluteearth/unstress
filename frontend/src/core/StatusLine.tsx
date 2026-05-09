@@ -69,6 +69,7 @@ export const StatusLine: React.FC<StatusLineProps> = ({ pageTitle }) => {
       'TASK_CREATED',
       'FINANCE_TRANSACTION_ADDED',
       'HABIT_LOGGED',
+      'HABIT_UPDATED',
       'GOAL_UPDATE',
       'SCHEDULE_CONFLICT_DETECTED',
       'GOAL_FOCUS_CHANGED',
@@ -76,10 +77,15 @@ export const StatusLine: React.FC<StatusLineProps> = ({ pageTitle }) => {
     ];
 
     const unlistens = eventTypes.map(async (type) => {
-      return await listen(type, () => {
-        const msg = type.replace(/_/g, ' ').toLowerCase();
-        const capitalized = msg.charAt(0).toUpperCase() + msg.slice(1);
-        setLastEvent(capitalized);
+      return await listen(type, (event: any) => {
+        if (type === 'HABIT_UPDATED') {
+          const { value, unit } = event.payload;
+          setLastEvent(`Habit Updated: ${value} ${unit === 'rep' ? 'reps' : 'mins'}`);
+        } else {
+          const msg = type.replace(/_/g, ' ').toLowerCase();
+          const capitalized = msg.charAt(0).toUpperCase() + msg.slice(1);
+          setLastEvent(capitalized);
+        }
       });
     });
 

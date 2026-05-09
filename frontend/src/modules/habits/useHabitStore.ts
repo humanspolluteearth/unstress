@@ -82,6 +82,19 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       });
       const result = await response.json();
       if (result.success) {
+        // Optimistic local update
+        const currentHabits = get().habits;
+        const updatedHabits = currentHabits.map(h => {
+          if (h.id === habitId) {
+            return {
+              ...h,
+              logs: [...h.logs, { timestamp: new Date().toISOString(), value }]
+            };
+          }
+          return h;
+        });
+        set({ habits: updatedHabits });
+
         await get().fetchHabits();
       }
       return result;
@@ -100,6 +113,22 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       });
       const result = await response.json();
       if (result.success) {
+        // Optimistic local update to ensure immediate UI sync
+        const today = new Date().toLocaleDateString('en-CA');
+        const currentHabits = get().habits;
+        const updatedHabits = currentHabits.map(h => {
+          if (h.id === habitId) {
+            // Replace today's logs
+            const filteredLogs = h.logs.filter(l => !l.timestamp.startsWith(today));
+            return {
+              ...h,
+              logs: [...filteredLogs, { timestamp: new Date().toISOString(), value }]
+            };
+          }
+          return h;
+        });
+        set({ habits: updatedHabits });
+        
         await get().fetchHabits();
       }
       return result;

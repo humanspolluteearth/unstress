@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { useHabitStore } from './useHabitStore';
+import { emit } from '@tauri-apps/api/event';
 
 interface EditableLogValueProps {
   habitId: string;
@@ -13,11 +14,14 @@ export const EditableLogValue: React.FC<EditableLogValueProps> = ({ habitId, ini
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(initialValue.toString());
   const [isShaking, setIsShaking] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setValue(initialValue.toString());
-  }, [initialValue]);
+    if (!isEditing) {
+      setValue(initialValue.toString());
+    }
+  }, [initialValue, isEditing]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -37,6 +41,16 @@ export const EditableLogValue: React.FC<EditableLogValueProps> = ({ habitId, ini
     const result = await updateHabitLog(habitId, numericValue);
     if (result.success) {
       setIsEditing(false);
+      setIsSuccess(true);
+      
+      // Emit event for StatusLine
+      await emit('HABIT_UPDATED', { 
+        habit_id: habitId, 
+        value: numericValue, 
+        unit: unit 
+      });
+
+      setTimeout(() => setIsSuccess(false), 1000);
     } else {
       setIsShaking(true);
       setTimeout(() => {
@@ -75,8 +89,9 @@ export const EditableLogValue: React.FC<EditableLogValueProps> = ({ habitId, ini
     <span 
       onClick={() => setIsEditing(true)}
       className={clsx(
-        "text-sm font-black cursor-pointer hover:text-primary transition-colors",
-        isShaking && "animate-shake text-destructive"
+        "text-sm font-black cursor-pointer transition-all duration-300",
+        isShaking && "animate-shake text-destructive",
+        isSuccess ? "text-green-500 scale-110" : "hover:text-primary"
       )}
     >
       {initialValue} {unit === 'rep' ? 'reps' : 'mins'}
