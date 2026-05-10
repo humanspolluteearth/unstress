@@ -80,7 +80,10 @@ export const GoalDashboard: React.FC = () => {
         {/* List Panel */}
         <div className={clsx("flex flex-col transition-all duration-300 ease-in-out", selectedGoal ? "flex-1" : "w-full")}>
           <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className={clsx(
+              "grid gap-4 transition-all duration-300",
+              selectedGoal ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+            )}>
               {filteredGoals.map((goal, index) => (
                 <GoalCard 
                   key={goal.id || index}
