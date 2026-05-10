@@ -67,7 +67,7 @@ const SidecarHealthCheck: React.FC<{ children: React.ReactNode }> = ({ children 
 
 export const App: React.FC = () => {
   const { activePage } = useNavigationStore();
-  const isBoard = activePage === 'tasks' || activePage === 'schedule';
+  const isBoard = activePage === 'tasks' || activePage === 'schedule' || activePage === 'habits';
 
   const renderPage = () => {
     const pageClass = clsx(
