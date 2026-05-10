@@ -183,50 +183,32 @@ export const ZenTimer: React.FC = () => {
     );
   }
 
+  const InlineInput: React.FC<{ value: number, onChange: (v: number) => void }> = ({ value, onChange }) => (
+    <input 
+      type="number" 
+      value={value}
+      onChange={(e) => onChange(parseInt(e.target.value) || 1)}
+      className="bg-transparent border-b-2 border-primary/20 focus:border-primary text-primary font-black px-1 min-w-[1ch] max-w-[3ch] w-fit outline-none transition-all text-center tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none inline-block"
+      style={{ width: `${Math.max(1, value.toString().length)}ch` }}
+    />
+  );
+
   return (
-    <div className="p-12 flex flex-col items-center justify-center space-y-12 flex-1 animate-in fade-in duration-500">
-      <div className="text-center space-y-4">
-        <h2 className="text-4xl font-black tracking-tight uppercase">Zen Timer</h2>
-        <p className="text-muted-foreground text-sm tracking-wide">Calibrate your focus intervals for maximum cognitive throughput.</p>
+    <div className="p-12 flex flex-col items-center justify-center min-h-full space-y-16 animate-in fade-in duration-500 overflow-hidden">
+      <div className="max-w-5xl text-center leading-relaxed">
+        <h1 className="text-5xl md:text-8xl font-black tracking-tighter uppercase leading-[1.1]">
+          Focus for <InlineInput value={focusTime} onChange={setFocusTime} /> minutes 
+          <br className="hidden md:block" /> with <InlineInput value={breakTime} onChange={setBreakTime} /> minutes breaks 
+          <br className="hidden md:block" /> for <InlineInput value={targetLoops} onChange={setTargetLoops} /> times.
+        </h1>
       </div>
 
-      <div className="grid grid-cols-3 gap-8 w-full max-w-2xl">
-        <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Focus (Mins)</label>
-          <input 
-            type="number" 
-            value={focusTime}
-            onChange={(e) => setFocusTime(parseInt(e.target.value) || 1)}
-            className="w-full bg-card border-b-2 border-white/5 focus:border-primary px-4 py-3 text-2xl font-mono font-bold outline-none transition-all"
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Break (Mins)</label>
-          <input 
-            type="number" 
-            value={breakTime}
-            onChange={(e) => setBreakTime(parseInt(e.target.value) || 1)}
-            className="w-full bg-card border-b-2 border-white/5 focus:border-primary px-4 py-3 text-2xl font-mono font-bold outline-none transition-all"
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Loops</label>
-          <input 
-            type="number" 
-            value={targetLoops}
-            onChange={(e) => setTargetLoops(parseInt(e.target.value) || 1)}
-            className="w-full bg-card border-b-2 border-white/5 focus:border-primary px-4 py-3 text-2xl font-mono font-bold outline-none transition-all"
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-col items-center gap-6 w-full max-w-md">
+      <div className="flex flex-col items-center gap-12 w-full">
         <button 
           onClick={startFocus}
-          className="w-full py-8 border-2 border-white/10 text-2xl font-black uppercase tracking-[0.2em] hover:bg-white/5 hover:border-primary/50 transition-all active:scale-95 group relative overflow-hidden"
+          className="px-24 py-8 border-2 border-primary text-3xl font-black uppercase tracking-[0.4em] hover:bg-primary hover:text-primary-foreground transition-all active:scale-95 shadow-[0_0_50px_rgba(var(--primary-rgb),0.15)] group"
         >
-          <span className="relative z-10">Start Protocol</span>
-          <div className="absolute inset-0 bg-primary/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+          Start Now
         </button>
 
         <div className="flex flex-col items-center gap-4">
