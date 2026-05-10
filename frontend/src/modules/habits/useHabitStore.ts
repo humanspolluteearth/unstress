@@ -44,7 +44,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
     set({ isLoading: true });
     try {
       const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}${API_ENDPOINTS.HABITS}/`);
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.HABITS}`);
       const result: Result<Habit[], string> = await response.json();
       if (result.success && result.data) {
         set({ habits: result.data, isLoading: false });
@@ -61,7 +61,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
   createHabit: async (data) => {
     try {
       const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}${API_ENDPOINTS.HABITS}/`, {
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.HABITS}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

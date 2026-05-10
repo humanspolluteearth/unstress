@@ -76,7 +76,7 @@ export class ActionService {
   // --- Tasks ---
 
   static async createTask(data: TaskCreate): Promise<Result<any>> {
-    return this.request('POST', `${API_ENDPOINTS.TASKS}/`, data);
+    return this.request('POST', `${API_ENDPOINTS.TASKS}`, data);
   }
 
   static async updateTask(id: string, data: TaskCreate): Promise<Result<any>> {
@@ -106,7 +106,7 @@ export class ActionService {
   // --- Schedules ---
 
   static async createScheduleEvent(data: ScheduleEventCreate): Promise<Result<any>> {
-    return this.request('POST', `${API_ENDPOINTS.SCHEDULES}/`, data);
+    return this.request('POST', `${API_ENDPOINTS.SCHEDULES}`, data);
   }
 
   static async updateScheduleEvent(id: string, data: Partial<ScheduleEventCreate>): Promise<Result<any>> {
@@ -120,7 +120,7 @@ export class ActionService {
   static async getSchedules(): Promise<Result<any[]>> {
     try {
       const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}${API_ENDPOINTS.SCHEDULES}/`);
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.SCHEDULES}`);
       return await response.json();
     } catch (err) {
       return { success: false, error: 'Failed to fetch schedules' };

@@ -43,7 +43,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set({ isLoading: true });
     try {
       const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}${API_ENDPOINTS.TASKS}/`);
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.TASKS}`);
       const data = await response.json();
       
       // Handle Result wrapper if backend returns it, otherwise raw list

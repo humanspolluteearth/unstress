@@ -7,9 +7,9 @@ from app.api.goals import router as goals_router
 from app.api.tasks import router as tasks_router
 from app.api.finance import router as api_finance_router
 from app.api.focus import router as focus_router
+from app.api.habits import router as habits_router
+from app.api.schedules import router as schedules_router
 from app.core.actions_router import router as actions_router
-from app.modules.habits.router import router as habits_router
-from app.modules.schedules.router import router as schedules_router
 
 # Python 3.14 Compatibility: Ensure standard asyncio is used
 import asyncio
@@ -30,7 +30,9 @@ app.add_middleware(
 )
 
 # --- Standardized API Mounting ---
-# Every domain module is mounted under the global /api namespace.
+# All domain modules are now centralized in app/api/ and follow the same pattern.
+# We mount them with explicit /api prefixes.
+
 app.include_router(goals_router, prefix="/api/goals", tags=["goals"])
 app.include_router(tasks_router, prefix="/api/tasks", tags=["tasks"])
 app.include_router(api_finance_router, prefix="/api/finance", tags=["finance"])
@@ -38,9 +40,9 @@ app.include_router(focus_router, prefix="/api/focus", tags=["focus"])
 app.include_router(habits_router, prefix="/api/habits", tags=["habits"])
 app.include_router(schedules_router, prefix="/api/schedules", tags=["schedules"])
 
-# Infrastructure & Legacy Actions (Mounted under /api/actions)
+# Infrastructure & Legacy Actions
 app.include_router(actions_router, prefix="/api/actions", tags=["infrastructure"])
 
 @app.get("/")
 async def root():
-    return {"status": "unstress_api_v1_online"}
+    return {"status": "unstress_api_monolith_active"}
