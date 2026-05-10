@@ -3,12 +3,12 @@ import { clsx } from 'clsx';
 import { Plus, LayoutGrid, BarChart3, CalendarDays, Trophy } from 'lucide-react';
 import { GoalCard } from './GoalCard';
 import { GoalCreateModal } from './GoalCreateModal';
-import { GoalDetailPanel } from '../../components/GoalDetailPanel';
 import { GoalService, Goal } from '../../services/GoalService';
+import { useTaskStore } from '../tasks/useTaskStore';
 
 export const GoalDashboard: React.FC = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+  const { tasks: allTasks, fetchTasks } = useTaskStore();
   const [filter, setFilter] = useState<'all' | 'weekly' | 'monthly' | 'yearly'>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
@@ -30,11 +30,8 @@ export const GoalDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchGoals();
+    fetchTasks();
   }, []);
-
-  const handleSelectGoal = (goal: Goal) => {
-    setSelectedGoal(goal);
-  };
 
   const handleEditGoal = (goal: Goal) => {
     setEditingGoal(goal);
@@ -87,51 +84,33 @@ export const GoalDashboard: React.FC = () => {
         </div>
       </header>
 
-      <div className="flex flex-1 min-h-0 overflow-hidden gap-6">
-        {/* List Panel */}
-        <div className={clsx("flex flex-col transition-all duration-300 ease-in-out", selectedGoal ? "flex-1" : "w-full")}>
-          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-            <div className={clsx(
-              "grid gap-4 transition-all duration-300",
-              selectedGoal ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-            )}>
-              {filteredGoals.map((goal, index) => (
-                <GoalCard 
-                  key={goal.id || index}
-                  goal={goal}
-                  isSelected={selectedGoal?.id === goal.id}
-                  onSelect={handleSelectGoal}
-                  onUpdate={fetchGoals}
-                  onEdit={handleEditGoal}
-                />
-              ))}
-            </div>
-            {!isLoading && filteredGoals.length === 0 && (
-              <div className="h-64 border border-dashed border-white/10 flex flex-col items-center justify-center gap-4 text-center">
-                <Trophy size={48} className="text-white/5" />
-                <p className="text-white/20 text-xs font-black uppercase tracking-widest">No goals established in this tier</p>
-                <button 
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all border border-white/10"
-                >
-                  Establish First Goal
-                </button>
-              </div>
-            )}
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* Main Grid List */}
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredGoals.map((goal, index) => (
+              <GoalCard 
+                key={goal.id || index}
+                goal={goal}
+                isSelected={false}
+                onSelect={() => {}}
+                onUpdate={fetchGoals}
+                onEdit={handleEditGoal}
+                availableTasks={allTasks.filter(t => !t.goalId || t.goalId === goal.id)}
+              />
+            ))}
           </div>
-        </div>
-
-        {/* Detail Panel Injection */}
-        <div className={clsx(
-          "transition-all duration-300 ease-in-out flex flex-col h-full", 
-          selectedGoal ? "w-2/3 opacity-100 border border-white/10" : "w-0 opacity-0 overflow-hidden"
-        )}>
-          {selectedGoal && (
-            <GoalDetailPanel 
-              goal={selectedGoal} 
-              onClose={() => setSelectedGoal(null)} 
-              onUpdate={fetchGoals}
-            />
+          {!isLoading && filteredGoals.length === 0 && (
+            <div className="h-64 border border-dashed border-white/10 flex flex-col items-center justify-center gap-4 text-center">
+              <Trophy size={48} className="text-white/5" />
+              <p className="text-white/20 text-xs font-black uppercase tracking-widest">No goals established in this tier</p>
+              <button 
+                onClick={() => setIsCreateModalOpen(true)}
+                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all border border-white/10"
+              >
+                Establish First Goal
+              </button>
+            </div>
           )}
         </div>
       </div>
