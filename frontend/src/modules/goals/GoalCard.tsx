@@ -101,7 +101,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
           {goal.title}
         </h3>
         
-        <p className="text-xs text-muted-foreground mb-4 italic font-serif leading-relaxed line-clamp-2 min-h-[2.5rem]">
+        <p className="text-xs text-muted-foreground mb-4 font-sans leading-relaxed line-clamp-2 min-h-[2.5rem]">
           {goal.description 
             ? (goal.description.length > 100 ? `${goal.description.substring(0, 100)}...` : goal.description)
             : "No mission brief provided."}
