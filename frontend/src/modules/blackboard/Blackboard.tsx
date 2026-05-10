@@ -18,6 +18,9 @@ export const Blackboard: React.FC = () => {
   const [color, setColor] = useState(COLORS[0].value);
   const [strokeWidth, setStrokeWidth] = useState(3);
   
+  // Track last coordinates for quadratic curve smoothing
+  const lastPoint = useRef<{ x: number, y: number } | null>(null);
+  
   // Undo/Redo State
   const historyRef = useRef<ImageData[]>([]);
   const redoStackRef = useRef<ImageData[]>([]);
@@ -37,7 +40,7 @@ export const Blackboard: React.FC = () => {
     const container = containerRef.current;
     if (!canvas || !container) return;
 
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = window.devicePixelRatio || 2; // Default to 2 for extra sharpness if DPR is low
     const rect = container.getBoundingClientRect();
 
     canvas.width = rect.width * dpr;
@@ -45,13 +48,11 @@ export const Blackboard: React.FC = () => {
     canvas.style.width = `${rect.width}px`;
     canvas.style.height = `${rect.height}px`;
 
-    const context = canvas.getContext('2d', { willReadFrequently: true });
+    const context = canvas.getContext('2d', { willReadFrequently: true, alpha: false });
     if (context) {
       context.scale(dpr, dpr);
       context.lineCap = 'round';
       context.lineJoin = 'round';
-      context.imageSmoothingEnabled = true;
-      context.imageSmoothingQuality = 'high';
       
       // Theme background
       const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--background').trim() || '#0a0a0a';
@@ -59,6 +60,10 @@ export const Blackboard: React.FC = () => {
       context.fillRect(0, 0, rect.width, rect.height);
       
       contextRef.current = context;
+      
+      // Clear history on resize to prevent aspect ratio / size mismatch bugs
+      historyRef.current = [];
+      redoStackRef.current = [];
       saveState();
     }
   }, [saveState]);
@@ -81,37 +86,45 @@ export const Blackboard: React.FC = () => {
     if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
-    if ('touches' in e.nativeEvent) {
-      return {
-        x: e.nativeEvent.touches[0].clientX - rect.left,
-        y: e.nativeEvent.touches[0].clientY - rect.top
-      };
-    } else {
-      return {
-        x: (e as React.MouseEvent).nativeEvent.offsetX,
-        y: (e as React.MouseEvent).nativeEvent.offsetY
-      };
-    }
+    const clientX = 'touches' in e.nativeEvent ? e.nativeEvent.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e.nativeEvent ? e.nativeEvent.touches[0].clientY : (e as React.MouseEvent).clientY;
+
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
   };
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
     const { x, y } = getCoordinates(e);
-    contextRef.current?.beginPath();
-    contextRef.current?.moveTo(x, y);
+    lastPoint.current = { x, y };
     setIsDrawing(true);
   };
 
   const draw = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDrawing) return;
+    if (!isDrawing || !lastPoint.current || !contextRef.current) return;
+    
     const { x, y } = getCoordinates(e);
-    contextRef.current?.lineTo(x, y);
-    contextRef.current?.stroke();
+    const ctx = contextRef.current;
+
+    // Use Quadratic Curves for superior smoothness
+    ctx.beginPath();
+    ctx.moveTo(lastPoint.current.x, lastPoint.current.y);
+    
+    // Midpoint calculation for the quadratic curve
+    const midX = (lastPoint.current.x + x) / 2;
+    const midY = (lastPoint.current.y + y) / 2;
+    
+    ctx.quadraticCurveTo(lastPoint.current.x, lastPoint.current.y, midX, midY);
+    ctx.stroke();
+    
+    lastPoint.current = { x, y };
   };
 
   const stopDrawing = () => {
     if (isDrawing) {
-      contextRef.current?.closePath();
       setIsDrawing(false);
+      lastPoint.current = null;
       saveState();
     }
   };
@@ -153,7 +166,7 @@ export const Blackboard: React.FC = () => {
       />
 
       {/* Floating Toolbar */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-card/80 backdrop-blur-xl border border-white/5 p-3 px-6 shadow-2xl flex items-center gap-8 z-50 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-card/80 backdrop-blur-xl border border-white/5 p-3 px-6 shadow-2xl flex items-center gap-8 z-50 animate-in fade-in slide-in-from-bottom-4 duration-500 rounded-none">
         {/* Colors */}
         <div className="flex items-center gap-2 pr-8 border-r border-white/5">
           {COLORS.map((c) => (
@@ -169,13 +182,12 @@ export const Blackboard: React.FC = () => {
           ))}
         </div>
 
-        {/* Stroke Width Slider */}
-        <div className="flex flex-col gap-1 items-center">
-           <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Width</span>
+        {/* Stroke Width Slider (Minimalist) */}
+        <div className="flex items-center">
            <input 
             type="range" 
             min="1" 
-            max="15" 
+            max="20" 
             step="0.5"
             value={strokeWidth}
             onChange={(e) => setStrokeWidth(parseFloat(e.target.value))}
