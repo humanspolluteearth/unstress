@@ -1,8 +1,11 @@
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request, Depends
 from pydantic import BaseModel, Field, HttpUrl
 from typing import List, Optional, Literal, Any
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import uuid
+from sqlalchemy.orm import Session
+from app.database import get_db
+import app.models as models
 
 # Schema Definitions
 class TransactionBase(BaseModel):
@@ -23,118 +26,63 @@ class NetWorthSnapshot(BaseModel):
     liabilities: float
     total: float
 
-# --- In-Memory Store ---
-transactions_db: List[Transaction] = [
-    Transaction(
-        id=uuid.uuid4(),
-        amount=5000.00,
-        type="income",
-        category="Salary",
-        tags=["primary", "work"],
-        date=datetime.now(timezone.utc),
-        description="Monthly Paycheck"
-    ),
-    Transaction(
-        id=uuid.uuid4(),
-        amount=120.50,
-        type="expense",
-        category="Food",
-        tags=["groceries", "essential"],
-        date=datetime.now(timezone.utc),
-        description="Whole Foods"
-    ),
-    Transaction(
-        id=uuid.uuid4(),
-        amount=45.00,
-        type="expense",
-        category="Subscription",
-        tags=["entertainment"],
-        date=datetime.now(timezone.utc),
-        description="Netflix & Spotify"
-    ),
-    Transaction(
-        id=uuid.uuid4(),
-        amount=200.00,
-        type="income",
-        category="Freelance",
-        tags=["side-hustle"],
-        date=datetime.now(timezone.utc),
-        description="Logo Design"
-    )
-]
-
-net_worth_db: List[NetWorthSnapshot] = [
-    NetWorthSnapshot(
-        id=uuid.uuid4(),
-        date=datetime(2026, 3, 1, tzinfo=timezone.utc),
-        assets=15000.0,
-        liabilities=2000.0,
-        total=13000.0
-    ),
-    NetWorthSnapshot(
-        id=uuid.uuid4(),
-        date=datetime(2026, 4, 1, tzinfo=timezone.utc),
-        assets=16500.0,
-        liabilities=1800.0,
-        total=14700.0
-    ),
-    NetWorthSnapshot(
-        id=uuid.uuid4(),
-        date=datetime(2026, 5, 1, tzinfo=timezone.utc),
-        assets=18200.0,
-        liabilities=1500.0,
-        total=16700.0
-    )
-]
-
-# Router without internal prefix to avoid doubling
 router = APIRouter()
 
 @router.get("/transactions", response_model=List[Transaction])
 @router.get("/transactions/", response_model=List[Transaction])
 async def get_transactions(
-    timeframe: Optional[str] = Query(None, description="weekly, monthly, or yearly")
+    timeframe: Optional[str] = Query(None, description="weekly, monthly, or yearly"),
+    db: Session = Depends(get_db)
 ):
     now = datetime.now(timezone.utc)
-    if not timeframe:
-        return transactions_db
+    query = db.query(models.Transaction)
     
-    filtered = []
-    for tx in transactions_db:
-        if timeframe == "weekly":
-            if (now - tx.date).days <= 7:
-                filtered.append(tx)
-        elif timeframe == "monthly":
-            if tx.date.month == now.month and tx.date.year == now.year:
-                filtered.append(tx)
-        elif timeframe == "yearly":
-            if tx.date.year == now.year:
-                filtered.append(tx)
-        else:
-            filtered.append(tx)
+    if timeframe == "weekly":
+        start_date = now - timedelta(days=7)
+        query = query.filter(models.Transaction.date >= start_date)
+    elif timeframe == "monthly":
+        query = query.filter(
+            models.Transaction.date >= datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+        )
+    elif timeframe == "yearly":
+        query = query.filter(
+            models.Transaction.date >= datetime(now.year, 1, 1, tzinfo=timezone.utc)
+        )
             
-    return filtered
+    return query.order_by(models.Transaction.date.desc()).all()
 
 @router.post("/transactions", response_model=Transaction)
 @router.post("/transactions/", response_model=Transaction)
-async def create_transaction(tx_data: TransactionBase, request: Request):
-    print(f"DEBUG: Finance Payload: {await request.json()}")
-    new_tx = Transaction(id=uuid.uuid4(), **tx_data.model_dump())
-    transactions_db.append(new_tx)
+async def create_transaction(tx_data: TransactionBase, db: Session = Depends(get_db)):
+    new_tx = models.Transaction(
+        id=str(uuid.uuid4()),
+        amount=tx_data.amount,
+        type=tx_data.type,
+        category=tx_data.category,
+        tags=tx_data.tags,
+        date=tx_data.date,
+        description=tx_data.description
+    )
+    db.add(new_tx)
+    db.commit()
+    db.refresh(new_tx)
     return new_tx
 
 @router.delete("/transactions/{transaction_id}")
 @router.delete("/transactions/{transaction_id}/")
-async def delete_transaction(transaction_id: uuid.UUID):
-    global transactions_db
-    transactions_db = [t for t in transactions_db if t.id != transaction_id]
+async def delete_transaction(transaction_id: uuid.UUID, db: Session = Depends(get_db)):
+    tx = db.query(models.Transaction).filter(models.Transaction.id == str(transaction_id)).first()
+    if not tx:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    db.delete(tx)
+    db.commit()
     return {"success": True, "status": "deleted"}
 
 @router.get("/summaries")
 @router.get("/summaries/")
-async def get_summaries():
-    from datetime import timedelta
+async def get_summaries(db: Session = Depends(get_db)):
     now = datetime.now(timezone.utc)
+    transactions = db.query(models.Transaction).all()
     
     weekly = []
     for i in range(6, -1, -1):
@@ -142,7 +90,7 @@ async def get_summaries():
         day_str = day.strftime("%a")
         total_income = 0
         total_expense = 0
-        for tx in transactions_db:
+        for tx in transactions:
             if tx.date.date() == day.date():
                 if tx.type == "income":
                     total_income += tx.amount
@@ -158,7 +106,7 @@ async def get_summaries():
         month_str = month_date.strftime("%b")
         total_income = 0
         total_expense = 0
-        for tx in transactions_db:
+        for tx in transactions:
             if tx.date.month == month and tx.date.year == year:
                 if tx.type == "income":
                     total_income += tx.amount
@@ -170,5 +118,6 @@ async def get_summaries():
 
 @router.get("/net-worth", response_model=List[NetWorthSnapshot])
 @router.get("/net-worth/", response_model=List[NetWorthSnapshot])
-async def get_net_worth():
-    return net_worth_db
+async def get_net_worth(db: Session = Depends(get_db)):
+    snapshots = db.query(models.NetWorthSnapshot).order_by(models.NetWorthSnapshot.date.asc()).all()
+    return snapshots

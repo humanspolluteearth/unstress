@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Result } from '../../core/results';
+import { getBaseUrl, API_ENDPOINTS } from '../../core/apiConfig';
 
 export interface HabitLog {
   timestamp: string;
@@ -42,8 +43,8 @@ export const useHabitStore = create<HabitState>((set, get) => ({
   fetchHabits: async () => {
     set({ isLoading: true });
     try {
-      const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/habits/`);
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.HABITS}/`);
       const result: Result<Habit[], string> = await response.json();
       if (result.success && result.data) {
         set({ habits: result.data, isLoading: false });
@@ -59,8 +60,8 @@ export const useHabitStore = create<HabitState>((set, get) => ({
 
   createHabit: async (data) => {
     try {
-      const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/habits/`, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.HABITS}/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -77,30 +78,14 @@ export const useHabitStore = create<HabitState>((set, get) => ({
 
   logHabit: async (habitId, value) => {
     try {
-      const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/habits/log`, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.HABITS}/log`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ habit_id: habitId, value }),
       });
       const result = await response.json();
       if (result.success) {
-        // Optimistic local update using LOCAL time
-        const currentHabits = get().habits;
-        const now = new Date();
-        const localISO = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString();
-
-        const updatedHabits = currentHabits.map(h => {
-          if (h.id === habitId) {
-            return {
-              ...h,
-              logs: [...h.logs, { timestamp: localISO, value }]
-            };
-          }
-          return h;
-        });
-        set({ habits: updatedHabits });
-
         await get().fetchHabits();
       }
       return result;
@@ -111,33 +96,14 @@ export const useHabitStore = create<HabitState>((set, get) => ({
 
   updateHabitLog: async (habitId, value) => {
     try {
-      const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/habits/log`, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.HABITS}/log`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ habit_id: habitId, value }),
       });
       const result = await response.json();
       if (result.success) {
-        // Optimistic local update to ensure immediate UI sync
-        const today = new Date().toLocaleDateString('en-CA');
-        const now = new Date();
-        const localISO = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString();
-        
-        const currentHabits = get().habits;
-        const updatedHabits = currentHabits.map(h => {
-          if (h.id === habitId) {
-            // Replace today's logs
-            const filteredLogs = h.logs.filter(l => !l.timestamp.startsWith(today));
-            return {
-              ...h,
-              logs: [...filteredLogs, { timestamp: localISO, value }]
-            };
-          }
-          return h;
-        });
-        set({ habits: updatedHabits });
-        
         await get().fetchHabits();
       }
       return result;
@@ -148,8 +114,8 @@ export const useHabitStore = create<HabitState>((set, get) => ({
 
   deleteHabit: async (habitId) => {
     try {
-      const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/habits/${habitId}`, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.HABITS}/${habitId}`, {
         method: 'DELETE',
       });
       const result = await response.json();
@@ -164,8 +130,8 @@ export const useHabitStore = create<HabitState>((set, get) => ({
 
   updateHabit: async (habitId, data) => {
     try {
-      const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/habits/${habitId}`, {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.HABITS}/${habitId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -184,8 +150,6 @@ export const useHabitStore = create<HabitState>((set, get) => ({
 
   calculateStreak: (habit: Habit) => {
     if (habit.logs.length === 0) return 0;
-    
-    // Group logs by date
     const logDates = new Set(habit.logs.map(l => l.timestamp.split('T')[0]));
     const sortedDates = Array.from(logDates).sort((a, b) => b.localeCompare(a));
     
@@ -196,13 +160,10 @@ export const useHabitStore = create<HabitState>((set, get) => ({
     const yesterday = yesterdayDate.toLocaleDateString('en-CA');
 
     let currentDateStr = sortedDates[0];
-
-    // If last log is not today or yesterday, streak is broken
     if (currentDateStr !== today && currentDateStr !== yesterday) return 0;
 
     streak = 1;
     let curr = new Date(currentDateStr);
-
     while (true) {
       curr.setDate(curr.getDate() - 1);
       const d = curr.toLocaleDateString('en-CA');
@@ -212,8 +173,6 @@ export const useHabitStore = create<HabitState>((set, get) => ({
         break;
       }
     }
-
-    
     return streak;
   }
 }));

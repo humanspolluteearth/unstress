@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import { Result } from '../../core/results';
 import { TaskCreate } from '../../core/ActionService';
+import { getBaseUrl, API_ENDPOINTS } from '../../core/apiConfig';
 
 export interface Task {
   id: string;
@@ -40,48 +41,32 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   fetchTasks: async () => {
     set({ isLoading: true });
-    // Mock fetch with more detailed data
-    const mockTasks: Task[] = [
-      { 
-        id: 'task-1', 
-        title: 'Implement ActionService', 
-        description: 'Implement the core action service for backend communication.',
-        status: 'In Progress',
-        priority: 2,
-        tags: ['core', 'frontend'],
-        deadline: new Date().toISOString(),
-        projectLink: 'https://github.com/unstress/core'
-      },
-      { 
-        id: 'task-2', 
-        title: 'Fix Sidecar Path', 
-        description: 'Ensure the sidecar executable is correctly located in all environments.',
-        status: 'Done',
-        priority: 1,
-        tags: ['tauri', 'linux'],
-        deadline: new Date().toISOString()
-      },
-      { 
-        id: 'task-3', 
-        title: 'Design Task Board', 
-        description: 'Create a multi-view task board with Kanban and List views.',
-        status: 'Todo',
-        priority: 2,
-        tags: ['ui', 'ux'],
-        deadline: new Date(Date.now() + 86400000).toISOString()
-      },
-      { 
-        id: 'task-4', 
-        title: 'Verify Finance CRUD', 
-        description: 'Test all finance operations against the mock backend.',
-        status: 'Funded',
-        priority: 1,
-        tags: ['finance', 'testing'],
-        deadline: new Date(Date.now() + 172800000).toISOString()
-      },
-    ];
-    set({ tasks: mockTasks, isLoading: false });
-    return { success: true, data: mockTasks };
+    try {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.TASKS}/`);
+      const data = await response.json();
+      
+      // Handle Result wrapper if backend returns it, otherwise raw list
+      const tasksList = Array.isArray(data) ? data : (data.success ? data.data : []);
+      
+      const mappedTasks: Task[] = tasksList.map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        description: t.description,
+        status: t.status,
+        priority: t.priority,
+        tags: t.tags || [],
+        deadline: t.deadline,
+        projectLink: t.project_link,
+        goalId: t.goal_id
+      }));
+
+      set({ tasks: mappedTasks, isLoading: false });
+      return { success: true, data: mappedTasks };
+    } catch (err) {
+      set({ error: 'Network error', isLoading: false });
+      return { success: false, error: 'Network error' };
+    }
   },
 
   createTask: async (taskData) => {
@@ -89,8 +74,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       const { ActionService } = await import('../../core/ActionService');
       const result = await ActionService.createTask(taskData);
       
-      if (result.success && result.data && result.data.data) {
-        const backendTask = result.data.data;
+      if (result.success) {
+        const backendTask = result.data;
         const newTask: Task = {
           id: backendTask.id,
           title: backendTask.title,
@@ -116,8 +101,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       const { ActionService } = await import('../../core/ActionService');
       const result = await ActionService.updateTask(taskId, taskData);
       
-      if (result.success && result.data && result.data.data) {
-        const backendTask = result.data.data;
+      if (result.success) {
+        const backendTask = result.data;
         const updatedTask: Task = {
           id: backendTask.id,
           title: backendTask.title,
