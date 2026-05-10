@@ -219,7 +219,7 @@ export const ZenTimer: React.FC = () => {
       <div className="absolute bottom-8 right-8 flex flex-col items-end gap-4">
         {showStats && stats && (
           <div className="bg-card border border-white/5 p-4 animate-in slide-in-from-bottom-2 duration-200 shadow-2xl">
-            <span className="text-[9px] font-black uppercase text-muted-foreground block mb-1">Cumulative Deep Work</span>
+            <span className="text-[9px] font-black uppercase text-muted-foreground block mb-1">Total Cognitive Volume</span>
             <span className="text-2xl font-black tabular-nums tracking-tighter text-primary">
               {stats.total_hours?.toFixed(2) ?? '0.00'} <small className="text-[10px] uppercase ml-1 opacity-50">Hours</small>
             </span>
@@ -230,7 +230,7 @@ export const ZenTimer: React.FC = () => {
           onClick={fetchStats}
           className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors bg-background/50 backdrop-blur-sm px-3 py-1.5 border border-white/5"
         >
-          <BarChart2 size={14} /> {showStats ? 'Hide History' : 'Focus History'}
+          <BarChart2 size={14} /> {showStats ? 'Hide Volume' : 'Cognitive Volume'}
         </button>
       </div>
     </div>
