@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from typing import List
+from typing import List, Optional
 from sqlalchemy.orm import Session
 from app.database import get_db
 import app.models as models
@@ -45,8 +45,6 @@ class HabitUpdate(BaseModel):
 class HabitLogCreate(BaseModel):
     habit_id: str
     value: float
-
-from typing import Optional
 
 # --- Router ---
 
