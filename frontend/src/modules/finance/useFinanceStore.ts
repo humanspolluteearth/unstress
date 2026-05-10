@@ -20,18 +20,28 @@ export interface NetWorthSnapshot {
   total: number;
 }
 
+interface SummaryItem {
+  label: string;
+  value: number;
+}
+
 interface FinanceState {
   transactions: Transaction[];
   netWorthHistory: NetWorthSnapshot[];
+  weeklySummary: SummaryItem[];
+  yearlySummary: SummaryItem[];
   isLoading: boolean;
   error: string | null;
   fetchTransactions: (timeframe?: string) => Promise<Result<Transaction[], string>>;
   fetchNetWorth: () => Promise<Result<NetWorthSnapshot[], string>>;
+  fetchSummaries: () => Promise<Result<{ weekly: SummaryItem[], yearly: SummaryItem[] }, string>>;
 }
 
-export const useFinanceStore = create<FinanceState>((set) => ({
+export const useFinanceStore = create<FinanceState>((set, get) => ({
   transactions: [],
   netWorthHistory: [],
+  weeklySummary: [],
+  yearlySummary: [],
   isLoading: false,
   error: null,
 
@@ -46,7 +56,6 @@ export const useFinanceStore = create<FinanceState>((set) => ({
       const response = await fetch(url);
       const data = await response.json();
       
-      // The new api/finance returns raw list, not Result object
       if (response.ok) {
         set({ transactions: data, isLoading: false });
         return { success: true, data };
@@ -69,6 +78,25 @@ export const useFinanceStore = create<FinanceState>((set) => ({
       if (response.ok) {
         set({ netWorthHistory: data });
         return { success: true, data };
+      }
+      return { success: false, error: 'Failed' };
+    } catch (err) {
+      return { success: false, error: 'Network error' };
+    }
+  },
+
+  fetchSummaries: async () => {
+    try {
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/api/finance/summaries`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        set({ 
+          weeklySummary: result.data.weekly, 
+          yearlySummary: result.data.yearly 
+        });
+        return result;
       }
       return { success: false, error: 'Failed' };
     } catch (err) {

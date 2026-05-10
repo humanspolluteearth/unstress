@@ -30,30 +30,64 @@ class NetWorthSnapshot(BaseModel):
 transactions_db: List[Transaction] = [
     Transaction(
         id=uuid.uuid4(),
-        amount=2500.00,
+        amount=5000.00,
         type="income",
-        category="Consulting",
-        tags=["q2", "external"],
+        category="Salary",
+        tags=["primary", "work"],
         date=datetime.now(timezone.utc),
-        description="Q2 Framework Optimization"
+        description="Monthly Paycheck"
     ),
     Transaction(
         id=uuid.uuid4(),
         amount=120.50,
         type="expense",
-        category="Software",
-        tags=["subscription", "infra"],
+        category="Food",
+        tags=["groceries", "essential"],
         date=datetime.now(timezone.utc),
-        description="Cloud Hosting Monthly"
+        description="Whole Foods"
     ),
     Transaction(
         id=uuid.uuid4(),
         amount=45.00,
         type="expense",
-        category="Food",
-        tags=["team", "lunch"],
+        category="Subscription",
+        tags=["entertainment"],
         date=datetime.now(timezone.utc),
-        description="Strategic Planning Lunch"
+        description="Netflix & Spotify"
+    ),
+    Transaction(
+        id=uuid.uuid4(),
+        amount=200.00,
+        type="income",
+        category="Freelance",
+        tags=["side-hustle"],
+        date=datetime.now(timezone.utc),
+        description="Logo Design"
+    )
+]
+
+# Seed Net Worth for charts
+net_worth_db: List[NetWorthSnapshot] = [
+    NetWorthSnapshot(
+        id=uuid.uuid4(),
+        date=datetime(2026, 3, 1, tzinfo=timezone.utc),
+        assets=15000.0,
+        liabilities=2000.0,
+        total=13000.0
+    ),
+    NetWorthSnapshot(
+        id=uuid.uuid4(),
+        date=datetime(2026, 4, 1, tzinfo=timezone.utc),
+        assets=16500.0,
+        liabilities=1800.0,
+        total=14700.0
+    ),
+    NetWorthSnapshot(
+        id=uuid.uuid4(),
+        date=datetime(2026, 5, 1, tzinfo=timezone.utc),
+        assets=18200.0,
+        liabilities=1500.0,
+        total=16700.0
     )
 ]
 
@@ -95,24 +129,54 @@ async def create_transaction(tx_data: TransactionBase):
     transactions_db.append(new_tx)
     return new_tx
 
+@router.get("/summaries")
+async def get_summaries():
+    """
+    Calculates weekly and yearly net flow summaries.
+    """
+    from datetime import timedelta
+    now = datetime.now(timezone.utc)
+    
+    # Weekly (last 7 days)
+    weekly = []
+    for i in range(6, -1, -1):
+        day = now - timedelta(days=i)
+        day_str = day.strftime("%a")
+        total_income = 0
+        total_expense = 0
+        for tx in transactions_db:
+            if tx.date.date() == day.date():
+                if tx.type == "income":
+                    total_income += tx.amount
+                else:
+                    total_expense += tx.amount
+        weekly.append({"label": day_str, "value": total_income - total_expense})
+
+    # Yearly (last 12 months)
+    yearly = []
+    for i in range(11, -1, -1):
+        # Specific month and year
+        month = (now.month - i - 1) % 12 + 1
+        year = now.year + (now.month - i - 1) // 12
+        
+        month_date = datetime(year, month, 1, tzinfo=timezone.utc)
+        month_str = month_date.strftime("%b")
+        
+        total_income = 0
+        total_expense = 0
+        for tx in transactions_db:
+            if tx.date.month == month and tx.date.year == year:
+                if tx.type == "income":
+                    total_income += tx.amount
+                else:
+                    total_expense += tx.amount
+        yearly.append({"label": month_str, "value": total_income - total_expense})
+
+    return {"success": True, "data": {"weekly": weekly, "yearly": yearly}}
+
 @router.get("/net-worth", response_model=List[NetWorthSnapshot])
 async def get_net_worth():
     """
     Returns monthly/yearly aggregated net worth data.
-    (Currently returns a mock snapshot based on transactions).
     """
-    total_income = sum(t.amount for t in transactions_db if t.type == "income")
-    total_expense = sum(t.amount for t in transactions_db if t.type == "expense")
-    
-    current_net = total_income - total_expense
-    
-    # Mocking a snapshot for the current moment
-    return [
-        NetWorthSnapshot(
-            id=uuid.uuid4(),
-            date=datetime.now(timezone.utc),
-            assets=total_income,
-            liabilities=total_expense,
-            total=current_net
-        )
-    ]
+    return net_worth_db
