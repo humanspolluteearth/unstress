@@ -8,28 +8,37 @@ from app.core.broker import broker, BaseEvent
 from app.api.tasks import TaskCreate, Task
 
 class TaskService:
-    # In-memory store to link tasks to goals for event routing
+    # In-memory store seeded with tasks linked to Mockup Goals
     _tasks: Dict[str, dict] = {
         "task-1": {
             "id": "task-1",
-            "title": "Implement ActionService",
-            "description": "Implement the core action service for backend communication.",
-            "status": "In Progress",
+            "title": "Fix Python 3.14 asyncio loop",
+            "description": "Ensure no uvloop is used on Linux to prevent startup crash.",
+            "status": "Done",
             "priority": 2,
-            "tags": ["core", "frontend"],
-            "deadline": "2026-05-15",
-            "project_link": "https://github.com/unstress/core",
-            "goal_id": None
+            "tags": ["python", "infra"],
+            "deadline": "2026-05-14",
+            "goal_id": "e7b3a9c1-5c8e-4b9e-9d2a-7f1b2c3d4e5f" # Stabilize Sidecar
         },
         "task-2": {
             "id": "task-2",
-            "title": "Fix Sidecar Path",
-            "description": "Ensure the sidecar executable is correctly located in all environments.",
-            "status": "Done",
+            "title": "Audit CORS Middleware",
+            "description": "Verify allow_origins=['*'] is set in main.py.",
+            "status": "Todo",
             "priority": 1,
-            "tags": ["tauri", "linux"],
-            "deadline": "2026-05-10",
-            "goal_id": None
+            "tags": ["security", "infra"],
+            "deadline": "2026-05-15",
+            "goal_id": "e7b3a9c1-5c8e-4b9e-9d2a-7f1b2c3d4e5f" # Stabilize Sidecar
+        },
+        "task-3": {
+            "id": "task-3",
+            "title": "Design 3-Column Detail Panel",
+            "description": "Implement the slide-out logic using clsx and framer-motion-style transitions.",
+            "status": "In Progress",
+            "priority": 2,
+            "tags": ["frontend", "ui"],
+            "deadline": "2026-05-11",
+            "goal_id": "a1b2c3d4-e5f6-4a5b-bcde-1234567890ab" # High-Density UI
         }
     }
 

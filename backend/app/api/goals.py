@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, HttpUrl
-from typing import List, Optional
+from typing import List, Optional, Any
 import uuid
 from app.core.dispatcher import TaskService
 
@@ -25,16 +25,12 @@ class Goal(GoalModel):
     progress: float = 0.0
     total_tasks: int = 0
     completed_tasks: int = 0
-    active_tasks_count: int = 0 # Specifically requested field
+    active_tasks_count: int = 0
 
 # Helper Logic
 def sync_goal_stats(goal: Goal):
     """Recalculates progress and task counts for a goal, including external tasks."""
-    # Internal tasks (checklist)
     internal_tasks = goal.tasks
-    
-    # External tasks (linked via TaskService)
-    # TaskService uses string IDs, so we convert goal.id to string for matching
     external_tasks = [t for t in TaskService._tasks.values() if t.get('goal_id') == str(goal.id)]
     
     total_internal = len(internal_tasks)
@@ -43,7 +39,6 @@ def sync_goal_stats(goal: Goal):
     total_external = len(external_tasks)
     completed_external = len([t for t in external_tasks if t.get('status') == 'Done'])
     
-    # Active tasks are those not in 'Done' status (for external) or not completed (for internal)
     active_internal = total_internal - completed_internal
     active_external = len([t for t in external_tasks if t.get('status') != 'Done'])
     
@@ -56,17 +51,61 @@ def sync_goal_stats(goal: Goal):
     else:
         goal.progress = 0.0
 
-# In-memory store (Starting clean)
-goals_db: List[Goal] = []
+# Pre-defined UUIDs for seeding and linking
+GOAL_INFRA_ID = uuid.UUID("e7b3a9c1-5c8e-4b9e-9d2a-7f1b2c3d4e5f")
+GOAL_UI_ID = uuid.UUID("a1b2c3d4-e5f6-4a5b-bcde-1234567890ab")
+
+# In-memory store seeded with mockup data
+goals_db: List[Goal] = [
+    Goal(
+        id=GOAL_INFRA_ID,
+        title="Stabilize Arch Linux Sidecar",
+        description="Ensure the FastAPI backend runs natively on Python 3.14 without binary conflicts.",
+        markdown_content="## Mission Objectives\n- Zero `uvloop` compilation errors.\n- Port 8000 consistency across reboots.\n- Direct 127.0.0.1 connectivity verified.",
+        priority="critical",
+        category="Infrastructure",
+        time_frame="weekly",
+        deadline="2026-05-15",
+        label_color="#ef4444",
+        assignee_initials="MH",
+        tags=["arch", "python", "sys"],
+        tasks=[
+            {"id": "int-1", "text": "Audit main.py inclusion order", "completed": True},
+            {"id": "int-2", "text": "Verify CORS allowance", "completed": False}
+        ]
+    ),
+    Goal(
+        id=GOAL_UI_ID,
+        title="Implement High-Density Goal UI",
+        description="Refactor the goal dashboard to use adaptive grid cards and Trello-style metadata.",
+        markdown_content="## Design Specification\n- 3-column detail panel slide-out.\n- Trello-style checklist badges on cards.\n- Color-coded progress bars by priority.",
+        priority="high",
+        category="Frontend",
+        time_frame="weekly",
+        deadline="2026-05-12",
+        label_color="#f97316",
+        assignee_initials="MH",
+        tags=["react", "lucide", "ui"],
+        tasks=[
+            {"id": "int-3", "text": "Create GoalCard component", "completed": True},
+            {"id": "int-4", "text": "Implement GoalDetailPanel layout", "completed": True}
+        ]
+    )
+]
 
 router = APIRouter()
 
 @router.get("")
-async def get_goals() -> List[Goal]:
+async def get_goals() -> List[dict]:
     """Retrieves all goals with updated stats from TaskService."""
+    results = []
     for goal in goals_db:
         sync_goal_stats(goal)
-    return goals_db
+        goal_dict = goal.model_dump()
+        external_tasks = [t for t in TaskService._tasks.values() if t.get('goal_id') == str(goal.id)]
+        goal_dict['external_tasks'] = external_tasks
+        results.append(goal_dict)
+    return results
 
 @router.post("")
 async def create_goal(goal_data: GoalModel) -> Goal:
