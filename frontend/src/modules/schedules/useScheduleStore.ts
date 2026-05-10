@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Result } from '../../core/results';
+import { getBaseUrl, API_ENDPOINTS } from '../../core/apiConfig';
 
 export interface TimeBlock {
   id: string;
@@ -41,14 +42,16 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
   fetchBlocks: async () => {
     set({ isLoading: true });
     try {
-      const { ActionService } = await import('../../core/ActionService');
-      const result = await ActionService.getSchedules();
-      if (result.success && result.data) {
-        set({ blocks: result.data, isLoading: false });
-        return result;
-      }
-      set({ error: result.error || 'Failed', isLoading: false });
-      return result;
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.SCHEDULES}`);
+      const data = await response.json();
+      
+      // The persistent API returns a raw list or a Result object depending on the implementation
+      // Standardizing on raw list for GET collections
+      const resultData = Array.isArray(data) ? data : (data.success ? data.data : []);
+
+      set({ blocks: resultData, isLoading: false });
+      return { success: true, data: resultData };
     } catch (err) {
       set({ error: 'Network error', isLoading: false });
       return { success: false, error: 'Network error' };
@@ -70,7 +73,6 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
 
   updateBlock: async (id, data) => {
     const previousBlocks = get().blocks;
-    // Optimistic update
     set(state => ({
       blocks: state.blocks.map(b => b.id === id ? { ...b, ...data } : b)
     }));
@@ -81,7 +83,7 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       if (!result.success) {
         set({ blocks: previousBlocks });
       } else {
-        get().fetchBlocks(); // Refresh to get final state/conflicts
+        get().fetchBlocks();
       }
       return result;
     } catch (err) {
@@ -92,7 +94,6 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
 
   deleteBlock: async (id) => {
     const previousBlocks = get().blocks;
-    // Optimistic delete
     set(state => ({
       blocks: state.blocks.filter(b => b.id !== id),
       selectedBlockId: state.selectedBlockId === id ? null : state.selectedBlockId
