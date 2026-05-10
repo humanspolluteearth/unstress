@@ -13,7 +13,7 @@ const CSSBarChart: React.FC<{ data: { label: string; value: number }[], title: s
   const totalValue = data.reduce((acc, curr) => acc + curr.value, 0);
   
   return (
-    <div className="bg-card border rounded-none p-6 space-y-4 shadow-sm relative overflow-hidden">
+    <div className="bg-card border rounded-none p-6 space-y-4 shadow-sm relative overflow-hidden text-white/90">
       <div className="flex justify-between items-start">
         <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{title}</h3>
         <span className={clsx(
@@ -50,7 +50,18 @@ const CSSBarChart: React.FC<{ data: { label: string; value: number }[], title: s
 };
 
 export const FinanceLedger: React.FC = () => {
-  const { transactions, netWorthHistory, isLoading, error, fetchTransactions, fetchNetWorth } = useFinanceStore();
+  const { 
+    transactions, 
+    netWorthHistory, 
+    weeklySummary, 
+    yearlySummary, 
+    isLoading, 
+    error, 
+    fetchTransactions, 
+    fetchNetWorth, 
+    fetchSummaries 
+  } = useFinanceStore();
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>();
   const [filter, setFilter] = useState<'monthly' | 'yearly'>('monthly');
@@ -62,34 +73,34 @@ export const FinanceLedger: React.FC = () => {
   }, [filter]);
 
   const handleEdit = (tx: Transaction) => {
-    // Note: TransactionModal might need update to support new Transaction type
-    // setEditingTransaction(tx);
-    // setIsModalOpen(true);
+    setEditingTransaction(tx);
+    setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Permanently remove this entry?')) {
-      // await ActionDispatcher.deleteTransaction(id);
-      fetchTransactions(filter);
+      const result = await ActionDispatcher.deleteTransaction(id);
+      if (result.success) {
+        fetchTransactions(filter);
+        fetchSummaries();
+        fetchNetWorth();
+      }
     }
   };
 
-  // Process data for charts
-  const weeklySummary = transactions.slice(0, 7).map(tx => ({
-    label: new Date(tx.date).toLocaleDateString(undefined, { weekday: 'short' }),
-    value: tx.type === 'income' ? tx.amount : -tx.amount
-  }));
-
-  const yearlySummary = netWorthHistory.map(snapshot => ({
-    label: new Date(snapshot.date).toLocaleDateString(undefined, { month: 'short' }),
-    value: snapshot.total
-  }));
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingTransaction(undefined);
+    fetchTransactions(filter);
+    fetchSummaries();
+    fetchNetWorth();
+  };
 
   return (
     <div className="p-6 space-y-6 flex flex-col flex-1 min-h-0 bg-background/50 overflow-auto relative animate-in fade-in duration-500">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Finance</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-white">Finance</h2>
           <p className="text-muted-foreground text-sm">Strategic capital allocation and automated ledgering.</p>
         </div>
         <div className="flex items-center gap-3">
@@ -102,7 +113,7 @@ export const FinanceLedger: React.FC = () => {
         </div>
       </header>
 
-      {/* Charts Section - Restored from Old UI */}
+      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <CSSBarChart data={weeklySummary} title="Recent Cashflow" color="bg-emerald-500/80" />
         <CSSBarChart data={yearlySummary} title="Net Worth Overview" color="bg-blue-500/80" />
@@ -125,7 +136,7 @@ export const FinanceLedger: React.FC = () => {
               <thead>
                 <tr className="bg-muted/30 border-b border-white/5 sticky top-0 z-10 backdrop-blur-md">
                   <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Date</th>
-                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Category</th>
+                  <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Transaction</th>
                   <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tags</th>
                   <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Amount</th>
                   <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Actions</th>
@@ -134,25 +145,28 @@ export const FinanceLedger: React.FC = () => {
               <tbody className="divide-y divide-white/5">
                 {transactions.length === 0 && !isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-20 text-center text-muted-foreground italic text-xs uppercase tracking-widest">
+                    <td colSpan={5} className="px-6 py-20 text-center text-zinc-500 italic text-xs uppercase tracking-widest">
                       The ledger is empty. Start by logging your first transaction.
                     </td>
                   </tr>
                 ) : (
                   transactions.map((tx) => (
-                    <tr key={tx.id} className="group hover:bg-white/[0.02] transition-colors">
+                    <tr key={tx.id} className="group hover:bg-white/[0.02] transition-colors border-b border-white/5 last:border-0">
                       <td className="px-6 py-5 text-xs text-muted-foreground">
                         {new Date(tx.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                       </td>
                       <td className="px-6 py-5">
-                        <span className="text-[10px] font-bold uppercase tracking-tighter text-foreground px-2 py-1 bg-muted rounded-none border border-white/5">
-                          {tx.category}
-                        </span>
+                        <div className="space-y-1">
+                          <div className="font-bold text-sm text-white/90">{tx.description}</div>
+                          <span className="text-[10px] font-bold uppercase tracking-tighter text-zinc-400 px-2 py-0.5 bg-muted rounded-none border border-white/5 inline-block">
+                            {tx.category}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-6 py-5">
-                        <div className="flex gap-1">
+                        <div className="flex flex-wrap gap-1">
                           {tx.tags.map(t => (
-                            <span key={t} className="text-[11px] text-muted-foreground/60">#{t}</span>
+                            <span key={t} className="text-[11px] text-zinc-500">#{t}</span>
                           ))}
                         </div>
                       </td>
@@ -186,6 +200,12 @@ export const FinanceLedger: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <TransactionModal 
+        isOpen={isModalOpen} 
+        onClose={handleCloseModal} 
+        transaction={editingTransaction} 
+      />
     </div>
   );
 };

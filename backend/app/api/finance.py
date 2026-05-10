@@ -129,6 +129,15 @@ async def create_transaction(tx_data: TransactionBase):
     transactions_db.append(new_tx)
     return new_tx
 
+@router.delete("/transactions/{transaction_id}")
+async def delete_transaction(transaction_id: uuid.UUID):
+    """
+    Deletes a transaction.
+    """
+    global transactions_db
+    transactions_db = [t for t in transactions_db if t.id != transaction_id]
+    return {"success": True, "status": "deleted"}
+
 @router.get("/summaries")
 async def get_summaries():
     """
