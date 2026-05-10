@@ -43,36 +43,35 @@ export const GoalDashboard: React.FC = () => {
     <div className="p-6 space-y-6 flex flex-col flex-1 min-h-0 bg-background/50 overflow-auto relative">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div>
-          <h2 className="text-2xl font-black tracking-tighter uppercase italic">Goals</h2>
-          <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Define your north star. Navigate with precision.</p>
+          <h2 className="text-2xl font-bold tracking-tight">Goals</h2>
+          <p className="text-muted-foreground text-sm">Define your north star. Navigate with precision.</p>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Timeframe Filter Toggle */}
-          <div className="flex items-center bg-white/5 p-1 border border-white/10">
+          <div className="flex items-center bg-muted/50 p-1 rounded-none border">
             {(['all', 'weekly', 'monthly', 'yearly'] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setFilter(t)}
                 className={clsx(
-                  "flex items-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
-                  filter === t ? "bg-white text-black" : "text-white/40 hover:text-white"
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-medium transition-all",
+                  filter === t ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                {t === 'all' && <LayoutGrid size={12} />}
-                {t === 'weekly' && <BarChart3 size={12} />}
-                {t === 'monthly' && <CalendarDays size={12} />}
-                {t === 'yearly' && <Trophy size={12} />}
-                <span>{t}</span>
+                {t === 'all' && <LayoutGrid size={14} />}
+                {t === 'weekly' && <BarChart3 size={14} />}
+                {t === 'monthly' && <CalendarDays size={14} />}
+                {t === 'yearly' && <Trophy size={14} />}
+                <span className="capitalize">{t}</span>
               </button>
             ))}
           </div>
 
           <button 
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 bg-primary text-black px-4 py-2 rounded-none text-[10px] font-black uppercase tracking-widest shadow-sm hover:opacity-90 transition-all active:scale-95"
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-none text-sm font-semibold shadow-sm hover:bg-primary/90 transition-all active:scale-95"
           >
-            <Plus size={14} /> Establish Goal
+            <Plus size={18} /> Establish Goal
           </button>
         </div>
       </header>
