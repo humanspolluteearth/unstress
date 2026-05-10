@@ -18,8 +18,9 @@ export const Blackboard: React.FC = () => {
   const [color, setColor] = useState(COLORS[0].value);
   const [strokeWidth, setStrokeWidth] = useState(3);
   
-  // Track last coordinates for quadratic curve smoothing
+  // Ref for tracking points to ensure continuous smooth strokes
   const lastPoint = useRef<{ x: number, y: number } | null>(null);
+  const midPoint = useRef<{ x: number, y: number } | null>(null);
   
   // Undo/Redo State
   const historyRef = useRef<ImageData[]>([]);
@@ -40,7 +41,7 @@ export const Blackboard: React.FC = () => {
     const container = containerRef.current;
     if (!canvas || !container) return;
 
-    const dpr = window.devicePixelRatio || 2; // Default to 2 for extra sharpness if DPR is low
+    const dpr = window.devicePixelRatio || 2;
     const rect = container.getBoundingClientRect();
 
     canvas.width = rect.width * dpr;
@@ -54,14 +55,11 @@ export const Blackboard: React.FC = () => {
       context.lineCap = 'round';
       context.lineJoin = 'round';
       
-      // Theme background
       const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--background').trim() || '#0a0a0a';
       context.fillStyle = bgColor;
       context.fillRect(0, 0, rect.width, rect.height);
       
       contextRef.current = context;
-      
-      // Clear history on resize to prevent aspect ratio / size mismatch bugs
       historyRef.current = [];
       redoStackRef.current = [];
       saveState();
@@ -98,33 +96,45 @@ export const Blackboard: React.FC = () => {
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
     const { x, y } = getCoordinates(e);
     lastPoint.current = { x, y };
+    midPoint.current = { x, y };
+    
+    contextRef.current?.beginPath();
+    contextRef.current?.moveTo(x, y);
     setIsDrawing(true);
   };
 
   const draw = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isDrawing || !lastPoint.current || !contextRef.current) return;
+    if (!isDrawing || !lastPoint.current || !midPoint.current || !contextRef.current) return;
     
     const { x, y } = getCoordinates(e);
     const ctx = contextRef.current;
 
-    // Use Quadratic Curves for superior smoothness
+    // Calculate new midpoint
+    const newMidX = (lastPoint.current.x + x) / 2;
+    const newMidY = (lastPoint.current.y + y) / 2;
+
+    // Draw from the last midpoint to the new midpoint, using the last point as a control point
     ctx.beginPath();
-    ctx.moveTo(lastPoint.current.x, lastPoint.current.y);
-    
-    // Midpoint calculation for the quadratic curve
-    const midX = (lastPoint.current.x + x) / 2;
-    const midY = (lastPoint.current.y + y) / 2;
-    
-    ctx.quadraticCurveTo(lastPoint.current.x, lastPoint.current.y, midX, midY);
+    ctx.moveTo(midPoint.current.x, midPoint.current.y);
+    ctx.quadraticCurveTo(lastPoint.current.x, lastPoint.current.y, newMidX, newMidY);
     ctx.stroke();
-    
+
+    // Store points for next segment
     lastPoint.current = { x, y };
+    midPoint.current = { x: newMidX, y: newMidY };
   };
 
   const stopDrawing = () => {
-    if (isDrawing) {
+    if (isDrawing && contextRef.current) {
+      // Finish the line to the final point
+      if (lastPoint.current) {
+        contextRef.current.lineTo(lastPoint.current.x, lastPoint.current.y);
+        contextRef.current.stroke();
+      }
+      
       setIsDrawing(false);
       lastPoint.current = null;
+      midPoint.current = null;
       saveState();
     }
   };
@@ -182,7 +192,7 @@ export const Blackboard: React.FC = () => {
           ))}
         </div>
 
-        {/* Stroke Width Slider (Minimalist) */}
+        {/* Stroke Width Slider */}
         <div className="flex items-center">
            <input 
             type="range" 
