@@ -188,46 +188,44 @@ export const ZenTimer: React.FC = () => {
       type="number" 
       value={value}
       onChange={(e) => onChange(parseInt(e.target.value) || 1)}
-      className="bg-transparent border-b-2 border-primary/20 focus:border-primary text-primary font-black px-1 min-w-[1ch] max-w-[3ch] w-fit outline-none transition-all text-center tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none inline-block"
-      style={{ width: `${Math.max(1, value.toString().length)}ch` }}
+      className="bg-transparent border-b border-primary/40 focus:border-primary text-primary font-black px-1 outline-none transition-all text-center tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none inline-block"
+      style={{ width: `${Math.max(1, value.toString().length + 0.5)}ch` }}
     />
   );
 
   return (
-    <div className="p-12 flex flex-col items-center justify-center min-h-full space-y-16 animate-in fade-in duration-500 overflow-hidden">
-      <div className="max-w-5xl text-center leading-relaxed">
-        <h1 className="text-5xl md:text-8xl font-black tracking-tighter uppercase leading-[1.1]">
+    <div className="p-12 flex flex-col items-center justify-center min-h-full space-y-12 animate-in fade-in duration-500 overflow-hidden">
+      <div className="max-w-4xl text-center leading-[1.4]">
+        <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-white/90 uppercase">
           Focus for <InlineInput value={focusTime} onChange={setFocusTime} /> minutes 
           <br className="hidden md:block" /> with <InlineInput value={breakTime} onChange={setBreakTime} /> minutes breaks 
           <br className="hidden md:block" /> for <InlineInput value={targetLoops} onChange={setTargetLoops} /> times.
+          {" "}
+          <button 
+            onClick={startFocus}
+            className="text-primary hover:text-primary/80 underline decoration-primary/30 underline-offset-8 transition-all active:scale-95 inline-block ml-2"
+          >
+            Start Now
+          </button>
         </h1>
       </div>
 
-      <div className="flex flex-col items-center gap-12 w-full">
+      <div className="flex flex-col items-center gap-4">
         <button 
-          onClick={startFocus}
-          className="px-24 py-8 border-2 border-primary text-3xl font-black uppercase tracking-[0.4em] hover:bg-primary hover:text-primary-foreground transition-all active:scale-95 shadow-[0_0_50px_rgba(var(--primary-rgb),0.15)] group"
+          onClick={fetchStats}
+          className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
         >
-          Start Now
+          <BarChart2 size={14} /> {showStats ? 'Hide Metrics' : 'System Stats'}
         </button>
 
-        <div className="flex flex-col items-center gap-4">
-          <button 
-            onClick={fetchStats}
-            className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
-          >
-            <BarChart2 size={14} /> {showStats ? 'Hide Metrics' : 'System Stats'}
-          </button>
-
-          {showStats && stats && (
-            <div className="bg-card border border-white/5 p-4 animate-in zoom-in-95 duration-200">
-              <span className="text-[9px] font-black uppercase text-muted-foreground block mb-1">Total Cumulative Focus</span>
-              <span className="text-3xl font-black tabular-nums tracking-tighter text-primary">
-                {stats.total_hours.toFixed(2)} <small className="text-xs uppercase ml-1">Hours</small>
-              </span>
-            </div>
-          )}
-        </div>
+        {showStats && stats && (
+          <div className="bg-card border border-white/5 p-4 animate-in zoom-in-95 duration-200">
+            <span className="text-[9px] font-black uppercase text-muted-foreground block mb-1">Total Cumulative Focus</span>
+            <span className="text-2xl font-black tabular-nums tracking-tighter text-primary">
+              {stats.total_hours.toFixed(2)} <small className="text-[10px] uppercase ml-1 opacity-50">Hours</small>
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
