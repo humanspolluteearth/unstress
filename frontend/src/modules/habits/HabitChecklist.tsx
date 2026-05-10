@@ -129,7 +129,7 @@ export const HabitChecklist: React.FC = () => {
         const points = calculatePoints(habit, today);
 
         return (
-          <div key={habit.id} className={clsx("group bg-card border p-4 transition-all duration-300 flex flex-col md:flex-row md:items-center gap-6", points > 0 ? "border-primary/40" : "hover:border-primary/20")}>
+          <div key={habit.id} className={clsx("group bg-card border p-4 transition-all duration-300 flex flex-col md:flex-row md:items-start gap-6", points > 0 ? "border-primary/40" : "hover:border-primary/20")}>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
@@ -179,7 +179,7 @@ export const HabitChecklist: React.FC = () => {
                 })}
               </div>
             </div>
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-start gap-3 shrink-0">
               <input 
                 type="number" 
                 value={logValues[habit.id] || ''} 
@@ -192,7 +192,7 @@ export const HabitChecklist: React.FC = () => {
                 placeholder={habit.unit === 'rep' ? 'Reps' : 'Mins'} 
                 className="w-24 bg-muted/50 border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-center appearance-none" 
               />
-              <button onClick={() => deleteHabit(habit.id)} className="p-2 text-muted-foreground/20 hover:text-destructive transition-colors"><Trash2 size={18} /></button>
+              <button onClick={() => deleteHabit(habit.id)} className="p-2 text-muted-foreground/20 hover:text-destructive transition-colors -mt-1"><Trash2 size={18} /></button>
             </div>
           </div>
         );
