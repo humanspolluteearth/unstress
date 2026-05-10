@@ -30,7 +30,6 @@ app.include_router(api_finance_router, prefix="/api/finance", tags=["finance"])
 
 # Legacy / Infrastructure Routes
 app.include_router(actions_router)
-app.include_router(finance_router)
 app.include_router(habits_router)
 app.include_router(schedules_router)
 
