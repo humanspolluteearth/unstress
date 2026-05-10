@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { Result } from '../../core/results';
+import { getBaseUrl } from '../../core/apiConfig';
 
 export interface Posting {
   id?: string;
@@ -43,8 +44,8 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   fetchTransactions: async () => {
     set({ isLoading: true, error: null });
     try {
-      const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/finance/transactions`);
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/finance/transactions`);
       const result: Result<Transaction[], string> = await response.json();
       
       if (result.success && result.data) {
@@ -62,8 +63,8 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
 
   fetchSummaries: async () => {
     try {
-      const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/finance/summaries`);
+      const baseUrl = getBaseUrl();
+      const response = await fetch(`${baseUrl}/finance/summaries`);
       const result: Result<{ weekly: SummaryItem[], yearly: SummaryItem[] }, string> = await response.json();
       
       if (result.success && result.data) {

@@ -15,19 +15,25 @@ const CSSBarChart: React.FC<{ data: { label: string; value: number }[], title: s
     <div className="bg-card border rounded-none p-6 space-y-4 shadow-sm">
       <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{title}</h3>
       <div className="flex items-end justify-between h-32 gap-2 pt-4">
-        {data.map((item, idx) => (
-          <div key={idx} className="flex-1 flex flex-col items-center gap-2 group relative">
-            <div 
-              className={clsx("w-full rounded-none transition-all duration-500", color)}
-              style={{ height: `${(item.value / maxValue) * 100}%` }}
-            >
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-foreground text-background text-[10px] px-1.5 py-0.5 rounded-none font-bold">
-                ${item.value.toFixed(0)}
+        {data.map((item, idx) => {
+          const heightPercent = (item.value / maxValue) * 100;
+          return (
+            <div key={idx} className="flex-1 flex flex-col items-center gap-2 group relative">
+              <div 
+                className={clsx(
+                  "w-full rounded-none transition-all duration-500", 
+                  item.value > 0 ? color : "bg-muted/20"
+                )}
+                style={{ height: `${Math.max(heightPercent, item.value > 0 ? 4 : 2)}%` }}
+              >
+                <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-foreground text-background text-[10px] px-1.5 py-0.5 rounded-none font-bold whitespace-nowrap z-10">
+                  ${item.value.toFixed(0)}
+                </div>
               </div>
+              <span className="text-[10px] font-mono text-muted-foreground uppercase">{item.label}</span>
             </div>
-            <span className="text-[10px] font-mono text-muted-foreground uppercase">{item.label}</span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

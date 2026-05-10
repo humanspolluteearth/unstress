@@ -135,12 +135,16 @@ class FinanceService:
             # Yearly (last 12 months)
             yearly = []
             for i in range(11, -1, -1):
-                # Approximation of months
-                month_date = now - timedelta(days=i*30)
+                # Calculate the specific month and year
+                month = (now.month - i - 1) % 12 + 1
+                year = now.year + (now.month - i - 1) // 12
+                
+                month_date = datetime(year, month, 1, tzinfo=timezone.utc)
                 month_str = month_date.strftime("%b")
+                
                 total = 0
                 for tx in FinanceService._transactions:
-                    if tx.date.month == month_date.month and tx.date.year == month_date.year:
+                    if tx.date.month == month and tx.date.year == year:
                         total += sum(p.amount for p in tx.postings if p.account_id == "acc-expenses" and p.amount > 0)
                 yearly.append({"label": month_str, "value": total / 100})
 
