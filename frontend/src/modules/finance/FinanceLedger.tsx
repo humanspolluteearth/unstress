@@ -12,16 +12,16 @@ const CSSBarChart: React.FC<{ data: { label: string; value: number }[], title: s
   const maxValue = Math.max(...data.map(d => d.value), 1);
   
   return (
-    <div className="bg-card border rounded-2xl p-6 space-y-4 shadow-sm">
+    <div className="bg-card border rounded-none p-6 space-y-4 shadow-sm">
       <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{title}</h3>
       <div className="flex items-end justify-between h-32 gap-2 pt-4">
         {data.map((item, idx) => (
           <div key={idx} className="flex-1 flex flex-col items-center gap-2 group relative">
             <div 
-              className={clsx("w-full rounded-t-sm transition-all duration-500", color)}
+              className={clsx("w-full rounded-none transition-all duration-500", color)}
               style={{ height: `${(item.value / maxValue) * 100}%` }}
             >
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-foreground text-background text-[10px] px-1.5 py-0.5 rounded font-bold">
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-foreground text-background text-[10px] px-1.5 py-0.5 rounded-none font-bold">
                 ${item.value.toFixed(0)}
               </div>
             </div>
@@ -63,17 +63,17 @@ export const FinanceLedger: React.FC = () => {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div>
-          <h2 className="text-4xl font-black tracking-tighter">Finance</h2>
-          <p className="text-muted-foreground">Strategic capital allocation and automated ledgering.</p>
+          <h2 className="text-2xl font-bold tracking-tight">Finance</h2>
+          <p className="text-muted-foreground text-sm">Strategic capital allocation and automated ledgering.</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex items-center gap-3">
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-black rounded-xl shadow-lg hover:shadow-primary/20 transition-all active:scale-95"
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-none text-sm font-semibold shadow-sm hover:bg-primary/90 transition-all active:scale-95"
           >
-            <Plus size={20} /> LOG TRANSACTION
+            <Plus size={18} /> Log Transaction
           </button>
         </div>
       </header>
@@ -90,12 +90,12 @@ export const FinanceLedger: React.FC = () => {
           <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
             <Wallet size={20} className="text-primary" /> Double-Entry Ledger
           </h3>
-          <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest bg-muted px-2 py-1 rounded">
+          <div className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest bg-muted px-2 py-1 rounded-none border border-white/5">
             Assets = Liabilities + Equity
           </div>
         </div>
 
-        <div className="rounded-2xl border bg-card overflow-hidden shadow-sm">
+        <div className="rounded-none border bg-card overflow-hidden shadow-sm">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-muted/30 border-b">
@@ -121,7 +121,7 @@ export const FinanceLedger: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <span className="font-bold text-sm">{tx.description}</span>
                             {tx.is_recurring && (
-                              <span className="text-[8px] bg-blue-500/10 text-blue-500 font-black px-1.5 py-0.5 rounded uppercase tracking-tighter">Recurring</span>
+                              <span className="text-[8px] bg-blue-500/10 text-blue-500 font-black px-1.5 py-0.5 rounded-none border border-blue-500/20 uppercase tracking-tighter">Recurring</span>
                             )}
                           </div>
                           <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
@@ -151,13 +151,13 @@ export const FinanceLedger: React.FC = () => {
                         <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
                             onClick={() => handleEdit(tx)}
-                            className="p-2 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground"
+                            className="p-2 hover:bg-muted rounded-none text-muted-foreground hover:text-foreground transition-all"
                           >
                             <Pencil size={14} />
                           </button>
                           <button 
                             onClick={() => handleDelete(tx.id)}
-                            className="p-2 hover:bg-destructive/10 rounded-lg text-muted-foreground hover:text-destructive"
+                            className="p-2 hover:bg-destructive/10 rounded-none text-muted-foreground hover:text-destructive transition-all"
                           >
                             <Trash2 size={14} />
                           </button>

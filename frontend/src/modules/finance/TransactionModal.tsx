@@ -105,21 +105,21 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onCl
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-background border rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+      <div className="bg-background border rounded-none shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
         <div className="p-4 border-b flex justify-between items-center">
-          <h3 className="text-xl font-bold tracking-tight">
+          <h3 className="text-lg font-bold tracking-tight uppercase">
             {transaction ? 'Update Entry' : (type === 'spending' ? 'Log Spending' : 'Log Income')}
           </h3>
-          <button onClick={onClose} className="p-1 hover:bg-muted rounded-full">
+          <button onClick={onClose} className="p-1 hover:bg-muted rounded-none">
             <X size={20} />
           </button>
         </div>
 
-        <div className="flex p-1 bg-muted mx-4 mt-4 rounded-xl">
+        <div className="flex p-1 bg-muted mx-4 mt-4 rounded-none border border-white/5">
           <button
             onClick={() => setType('spending')}
             className={clsx(
-              "flex-1 py-2 text-sm font-bold rounded-lg transition-all",
+              "flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-none transition-all",
               type === 'spending' ? "bg-background text-red-500 shadow-sm" : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -128,7 +128,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onCl
           <button
             onClick={() => setType('income')}
             className={clsx(
-              "flex-1 py-2 text-sm font-bold rounded-lg transition-all",
+              "flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-none transition-all",
               type === 'income' ? "bg-background text-green-500 shadow-sm" : "text-muted-foreground hover:text-foreground"
             )}
           >
@@ -138,7 +138,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onCl
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-1">
           {error && (
-            <div className="p-3 bg-destructive/10 text-destructive text-sm rounded border border-destructive/20 animate-in shake-1">
+            <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-none border border-destructive/20 animate-in shake-1">
               {error}
             </div>
           )}
@@ -153,7 +153,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onCl
                   step="0.01"
                   required
                   autoFocus
-                  className="w-full bg-muted/30 border-none rounded-2xl pl-10 pr-4 py-4 text-3xl font-black focus:ring-2 focus:ring-primary outline-none"
+                  className="w-full bg-muted/30 border-none rounded-none pl-10 pr-4 py-4 text-3xl font-bold focus:ring-2 focus:ring-primary outline-none"
                   value={amount || ''}
                   onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
                   placeholder="0.00"
@@ -166,7 +166,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onCl
               <input
                 type="text"
                 required
-                className="w-full bg-muted/30 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none"
+                className="w-full bg-muted/30 border-none rounded-none px-4 py-3 text-sm focus:ring-2 focus:ring-primary outline-none"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="What was this for?"
@@ -179,7 +179,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onCl
               </label>
               <div className="flex flex-wrap gap-2 mb-2">
                 {tags.map(tag => (
-                  <span key={tag} className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                  <span key={tag} className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-none border border-primary/20 flex items-center gap-1">
                     {tag} <X size={10} className="cursor-pointer" onClick={() => removeTag(tag)} />
                   </span>
                 ))}
@@ -189,7 +189,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onCl
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleAddTag}
-                className="w-full bg-muted/30 border-none rounded-xl px-4 py-2 text-xs focus:ring-2 focus:ring-primary outline-none"
+                className="w-full bg-muted/30 border-none rounded-none px-4 py-2 text-xs focus:ring-2 focus:ring-primary outline-none"
                 placeholder="Add tags..."
               />
             </div>
@@ -199,28 +199,28 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onCl
                 <FileText size={10} /> Notes
               </label>
               <textarea
-                className="w-full bg-muted/30 border-none rounded-xl px-4 py-3 text-xs focus:ring-2 focus:ring-primary outline-none resize-none h-20"
+                className="w-full bg-muted/30 border-none rounded-none px-4 py-3 text-xs focus:ring-2 focus:ring-primary outline-none resize-none h-20"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Optional details..."
               />
             </div>
 
-            <div className="flex items-center justify-between p-3 bg-muted/20 rounded-xl">
+            <div className="flex items-center justify-between p-3 bg-muted/20 rounded-none border border-white/5">
               <div className="flex items-center gap-2">
                 <Repeat size={16} className="text-muted-foreground" />
-                <span className="text-xs font-medium">Recurring Fee</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">Recurring Fee</span>
               </div>
               <button
                 type="button"
                 onClick={() => setIsRecurring(!isRecurring)}
                 className={clsx(
-                  "relative inline-flex h-5 w-10 items-center rounded-full transition-colors",
-                  isRecurring ? "bg-primary" : "bg-muted"
+                  "relative inline-flex h-5 w-10 items-center rounded-none border transition-colors",
+                  isRecurring ? "bg-primary border-primary" : "bg-muted border-white/10"
                 )}
               >
                 <span className={clsx(
-                  "inline-block h-3 w-3 transform rounded-full bg-white transition-transform",
+                  "inline-block h-3 w-3 transform rounded-none bg-white transition-transform",
                   isRecurring ? "translate-x-6" : "translate-x-1"
                 )} />
               </button>
@@ -232,14 +232,14 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onCl
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-3 text-sm font-bold text-muted-foreground hover:bg-muted rounded-xl transition-all"
+            className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:bg-muted rounded-none border border-transparent hover:border-white/5 transition-all"
           >
             CANCEL
           </button>
           <button
             onClick={handleSubmit}
             className={clsx(
-              "flex-[2] py-3 text-sm font-black rounded-xl shadow-lg transition-all active:scale-95",
+              "flex-[2] py-3 text-[10px] font-black uppercase tracking-widest rounded-none shadow-lg transition-all active:scale-95",
               type === 'spending' ? "bg-red-500 text-white" : "bg-green-500 text-white"
             )}
           >
