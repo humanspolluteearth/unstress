@@ -117,7 +117,8 @@ async def get_transactions(
 
 @router.post("/transactions", response_model=Transaction)
 @router.post("/transactions/", response_model=Transaction)
-async def create_transaction(tx_data: TransactionBase):
+async def create_transaction(tx_data: TransactionBase, request: Request):
+    print(f"DEBUG: Finance Payload: {await request.json()}")
     new_tx = Transaction(id=uuid.uuid4(), **tx_data.model_dump())
     transactions_db.append(new_tx)
     return new_tx
