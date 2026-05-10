@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tag, Link, CheckSquare, Target } from 'lucide-react';
+import { Tag, Link, CheckSquare, Target, Calendar } from 'lucide-react';
 import { Goal } from '../../services/GoalService';
 import { clsx } from 'clsx';
 
@@ -11,7 +11,7 @@ interface GoalCardProps {
 
 export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect }) => {
   const completedTasks = goal.tasks.filter(t => t.completed).length;
-  const progress = goal.tasks.length > 0 ? (completedTasks / goal.tasks.length) * 100 : 0;
+  const progress = goal.progress || 0;
 
   return (
     <div 
@@ -28,12 +28,22 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect }
           <Target size={14} className={isSelected ? "text-primary" : "text-white/40"} />
           <h3 className="text-sm font-bold text-white tracking-tight">{goal.title}</h3>
         </div>
-        <span className={clsx(
-          "text-[9px] font-black px-1.5 py-0.5 uppercase tracking-widest",
-          goal.priority === 'critical' ? "bg-red-500 text-black" : "bg-white/5 text-white/40"
-        )}>
-          {goal.priority}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={clsx(
+            "text-[8px] font-black px-1.5 py-0.5 uppercase tracking-widest border border-white/5 bg-white/5 text-white/40",
+            goal.time_frame === 'weekly' && "border-blue-500/20 text-blue-400",
+            goal.time_frame === 'monthly' && "border-purple-500/20 text-purple-400",
+            goal.time_frame === 'yearly' && "border-yellow-500/20 text-yellow-400"
+          )}>
+            {goal.time_frame}
+          </span>
+          <span className={clsx(
+            "text-[8px] font-black px-1.5 py-0.5 uppercase tracking-widest",
+            goal.priority === 'critical' ? "bg-red-500 text-black" : "bg-white/5 text-white/40"
+          )}>
+            {goal.priority}
+          </span>
+        </div>
       </div>
       
       <p className="text-xs text-white/50 mb-4 line-clamp-1 italic font-serif">

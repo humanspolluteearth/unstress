@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
-import { Plus, X, Edit3, Eye, LayoutGrid, BarChart3, CalendarDays, Trophy } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import { Plus, LayoutGrid, BarChart3, CalendarDays, Trophy } from 'lucide-react';
 import { GoalCard } from './GoalCard';
 import { GoalCreateModal } from './GoalCreateModal';
 import { GoalDetailPanel } from '../../components/GoalDetailPanel';
@@ -11,7 +10,6 @@ export const GoalDashboard: React.FC = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [filter, setFilter] = useState<'all' | 'weekly' | 'monthly' | 'yearly'>('all');
-  const [isEditing, setIsEditing] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,32 +33,55 @@ export const GoalDashboard: React.FC = () => {
 
   const handleSelectGoal = (goal: Goal) => {
     setSelectedGoal(goal);
-    setIsEditing(false);
   };
+
+  const filteredGoals = filter === 'all' 
+    ? goals 
+    : goals.filter(g => g.time_frame === filter);
 
   return (
     <div className="p-6 space-y-6 flex flex-col flex-1 min-h-0 bg-background/50 overflow-auto relative">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Goals</h2>
-          <p className="text-muted-foreground text-sm">Define your north star. Navigate with precision.</p>
+          <h2 className="text-2xl font-black tracking-tighter uppercase italic">Goals</h2>
+          <p className="text-white/40 text-[10px] font-bold uppercase tracking-widest">Define your north star. Navigate with precision.</p>
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Timeframe Filter Toggle */}
+          <div className="flex items-center bg-white/5 p-1 border border-white/10">
+            {(['all', 'weekly', 'monthly', 'yearly'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setFilter(t)}
+                className={clsx(
+                  "flex items-center gap-1.5 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
+                  filter === t ? "bg-white text-black" : "text-white/40 hover:text-white"
+                )}
+              >
+                {t === 'all' && <LayoutGrid size={12} />}
+                {t === 'weekly' && <BarChart3 size={12} />}
+                {t === 'monthly' && <CalendarDays size={12} />}
+                {t === 'yearly' && <Trophy size={12} />}
+                <span>{t}</span>
+              </button>
+            ))}
+          </div>
+
           <button 
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-none text-sm font-semibold shadow-sm hover:bg-primary/90 transition-all active:scale-95"
+            className="flex items-center gap-2 bg-primary text-black px-4 py-2 rounded-none text-[10px] font-black uppercase tracking-widest shadow-sm hover:opacity-90 transition-all active:scale-95"
           >
-            <Plus size={18} /> Establish Goal
+            <Plus size={14} /> Establish Goal
           </button>
         </div>
       </header>
 
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden gap-6">
         {/* List Panel */}
         <div className={clsx("flex flex-col transition-all duration-300 ease-in-out", selectedGoal ? "flex-1" : "w-full")}>
-          <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-            {goals.map((goal, index) => (
+          <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+            {filteredGoals.map((goal, index) => (
               <GoalCard 
                 key={goal.id || index}
                 goal={goal}
@@ -68,10 +89,10 @@ export const GoalDashboard: React.FC = () => {
                 onSelect={handleSelectGoal}
               />
             ))}
-            {!isLoading && goals.length === 0 && (
+            {!isLoading && filteredGoals.length === 0 && (
               <div className="h-64 border border-dashed border-white/10 flex flex-col items-center justify-center gap-4 text-center">
                 <Trophy size={48} className="text-white/5" />
-                <p className="text-white/20 text-xs font-black uppercase tracking-widest">No goals established yet</p>
+                <p className="text-white/20 text-xs font-black uppercase tracking-widest">No goals established in this tier</p>
                 <button 
                   onClick={() => setIsCreateModalOpen(true)}
                   className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all border border-white/10"
@@ -85,13 +106,14 @@ export const GoalDashboard: React.FC = () => {
 
         {/* Detail Panel Injection */}
         <div className={clsx(
-          "transition-all duration-300 ease-in-out flex flex-col", 
-          selectedGoal ? "w-2/3 opacity-100" : "w-0 opacity-0 overflow-hidden"
+          "transition-all duration-300 ease-in-out flex flex-col h-full", 
+          selectedGoal ? "w-2/3 opacity-100 border border-white/10" : "w-0 opacity-0 overflow-hidden"
         )}>
           {selectedGoal && (
             <GoalDetailPanel 
               goal={selectedGoal} 
               onClose={() => setSelectedGoal(null)} 
+              onUpdate={fetchGoals}
             />
           )}
         </div>
