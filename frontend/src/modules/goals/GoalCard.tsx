@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tag, CheckSquare, Target, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { Tag, CheckSquare, Target, ChevronDown, ChevronUp, User, Pencil } from 'lucide-react';
 import { Goal, GoalService } from '../../services/GoalService';
 import { clsx } from 'clsx';
 
@@ -8,9 +8,10 @@ interface GoalCardProps {
   isSelected: boolean;
   onSelect: (goal: Goal) => void;
   onUpdate: () => void;
+  onEdit: (goal: Goal) => void;
 }
 
-export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, onUpdate }) => {
+export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, onUpdate, onEdit }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const progress = goal.progress || 0;
 
@@ -68,6 +69,18 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
             <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">{goal.category}</span>
           </div>
           <div className="flex items-center gap-2">
+             {/* Edit Button */}
+             <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(goal);
+                }}
+                className="p-1 hover:bg-white/5 text-white/20 hover:text-white transition-colors"
+                title="Edit Goal"
+             >
+               <Pencil size={12} />
+             </button>
+
              {/* Assignee Initials Badge */}
              <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white/5 border border-white/10 text-[8px] font-black text-white/60 uppercase">
                {goal.assignee_initials}

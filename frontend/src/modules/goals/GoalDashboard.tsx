@@ -11,6 +11,7 @@ export const GoalDashboard: React.FC = () => {
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [filter, setFilter] = useState<'all' | 'weekly' | 'monthly' | 'yearly'>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchGoals = async () => {
@@ -33,6 +34,16 @@ export const GoalDashboard: React.FC = () => {
 
   const handleSelectGoal = (goal: Goal) => {
     setSelectedGoal(goal);
+  };
+
+  const handleEditGoal = (goal: Goal) => {
+    setEditingGoal(goal);
+    setIsCreateModalOpen(true);
+  };
+
+  const closeCreateModal = () => {
+    setIsCreateModalOpen(false);
+    setEditingGoal(null);
   };
 
   const filteredGoals = filter === 'all' 
@@ -91,6 +102,7 @@ export const GoalDashboard: React.FC = () => {
                   isSelected={selectedGoal?.id === goal.id}
                   onSelect={handleSelectGoal}
                   onUpdate={fetchGoals}
+                  onEdit={handleEditGoal}
                 />
               ))}
             </div>
@@ -126,8 +138,9 @@ export const GoalDashboard: React.FC = () => {
 
       <GoalCreateModal 
         isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)}
+        onClose={closeCreateModal}
         onSuccess={fetchGoals}
+        goal={editingGoal}
       />
     </div>
   );

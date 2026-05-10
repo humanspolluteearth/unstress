@@ -7,9 +7,10 @@ interface GoalCreateModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  goal?: Goal | null;
 }
 
-export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClose, onSuccess }) => {
+export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClose, onSuccess, goal }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<'critical' | 'high' | 'medium' | 'low'>('medium');
@@ -23,6 +24,32 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (goal) {
+      setTitle(goal.title);
+      setDescription(goal.description);
+      setPriority(goal.priority);
+      setTimeFrame(goal.time_frame);
+      setCategory(goal.category);
+      setLabelColor(goal.label_color);
+      setAssigneeInitials(goal.assignee_initials);
+      setTags(goal.tags.join(', '));
+      setLinks(goal.links.length > 0 ? goal.links : ['']);
+      setReferences(goal.references.length > 0 ? goal.references : ['']);
+    } else {
+      setTitle('');
+      setDescription('');
+      setPriority('medium');
+      setTimeFrame('weekly');
+      setCategory('General');
+      setLabelColor('#ffffff');
+      setAssigneeInitials('UN');
+      setTags('');
+      setLinks(['']);
+      setReferences(['']);
+    }
+  }, [goal, isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -55,26 +82,21 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
         tags: tags.split(',').map(t => t.trim()).filter(t => t !== ""),
         links: links.filter(l => l.trim() !== "").map(l => l.trim()),
         references: references.filter(r => r.trim() !== "").map(r => r.trim()),
-        tasks: []
+        tasks: goal ? goal.tasks : []
       };
 
-      const result = await GoalService.createGoal(payload as any);
+      let result;
+      if (goal) {
+        result = await GoalService.updateGoal(goal.id, payload as any);
+      } else {
+        result = await GoalService.createGoal(payload as any);
+      }
+
       if (result.success) {
         onSuccess();
         onClose();
-        // Reset
-        setTitle('');
-        setDescription('');
-        setPriority('medium');
-        setTimeFrame('weekly');
-        setCategory('General');
-        setLabelColor('#ffffff');
-        setAssigneeInitials('UN');
-        setTags('');
-        setLinks(['']);
-        setReferences(['']);
       } else {
-        setError(result.error || 'Establishment failure');
+        setError(result.error || 'Operation failure');
       }
     } catch (err) {
       setError('System network failure');
@@ -89,7 +111,7 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
         <header className="p-4 border-b border-white/5 flex items-center justify-between">
           <h3 className="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-2 text-white">
              <Trophy size={14} className="text-primary" />
-             Establish New Goal
+             {goal ? 'Modify Objective' : 'Establish New Goal'}
           </h3>
           <button onClick={onClose} className="text-white/20 hover:text-white transition-colors">
             <X size={18} />
