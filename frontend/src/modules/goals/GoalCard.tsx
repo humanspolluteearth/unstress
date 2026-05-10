@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tag, CheckSquare, Target, ChevronDown, ChevronUp, User, Pencil, Calendar } from 'lucide-react';
+import { Tag, CheckSquare, ChevronDown, ChevronUp, User, Pencil, Calendar } from 'lucide-react';
 import { Goal, GoalService } from '../../services/GoalService';
 import { clsx } from 'clsx';
 
@@ -66,9 +66,6 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
         <div className="flex justify-between items-start mb-3">
           <div className="flex flex-col gap-0.5">
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80">{goal.category}</span>
-            <div className="flex items-center gap-2">
-              <Target size={12} className={isSelected ? "text-primary" : "text-white/20"} />
-            </div>
           </div>
           <div className="flex items-center gap-2">
              {/* Edit Button */}
