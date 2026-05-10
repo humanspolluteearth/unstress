@@ -85,6 +85,12 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
           {goal.title}
         </h3>
         
+        <p className="text-xs text-muted-foreground mb-4 italic font-serif leading-relaxed line-clamp-2 min-h-[2.5rem]">
+          {goal.description 
+            ? (goal.description.length > 100 ? `${goal.description.substring(0, 100)}...` : goal.description)
+            : "No mission brief provided."}
+        </p>
+        
         <div className="flex flex-wrap gap-x-3 gap-y-1 mb-4">
           {goal.tags.map(tag => (
             <span key={tag} className="text-[10px] font-medium text-white/30 lowercase tracking-tight">#{tag}</span>
