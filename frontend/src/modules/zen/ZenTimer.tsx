@@ -227,7 +227,7 @@ export const ZenTimer: React.FC = () => {
           <div className="bg-card border border-white/5 p-4 animate-in zoom-in-95 duration-200">
             <span className="text-[9px] font-black uppercase text-muted-foreground block mb-1">Total Cumulative Focus</span>
             <span className="text-2xl font-black tabular-nums tracking-tighter text-primary">
-              {stats.total_hours.toFixed(2)} <small className="text-[10px] uppercase ml-1 opacity-50">Hours</small>
+              {stats.total_hours?.toFixed(2) ?? '0.00'} <small className="text-[10px] uppercase ml-1 opacity-50">Hours</small>
             </span>
           </div>
         )}
