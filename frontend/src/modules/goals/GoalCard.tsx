@@ -84,7 +84,6 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
       >
         <div className="flex justify-between items-start mb-3">
           <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{goal.category}</span>
             {goal.deadline && !isNaN(new Date(goal.deadline).getTime()) && (
                <div className="flex items-center gap-1.5 text-[9px] font-bold text-muted-foreground uppercase tracking-tight">
                  <Calendar size={10} className="text-white/40" />
