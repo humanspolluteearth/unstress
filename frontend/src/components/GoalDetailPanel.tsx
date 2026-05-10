@@ -45,14 +45,6 @@ export const GoalDetailPanel: React.FC<GoalDetailPanelProps> = ({ goal, onClose,
       {/* Header */}
       <header className="p-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
         <div className="flex items-center gap-4">
-          <span className={clsx(
-            "text-[8px] font-black px-1.5 py-0.5 uppercase tracking-[0.2em] border",
-            goal.time_frame === 'weekly' && "border-blue-500/30 text-blue-400 bg-blue-500/5",
-            goal.time_frame === 'monthly' && "border-purple-500/30 text-purple-400 bg-purple-500/5",
-            goal.time_frame === 'yearly' && "border-yellow-500/30 text-yellow-400 bg-yellow-500/5"
-          )}>
-            {goal.time_frame}
-          </span>
           <h2 className="text-sm font-black uppercase tracking-tight text-white/90 truncate max-w-[200px]">{goal.title}</h2>
         </div>
         

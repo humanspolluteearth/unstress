@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tag, CheckSquare, Target, ChevronDown, ChevronUp, User, Pencil } from 'lucide-react';
+import { Tag, CheckSquare, Target, ChevronDown, ChevronUp, User, Pencil, Calendar } from 'lucide-react';
 import { Goal, GoalService } from '../../services/GoalService';
 import { clsx } from 'clsx';
 
@@ -68,7 +68,6 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80">{goal.category}</span>
             <div className="flex items-center gap-2">
               <Target size={12} className={isSelected ? "text-primary" : "text-white/20"} />
-              <span className="text-[8px] font-bold uppercase tracking-widest text-white/30">{goal.time_frame}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -125,6 +124,13 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
                <CheckSquare size={10} />
                <span>{goal.completed_tasks}/{goal.total_tasks}</span>
              </div>
+
+             {goal.deadline && (
+               <div className="flex items-center gap-1.5 lowercase tracking-normal font-medium text-white/40">
+                 <Calendar size={10} />
+                 {new Date(goal.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+               </div>
+             )}
           </div>
           
           <button 

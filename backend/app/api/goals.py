@@ -11,6 +11,7 @@ class GoalModel(BaseModel):
     priority: str  # 'critical', 'high', 'medium', 'low'
     category: str
     time_frame: str # 'weekly', 'monthly', 'yearly'
+    deadline: Optional[str] = None # ISO date string
     label_color: str = "#ffffff" # Hex string for UI personalization
     assignee_initials: str = "--" # Visual marker for delegation
     tags: List[str] = []

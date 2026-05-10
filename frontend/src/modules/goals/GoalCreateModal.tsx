@@ -16,6 +16,7 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
   const [markdownContent, setMarkdownContent] = useState('');
   const [priority, setPriority] = useState<'critical' | 'high' | 'medium' | 'low'>('medium');
   const [timeFrame, setTimeFrame] = useState<'weekly' | 'monthly' | 'yearly'>('weekly');
+  const [deadline, setDeadline] = useState<string>('');
   const [category, setCategory] = useState('General');
   const [labelColor, setLabelColor] = useState('#ffffff');
   const [assigneeInitials, setAssigneeInitials] = useState('UN');
@@ -33,6 +34,7 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
       setMarkdownContent(goal.markdown_content || '');
       setPriority(goal.priority);
       setTimeFrame(goal.time_frame);
+      setDeadline(goal.deadline || '');
       setCategory(goal.category);
       setLabelColor(goal.label_color);
       setAssigneeInitials(goal.assignee_initials);
@@ -45,6 +47,7 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
       setMarkdownContent('');
       setPriority('medium');
       setTimeFrame('weekly');
+      setDeadline('');
       setCategory('General');
       setLabelColor('#ffffff');
       setAssigneeInitials('UN');
@@ -80,6 +83,7 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
         markdown_content: markdownContent,
         priority,
         time_frame: timeFrame,
+        deadline: deadline || null,
         category,
         label_color: labelColor,
         assignee_initials: assigneeInitials,
@@ -232,14 +236,26 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Tags</label>
+              <label className="text-[10px] font-black uppercase text-white/30 tracking-widest flex items-center gap-2">
+                <Calendar size={10} /> Deadline
+              </label>
               <input
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
+                type="date"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
                 className="w-full bg-white/5 border border-white/5 p-2.5 text-sm text-white focus:border-primary outline-none"
-                placeholder="focus, health, arch..."
               />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Tags (comma separated)</label>
+            <input
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              className="w-full bg-white/5 border border-white/5 p-2.5 text-sm text-white focus:border-primary outline-none"
+              placeholder="focus, health, arch..."
+            />
           </div>
         </form>
 

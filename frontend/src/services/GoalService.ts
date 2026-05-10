@@ -8,6 +8,7 @@ export interface Goal {
   priority: 'critical' | 'high' | 'medium' | 'low';
   category: string;
   time_frame: 'weekly' | 'monthly' | 'yearly';
+  deadline: string | null;
   label_color: string;
   assignee_initials: string;
   progress: number;
