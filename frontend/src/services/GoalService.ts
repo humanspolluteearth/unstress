@@ -7,7 +7,11 @@ export interface Goal {
   priority: 'critical' | 'high' | 'medium' | 'low';
   category: string;
   time_frame: 'weekly' | 'monthly' | 'yearly';
+  label_color: string;
+  assignee_initials: string;
   progress: number;
+  total_tasks: number;
+  completed_tasks: number;
   tags: string[];
   links: string[];
   references: string[];
@@ -17,7 +21,7 @@ export interface Goal {
 const API_BASE = "http://localhost:8000/api";
 
 export class GoalService {
-  static async createGoal(data: Omit<Goal, 'id' | 'progress'>): Promise<Result<any>> {
+  static async createGoal(data: Omit<Goal, 'id' | 'progress' | 'total_tasks' | 'completed_tasks'>): Promise<Result<any>> {
     try {
       const response = await fetch(`${API_BASE}/goals`, {
         method: "POST",

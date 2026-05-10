@@ -79,15 +79,18 @@ export const GoalDashboard: React.FC = () => {
       <div className="flex flex-1 min-h-0 overflow-hidden gap-6">
         {/* List Panel */}
         <div className={clsx("flex flex-col transition-all duration-300 ease-in-out", selectedGoal ? "flex-1" : "w-full")}>
-          <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-            {filteredGoals.map((goal, index) => (
-              <GoalCard 
-                key={goal.id || index}
-                goal={goal}
-                isSelected={selectedGoal?.id === goal.id}
-                onSelect={handleSelectGoal}
-              />
-            ))}
+          <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredGoals.map((goal, index) => (
+                <GoalCard 
+                  key={goal.id || index}
+                  goal={goal}
+                  isSelected={selectedGoal?.id === goal.id}
+                  onSelect={handleSelectGoal}
+                  onUpdate={fetchGoals}
+                />
+              ))}
+            </div>
             {!isLoading && filteredGoals.length === 0 && (
               <div className="h-64 border border-dashed border-white/10 flex flex-col items-center justify-center gap-4 text-center">
                 <Trophy size={48} className="text-white/5" />

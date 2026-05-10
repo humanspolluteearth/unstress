@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tag, CheckSquare, Target, ChevronDown, ChevronUp } from 'lucide-react';
+import { Tag, CheckSquare, Target, ChevronDown, ChevronUp, User } from 'lucide-react';
 import { Goal, GoalService } from '../../services/GoalService';
 import { clsx } from 'clsx';
 
@@ -12,7 +12,6 @@ interface GoalCardProps {
 
 export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, onUpdate }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const completedTasks = goal.tasks.filter(t => t.completed).length;
   const progress = goal.progress || 0;
 
   const handleToggleTask = async (e: React.MouseEvent, taskId: string) => {
@@ -21,7 +20,6 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
       t.id === taskId ? { ...t, completed: !t.completed } : t
     );
     
-    // We send the whole goal object as expected by the backend update_goal
     const result = await GoalService.updateGoal(goal.id, { ...goal, tasks: updatedTasks });
     if (result.success) {
       onUpdate();
@@ -53,22 +51,34 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
         "bg-[#0a0a0a]"
       )}
     >
+      {/* Label Color Stripe */}
+      <div 
+        className="absolute top-0 left-0 w-full h-1" 
+        style={{ backgroundColor: goal.label_color }} 
+      />
+
       {/* Clickable Header Area */}
       <div 
         onClick={() => onSelect(goal)}
-        className="p-4 cursor-pointer"
+        className="p-4 pt-5 cursor-pointer"
       >
         <div className="flex justify-between items-start mb-3">
           <div className="flex items-center gap-2">
             <Target size={14} className={isSelected ? "text-primary" : "text-white/20"} />
             <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">{goal.category}</span>
           </div>
-          <span className={clsx(
-            "text-[8px] font-black px-1.5 py-0.5 rounded-none border uppercase tracking-widest",
-            getPriorityColor()
-          )}>
-            {goal.priority}
-          </span>
+          <div className="flex items-center gap-2">
+             {/* Assignee Initials Badge */}
+             <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white/5 border border-white/10 text-[8px] font-black text-white/60 uppercase">
+               {goal.assignee_initials}
+             </div>
+             <span className={clsx(
+               "text-[8px] font-black px-1.5 py-0.5 rounded-none border uppercase tracking-widest",
+               getPriorityColor()
+             )}>
+               {goal.priority}
+             </span>
+          </div>
         </div>
 
         <h3 className="text-sm font-bold text-white tracking-tight mb-2 group-hover:text-primary transition-colors">
@@ -84,9 +94,12 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
 
         <div className="flex items-center justify-between">
           <div className="flex gap-4 text-[10px] font-bold uppercase tracking-widest text-white/20">
-             <div className="flex items-center gap-1.5">
-               <CheckSquare size={12} className={completedTasks > 0 ? "text-primary/60" : ""} />
-               <span>{completedTasks}/{goal.tasks.length}</span>
+             <div className={clsx(
+               "flex items-center gap-1 px-1.5 py-0.5 rounded-sm transition-colors",
+               goal.progress === 100 ? "bg-green-500/20 text-green-500" : "hover:bg-white/5"
+             )}>
+               <CheckSquare size={10} />
+               <span>{goal.completed_tasks}/{goal.total_tasks}</span>
              </div>
              <div className="flex items-center gap-1.5 lowercase tracking-normal font-medium text-white/40">
                {goal.time_frame}

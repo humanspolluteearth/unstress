@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trophy, AlertCircle, BarChart3, CalendarDays, Calendar } from 'lucide-react';
+import { X, Trophy, AlertCircle, BarChart3, CalendarDays, Calendar, Palette, User } from 'lucide-react';
 import { GoalService } from '../../services/GoalService';
 import { clsx } from 'clsx';
 
@@ -15,6 +15,8 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
   const [priority, setPriority] = useState<'critical' | 'high' | 'medium' | 'low'>('medium');
   const [timeFrame, setTimeFrame] = useState<'weekly' | 'monthly' | 'yearly'>('weekly');
   const [category, setCategory] = useState('General');
+  const [labelColor, setLabelColor] = useState('#ffffff');
+  const [assigneeInitials, setAssigneeInitials] = useState('UN');
   const [tags, setTags] = useState<string>('');
   const [links, setLinks] = useState<string[]>(['']);
   const [references, setReferences] = useState<string[]>(['']);
@@ -48,10 +50,12 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
         priority,
         time_frame: timeFrame,
         category,
+        label_color: labelColor,
+        assignee_initials: assigneeInitials,
         tags: tags.split(',').map(t => t.trim()).filter(t => t !== ""),
         links: links.filter(l => l.trim() !== "").map(l => l.trim()),
         references: references.filter(r => r.trim() !== "").map(r => r.trim()),
-        tasks: [] // Start with empty tasks, add in detail view
+        tasks: []
       };
 
       const result = await GoalService.createGoal(payload as any);
@@ -64,6 +68,8 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
         setPriority('medium');
         setTimeFrame('weekly');
         setCategory('General');
+        setLabelColor('#ffffff');
+        setAssigneeInitials('UN');
         setTags('');
         setLinks(['']);
         setReferences(['']);
@@ -145,6 +151,31 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase text-white/30 tracking-widest flex items-center gap-2">
+                <Palette size={10} /> Label Color
+              </label>
+              <input
+                type="color"
+                value={labelColor}
+                onChange={(e) => setLabelColor(e.target.value)}
+                className="w-full h-10 bg-white/5 border border-white/5 p-1 cursor-pointer"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase text-white/30 tracking-widest flex items-center gap-2">
+                <User size={10} /> Assignee Initials
+              </label>
+              <input
+                maxLength={2}
+                value={assigneeInitials}
+                onChange={(e) => setAssigneeInitials(e.target.value.toUpperCase())}
+                className="w-full bg-white/5 border border-white/5 p-2.5 text-sm text-white focus:border-primary outline-none text-center"
+              />
+            </div>
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Description (Markdown)</label>
             <textarea
@@ -165,7 +196,7 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Tags (comma separated)</label>
+              <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Tags</label>
               <input
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
