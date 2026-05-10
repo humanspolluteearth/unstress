@@ -90,8 +90,6 @@ export const HabitChecklist: React.FC = () => {
     return 0;
   };
 
-  const totalPointsToday = habits.reduce((acc, h) => acc + calculatePoints(h, today), 0);
-
   // Weekly Stats Calculation
   const getWeeklyData = () => {
     const data = [];
@@ -100,17 +98,17 @@ export const HabitChecklist: React.FC = () => {
       const d = new Date();
       d.setDate(now.getDate() - i);
       const dStr = d.toLocaleDateString('en-CA');
-      const points = habits.reduce((acc, h) => acc + calculatePoints(h, dStr), 0);
-      data.push({ date: dStr, points, label: d.toLocaleDateString(undefined, { weekday: 'short' }) });
+      const score = habits.reduce((acc, h) => acc + calculatePoints(h, dStr), 0);
+      data.push({ date: dStr, score, label: d.toLocaleDateString(undefined, { weekday: 'short' }) });
     }
     return data;
   };
 
   const weeklyData = getWeeklyData();
-  const totalWeeklyPoints = weeklyData.reduce((acc, d) => acc + d.points, 0);
+  const totalWeeklyScore = weeklyData.reduce((acc, d) => acc + d.score, 0);
   
   const weeklyStats = {
-    totalPoints: totalWeeklyPoints,
+    totalScore: totalWeeklyScore,
     impossibleCount: habits.reduce((acc, h) => {
       return acc + h.logs.filter(l => {
         const d = l.timestamp.split('T')[0];
@@ -122,37 +120,21 @@ export const HabitChecklist: React.FC = () => {
   };
 
   const renderDaily = () => (
-    <div className="grid grid-cols-1 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {filteredHabits.map((habit) => {
         const streak = calculateStreak(habit);
         const dailyTotal = habit.logs.filter(l => l.timestamp.startsWith(today)).reduce((acc, l) => acc + l.value, 0);
-        const points = calculatePoints(habit, today);
+        const active = calculatePoints(habit, today) > 0;
 
         return (
-          <div key={habit.id} className={clsx("group bg-card border p-4 transition-all duration-300 flex flex-col md:flex-row md:items-start gap-6", points > 0 ? "border-primary/40" : "hover:border-primary/20")}>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <h3 className="font-bold text-base leading-tight group-hover:text-primary transition-colors truncate">{habit.name}</h3>
-                  <span className="text-[10px] font-black bg-muted px-1.5 py-0.5 rounded-none uppercase tracking-widest text-muted-foreground">{streak}D Streak</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase block leading-none mb-1">Total</span>
-                    <EditableLogValue 
-                      habitId={habit.id} 
-                      initialValue={dailyTotal} 
-                      unit={habit.unit} 
-                    />
-                  </div>
-                  <div className="h-8 w-[1px] bg-border" />
-                  <div className="text-right">
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase block leading-none mb-1">Points</span>
-                    <span className="text-sm font-black text-primary">{points}</span>
-                  </div>
-                </div>
+          <div key={habit.id} className={clsx("group bg-card border p-5 transition-all duration-300 flex flex-col gap-5", active ? "border-primary/40" : "hover:border-primary/20 shadow-sm")}>
+            <div className="space-y-4">
+              <div className="flex items-start justify-between">
+                <h3 className="font-bold text-base leading-tight group-hover:text-primary transition-colors truncate pr-2">{habit.name}</h3>
+                <span className="text-[9px] font-black bg-muted px-1.5 py-0.5 rounded-none uppercase tracking-widest text-muted-foreground shrink-0">{streak}D Streak</span>
               </div>
-              <div className="grid grid-cols-4 gap-1 h-2">
+              
+              <div className="grid grid-cols-4 gap-1 h-1.5">
                 {[
                   { s: 0, e: habit.two_min_threshold, i: 0 },
                   { s: habit.two_min_threshold, e: habit.normal_threshold, i: 1 },
@@ -162,37 +144,41 @@ export const HabitChecklist: React.FC = () => {
                   const isAchieved = dailyTotal >= range.e;
                   const isFilling = dailyTotal > range.s && dailyTotal < range.e;
                   const fillWidth = isAchieved ? '100%' : isFilling ? `${((dailyTotal - range.s) / (range.e - range.s)) * 100}%` : '0%';
-                  
                   const opacity = isAchieved ? 1 : [0.4, 0.6, 0.8, 1][range.i];
                   
                   return (
                     <div key={range.i} className="relative bg-muted overflow-hidden h-full">
                       <div 
                         className="h-full transition-all duration-500 bg-primary" 
-                        style={{ 
-                          width: fillWidth,
-                          opacity: opacity
-                        }} 
+                        style={{ width: fillWidth, opacity: opacity }} 
                       />
                     </div>
                   );
                 })}
               </div>
-            </div>
-            <div className="flex items-start gap-3 shrink-0">
-              <input 
-                type="number" 
-                value={logValues[habit.id] || ''} 
-                onChange={(e) => setLogValues({ ...logValues, [habit.id]: parseFloat(e.target.value) || 0 })} 
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleLog(habit.id);
-                  }
-                }}
-                placeholder={habit.unit === 'rep' ? 'Reps' : 'Mins'} 
-                className="w-24 bg-muted/50 border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-center appearance-none" 
-              />
-              <button onClick={() => deleteHabit(habit.id)} className="p-2 text-muted-foreground/20 hover:text-destructive transition-colors -mt-1"><Trash2 size={18} /></button>
+
+              <div className="flex items-center justify-between">
+                <div className="text-left">
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase block leading-none mb-1">Status</span>
+                  <EditableLogValue 
+                    habitId={habit.id} 
+                    initialValue={dailyTotal} 
+                    unit={habit.unit} 
+                  />
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <input 
+                    type="number" 
+                    value={logValues[habit.id] || ''} 
+                    onChange={(e) => setLogValues({ ...logValues, [habit.id]: parseFloat(e.target.value) || 0 })} 
+                    onKeyDown={(e) => e.key === 'Enter' && handleLog(habit.id)}
+                    placeholder="+" 
+                    className="w-14 bg-muted/30 border border-white/5 rounded-none px-2 py-1 text-xs focus:outline-none focus:border-primary text-center appearance-none font-mono" 
+                  />
+                  <button onClick={() => deleteHabit(habit.id)} className="p-1.5 text-muted-foreground/20 hover:text-destructive transition-colors"><Trash2 size={14} /></button>
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -201,13 +187,13 @@ export const HabitChecklist: React.FC = () => {
   );
 
   const renderWeekly = () => {
-    const maxPoints = Math.max(...weeklyData.map(d => d.points), 10);
+    const maxScore = Math.max(...weeklyData.map(d => d.score), 10);
     return (
       <div className="flex flex-col lg:flex-row gap-6 h-full min-h-0">
         <div className="flex-1 bg-card border p-8 flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-lg font-bold flex items-center gap-2"><BarChart3 size={18} /> 7-Day Performance</h3>
-            <span className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Total {weeklyStats.totalPoints} Points</span>
+            <span className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Aggregate Score: {weeklyStats.totalScore}</span>
           </div>
           
           <div className="flex-1 flex items-end justify-between gap-4 pb-8">
@@ -216,9 +202,9 @@ export const HabitChecklist: React.FC = () => {
                 <div className="relative w-full flex flex-col items-center justify-end h-48">
                   <div 
                     className="w-full bg-primary/20 border-x border-t border-primary/40 group-hover:bg-primary/30 transition-all duration-500"
-                    style={{ height: `${(d.points / maxPoints) * 100}%` }}
+                    style={{ height: `${(d.score / maxScore) * 100}%` }}
                   >
-                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-black">{d.points}</div>
+                    <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-black">{d.score}</div>
                   </div>
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-tighter text-muted-foreground">{d.label}</span>
@@ -239,8 +225,8 @@ export const HabitChecklist: React.FC = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Total Points</span>
-                  <p className="text-xl font-black text-primary">{weeklyStats.totalPoints}</p>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase">Total Score</span>
+                  <p className="text-xl font-black text-primary">{weeklyStats.totalScore}</p>
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-muted-foreground uppercase">Impossible Hit</span>
@@ -293,15 +279,15 @@ export const HabitChecklist: React.FC = () => {
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
     const monthName = now.toLocaleDateString(undefined, { month: 'long' });
     
-    const monthlyPoints = Array.from({ length: daysInMonth }).map((_, i) => {
+    const monthlyScore = Array.from({ length: daysInMonth }).map((_, i) => {
       const d = new Date(now.getFullYear(), now.getMonth(), i + 1);
       const dStr = d.toLocaleDateString('en-CA');
       return habits.reduce((acc, h) => acc + calculatePoints(h, dStr), 0);
     });
     
-    const totalMonthPoints = monthlyPoints.reduce((a, b) => a + b, 0);
-    const targetPoints = 200; // Example target
-    const progress = (totalMonthPoints / targetPoints) * 100;
+    const totalMonthScore = monthlyScore.reduce((a, b) => a + b, 0);
+    const targetScore = 200; // Example target
+    const progress = (totalMonthScore / targetScore) * 100;
 
     return (
       <div className="space-y-6">
@@ -310,8 +296,8 @@ export const HabitChecklist: React.FC = () => {
             <h3 className="text-lg font-bold flex items-center gap-2"><CalendarIcon size={18} /> {monthName} Matrix</h3>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase block">Month Total</span>
-                <span className="text-lg font-black">{totalMonthPoints} PTS</span>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase block">Monthly Aggregate</span>
+                <span className="text-lg font-black">{totalMonthScore}</span>
               </div>
             </div>
           </div>
@@ -321,18 +307,18 @@ export const HabitChecklist: React.FC = () => {
               <div key={d} className="text-[10px] font-black uppercase text-muted-foreground/40 text-center mb-2">{d}</div>
             ))}
             {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
-            {monthlyPoints.map((pts, i) => (
+            {monthlyScore.map((score, i) => (
               <div 
                 key={i} 
                 className={clsx(
                   "aspect-square border flex flex-col items-center justify-center relative group transition-colors",
-                  pts === 0 ? "bg-muted/10 border-muted/20" : 
-                  pts < 5 ? "bg-primary/10 border-primary/20" :
-                  pts < 15 ? "bg-primary/30 border-primary/40" : "bg-primary/60 border-primary/70"
+                  score === 0 ? "bg-muted/10 border-muted/20" : 
+                  score < 5 ? "bg-primary/10 border-primary/20" :
+                  score < 15 ? "bg-primary/30 border-primary/40" : "bg-primary/60 border-primary/70"
                 )}
               >
                 <span className="text-[9px] font-bold opacity-40 absolute top-1 left-1">{i + 1}</span>
-                <span className="text-xs font-black">{pts > 0 ? pts : ''}</span>
+                <span className="text-xs font-black">{score > 0 ? score : ''}</span>
               </div>
             ))}
           </div>
@@ -353,7 +339,7 @@ export const HabitChecklist: React.FC = () => {
               <h4 className="text-lg font-bold">Monthly Milestone</h4>
               <span className="text-xs font-black text-muted-foreground">{Math.round(progress)}% COMPLETE</span>
             </div>
-            <p className="text-sm text-muted-foreground">Reach {targetPoints} points this month to unlock the <span className="text-primary font-bold">Executive Momentum</span> badge.</p>
+            <p className="text-sm text-muted-foreground">Reach {targetScore} score units this month to unlock the <span className="text-primary font-bold">Executive Momentum</span> badge.</p>
             <div className="h-2 w-full bg-muted rounded-none overflow-hidden">
               <div className="h-full bg-primary transition-all duration-1000" style={{ width: `${Math.min(progress, 100)}%` }} />
             </div>
@@ -370,11 +356,6 @@ export const HabitChecklist: React.FC = () => {
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Habits</h2>
             <p className="text-muted-foreground text-sm">Consistency is the foundation of high performance.</p>
-          </div>
-          <div className="h-10 w-[1px] bg-border hidden md:block" />
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold uppercase text-primary tracking-widest">Points Today</span>
-            <span className="text-2xl font-black">{totalPointsToday}</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
