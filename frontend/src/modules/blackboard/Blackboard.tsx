@@ -2,20 +2,12 @@ import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Undo, Redo, Trash2 } from 'lucide-react';
 import { clsx } from 'clsx';
 
-type StrokeSize = 'small' | 'medium' | 'large';
-
 const COLORS = [
   { name: 'White', value: '#ffffff' },
   { name: 'Red', value: '#ef4444' },
   { name: 'Emerald', value: '#10b981' },
   { name: 'Blue', value: '#3b82f6' },
 ];
-
-const STROKE_WIDTHS: Record<StrokeSize, number> = {
-  small: 1.5,
-  medium: 3,
-  large: 8,
-};
 
 export const Blackboard: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -24,7 +16,7 @@ export const Blackboard: React.FC = () => {
   
   const [isDrawing, setIsDrawing] = useState(false);
   const [color, setColor] = useState(COLORS[0].value);
-  const [strokeSize, setStrokeSize] = useState<StrokeSize>('medium');
+  const [strokeWidth, setStrokeWidth] = useState(3);
   
   // Undo/Redo State
   const historyRef = useRef<ImageData[]>([]);
@@ -80,9 +72,9 @@ export const Blackboard: React.FC = () => {
   useEffect(() => {
     if (contextRef.current) {
       contextRef.current.strokeStyle = color;
-      contextRef.current.lineWidth = STROKE_WIDTHS[strokeSize];
+      contextRef.current.lineWidth = strokeWidth;
     }
-  }, [color, strokeSize]);
+  }, [color, strokeWidth]);
 
   const getCoordinates = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
@@ -161,9 +153,9 @@ export const Blackboard: React.FC = () => {
       />
 
       {/* Floating Toolbar */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-card/80 backdrop-blur-xl border border-white/5 p-2 px-4 shadow-2xl flex items-center gap-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-card/80 backdrop-blur-xl border border-white/5 p-3 px-6 shadow-2xl flex items-center gap-8 z-50 animate-in fade-in slide-in-from-bottom-4 duration-500">
         {/* Colors */}
-        <div className="flex items-center gap-2 pr-6 border-r border-white/5">
+        <div className="flex items-center gap-2 pr-8 border-r border-white/5">
           {COLORS.map((c) => (
             <button
               key={c.name}
@@ -177,24 +169,22 @@ export const Blackboard: React.FC = () => {
           ))}
         </div>
 
-        {/* Stroke Size */}
-        <div className="flex items-center bg-muted/40 p-0.5 rounded-none border border-white/5">
-          {(['small', 'medium', 'large'] as const).map((size) => (
-            <button
-              key={size}
-              onClick={() => setStrokeSize(size)}
-              className={clsx(
-                "px-3 py-1 text-[9px] font-bold uppercase tracking-tighter transition-all",
-                strokeSize === size ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {size}
-            </button>
-          ))}
+        {/* Stroke Width Slider */}
+        <div className="flex flex-col gap-1 items-center">
+           <span className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Width</span>
+           <input 
+            type="range" 
+            min="1" 
+            max="15" 
+            step="0.5"
+            value={strokeWidth}
+            onChange={(e) => setStrokeWidth(parseFloat(e.target.value))}
+            className="w-32 h-1 bg-white/10 rounded-none appearance-none cursor-pointer accent-primary hover:bg-white/20 transition-all"
+           />
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1 pl-6 border-l border-white/5">
+        <div className="flex items-center gap-1 pl-8 border-l border-white/5">
           <button onClick={undo} disabled={historyRef.current.length <= 1} className="p-2 text-muted-foreground hover:text-foreground disabled:opacity-10 transition-colors">
             <Undo size={14} />
           </button>
