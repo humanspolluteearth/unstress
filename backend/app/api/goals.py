@@ -1,14 +1,33 @@
 from fastapi import APIRouter
-from app.modules.goals.service import GoalService, GoalCreate, Goal
-from app.core.results import Result
-from typing import List, Any
+from pydantic import BaseModel, HttpUrl
+from typing import List, Optional
+import uuid
 
-router = APIRouter(prefix="/goals", tags=["goals"])
+# Schema Definitions
+class GoalModel(BaseModel):
+    title: str
+    description: str
+    priority: str
+    category: str
+    tags: List[str] = []
+    links: List[HttpUrl] = []
+    references: List[str] = []
+    tasks: List[dict] = []
 
-@router.get("/")
-async def get_goals() -> Result[List[Goal], str]:
-    return await GoalService.get_goals()
+class Goal(GoalModel):
+    id: uuid.UUID
 
-@router.post("/")
-async def create_goal(data: GoalCreate) -> Result[Goal, str]:
-    return await GoalService.create_goal(data)
+# In-memory store
+goals_db: List[Goal] = []
+
+router = APIRouter()
+
+@router.get("")
+async def get_goals():
+    return goals_db
+
+@router.post("")
+async def create_goal(goal_data: GoalModel):
+    new_goal = Goal(id=uuid.uuid4(), **goal_data.model_dump())
+    goals_db.append(new_goal)
+    return new_goal

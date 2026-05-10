@@ -21,7 +21,7 @@ app.add_middleware(
 )
 
 # Route Mounting
-app.include_router(goals_router, prefix="/api", tags=["goals"])
+app.include_router(goals_router, prefix="/api/goals", tags=["goals"])
 app.include_router(finance_router)
 app.include_router(actions_router)
 app.include_router(habits_router)
