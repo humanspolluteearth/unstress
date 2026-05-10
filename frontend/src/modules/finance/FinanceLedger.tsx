@@ -10,27 +10,32 @@ import { clsx } from 'clsx';
  */
 const CSSBarChart: React.FC<{ data: { label: string; value: number }[], title: string, color: string }> = ({ data, title, color }) => {
   const maxValue = Math.max(...data.map(d => d.value), 1);
+  const totalValue = data.reduce((acc, curr) => acc + curr.value, 0);
   
   return (
-    <div className="bg-card border rounded-none p-6 space-y-4 shadow-sm">
-      <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{title}</h3>
-      <div className="flex items-end justify-between h-32 gap-2 pt-4">
+    <div className="bg-card border rounded-none p-6 space-y-4 shadow-sm relative overflow-hidden">
+      <div className="flex justify-between items-start">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{title}</h3>
+        <span className="text-lg font-black tracking-tighter">${totalValue.toFixed(2)}</span>
+      </div>
+      
+      <div className="flex items-end justify-between h-32 gap-1.5 pt-4">
         {data.map((item, idx) => {
           const heightPercent = (item.value / maxValue) * 100;
           return (
-            <div key={idx} className="flex-1 flex flex-col items-center gap-2 group relative">
+            <div key={idx} className="flex-1 flex flex-col items-center gap-2 group relative h-full justify-end">
               <div 
                 className={clsx(
-                  "w-full rounded-none transition-all duration-500", 
-                  item.value > 0 ? color : "bg-muted/20"
+                  "w-full rounded-none transition-all duration-700 ease-out", 
+                  item.value > 0 ? color : "bg-white/[0.03]"
                 )}
-                style={{ height: `${Math.max(heightPercent, item.value > 0 ? 4 : 2)}%` }}
+                style={{ height: `${Math.max(heightPercent, item.value > 0 ? 5 : 2)}%` }}
               >
                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-foreground text-background text-[10px] px-1.5 py-0.5 rounded-none font-bold whitespace-nowrap z-10">
                   ${item.value.toFixed(0)}
                 </div>
               </div>
-              <span className="text-[10px] font-mono text-muted-foreground uppercase">{item.label}</span>
+              <span className="text-[10px] font-mono text-muted-foreground/50 uppercase">{item.label}</span>
             </div>
           );
         })}

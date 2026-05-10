@@ -31,35 +31,35 @@ class FinanceService:
     _transactions: List[Transaction] = [
         Transaction(
             id="tx-1",
-            description="Initial Capital",
-            date=datetime.now(timezone.utc) - timedelta(days=30),
+            description="Operational Setup",
+            date=datetime.now(timezone.utc) - timedelta(days=5),
             postings=[
-                PostingCreate(account_id="acc-assets", amount=100000, memo="Cash Deposit"),
-                PostingCreate(account_id="acc-equity", amount=-100000, memo="Owner Investment")
+                PostingCreate(account_id="acc-assets", amount=500000, memo="Seed Funding"),
+                PostingCreate(account_id="acc-equity", amount=-500000, memo="Founder Equity")
             ],
             tags=["setup"],
-            notes="Initial funding"
+            notes="Initial capital injection"
         ),
         Transaction(
             id="tx-2",
-            description="Lunch with Client",
-            date=datetime.now(timezone.utc) - timedelta(days=2),
+            description="Strategic Consultation",
+            date=datetime.now(timezone.utc) - timedelta(hours=2),
             postings=[
-                PostingCreate(account_id="acc-expenses", amount=4500, memo="Thai Food"),
-                PostingCreate(account_id="acc-assets", amount=-4500, memo="Debit Card")
+                PostingCreate(account_id="acc-expenses", amount=15000, memo="Professional Fees"),
+                PostingCreate(account_id="acc-assets", amount=-15000, memo="Wire Transfer")
             ],
-            tags=["marketing", "food"],
-            notes="Business lunch"
+            tags=["consulting", "admin"],
+            notes="Workflow optimization audit"
         ),
         Transaction(
             id="tx-3",
-            description="Software Subscription",
+            description="Infrastructure SaaS",
             date=datetime.now(timezone.utc) - timedelta(days=1),
             postings=[
-                PostingCreate(account_id="acc-expenses", amount=2000, memo="Monthly SaaS"),
-                PostingCreate(account_id="acc-assets", amount=-2000, memo="Auto-pay")
+                PostingCreate(account_id="acc-expenses", amount=8500, memo="Cloud Hosting"),
+                PostingCreate(account_id="acc-assets", amount=-8500, memo="Auto-pay")
             ],
-            tags=["software"],
+            tags=["infra", "software"],
             is_recurring=True
         )
     ]
