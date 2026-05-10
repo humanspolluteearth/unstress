@@ -1,64 +1,146 @@
-import React from 'react';
-import { Tag, Link, CheckSquare, Target, Calendar } from 'lucide-react';
-import { Goal } from '../../services/GoalService';
+import React, { useState } from 'react';
+import { Tag, CheckSquare, Target, ChevronDown, ChevronUp } from 'lucide-react';
+import { Goal, GoalService } from '../../services/GoalService';
 import { clsx } from 'clsx';
 
 interface GoalCardProps {
   goal: Goal;
   isSelected: boolean;
   onSelect: (goal: Goal) => void;
+  onUpdate: () => void;
 }
 
-export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect }) => {
+export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, onUpdate }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const completedTasks = goal.tasks.filter(t => t.completed).length;
   const progress = goal.progress || 0;
 
+  const handleToggleTask = async (e: React.MouseEvent, taskId: string) => {
+    e.stopPropagation();
+    const updatedTasks = goal.tasks.map(t => 
+      t.id === taskId ? { ...t, completed: !t.completed } : t
+    );
+    
+    // We send the whole goal object as expected by the backend update_goal
+    const result = await GoalService.updateGoal(goal.id, { ...goal, tasks: updatedTasks });
+    if (result.success) {
+      onUpdate();
+    }
+  };
+
+  const getPriorityColor = () => {
+    switch (goal.priority) {
+      case 'critical': return 'text-red-500 border-red-500/30 bg-red-500/5';
+      case 'high': return 'text-orange-500 border-orange-500/30 bg-orange-500/5';
+      case 'medium': return 'text-primary border-primary/30 bg-primary/5';
+      default: return 'text-muted-foreground border-border bg-muted/5';
+    }
+  };
+
+  const getProgressColor = () => {
+    if (goal.priority === 'critical') return 'bg-red-500';
+    if (goal.priority === 'high') return 'bg-orange-500';
+    return 'bg-primary';
+  };
+
   return (
     <div 
-      onClick={() => onSelect(goal)}
       className={clsx(
-        "group border p-4 cursor-pointer transition-all relative overflow-hidden",
+        "group border transition-all duration-200 relative overflow-hidden",
         isSelected 
-          ? "border-primary bg-primary/5 shadow-[0_0_20px_rgba(255,255,255,0.05)]" 
-          : "border-white/10 bg-[#0a0a0a] hover:border-white/20"
+          ? "border-primary/50 shadow-[0_0_20px_rgba(255,255,255,0.05)]" 
+          : "border-white/10 hover:border-white/20",
+        "bg-[#0a0a0a]"
       )}
     >
-      <div className="flex justify-between items-start mb-2">
-        <div className="flex items-center gap-2">
-          <Target size={14} className={isSelected ? "text-primary" : "text-white/40"} />
-          <h3 className="text-sm font-bold text-white tracking-tight">{goal.title}</h3>
-        </div>
-        <div className="flex items-center gap-2">
+      {/* Clickable Header Area */}
+      <div 
+        onClick={() => onSelect(goal)}
+        className="p-4 cursor-pointer"
+      >
+        <div className="flex justify-between items-start mb-3">
+          <div className="flex items-center gap-2">
+            <Target size={14} className={isSelected ? "text-primary" : "text-white/20"} />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">{goal.category}</span>
+          </div>
           <span className={clsx(
-            "text-[8px] font-black px-1.5 py-0.5 uppercase tracking-widest border border-white/5 bg-white/5 text-white/40",
-            goal.time_frame === 'weekly' && "border-blue-500/20 text-blue-400",
-            goal.time_frame === 'monthly' && "border-purple-500/20 text-purple-400",
-            goal.time_frame === 'yearly' && "border-yellow-500/20 text-yellow-400"
-          )}>
-            {goal.time_frame}
-          </span>
-          <span className={clsx(
-            "text-[8px] font-black px-1.5 py-0.5 uppercase tracking-widest",
-            goal.priority === 'critical' ? "bg-red-500 text-black" : "bg-white/5 text-white/40"
+            "text-[8px] font-black px-1.5 py-0.5 rounded-none border uppercase tracking-widest",
+            getPriorityColor()
           )}>
             {goal.priority}
           </span>
         </div>
-      </div>
-      
-      <p className="text-xs text-white/50 mb-4 line-clamp-1 italic font-serif">
-        {goal.description || "No mission brief provided."}
-      </p>
-      
-      <div className="flex gap-4 text-[9px] font-black uppercase tracking-widest text-white/30">
-        <div className="flex items-center gap-1"><Tag size={10} /> {goal.tags.length}</div>
-        <div className="flex items-center gap-1"><Link size={10} /> {goal.links.length}</div>
-        <div className="flex items-center gap-1"><CheckSquare size={10} /> {completedTasks}/{goal.tasks.length}</div>
+
+        <h3 className="text-sm font-bold text-white tracking-tight mb-2 group-hover:text-primary transition-colors">
+          {goal.title}
+        </h3>
+        
+        <div className="flex flex-wrap gap-x-3 gap-y-1 mb-4">
+          {goal.tags.map(tag => (
+            <span key={tag} className="text-[10px] font-medium text-white/30 lowercase tracking-tight">#{tag}</span>
+          ))}
+          {goal.tags.length === 0 && <span className="text-[10px] text-white/10 italic">#untagged</span>}
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex gap-4 text-[10px] font-bold uppercase tracking-widest text-white/20">
+             <div className="flex items-center gap-1.5">
+               <CheckSquare size={12} className={completedTasks > 0 ? "text-primary/60" : ""} />
+               <span>{completedTasks}/{goal.tasks.length}</span>
+             </div>
+             <div className="flex items-center gap-1.5 lowercase tracking-normal font-medium text-white/40">
+               {goal.time_frame}
+             </div>
+          </div>
+          
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+            className="p-1 hover:bg-white/5 text-white/20 hover:text-white transition-colors"
+          >
+            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+        </div>
       </div>
 
+      {/* Collapsible Tasks */}
+      <div className={clsx(
+        "overflow-hidden transition-all duration-300 ease-in-out border-t border-white/5 bg-black/40",
+        isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+      )}>
+        <div className="p-3 space-y-1">
+          {goal.tasks.map((task) => (
+            <div 
+              key={task.id}
+              onClick={(e) => handleToggleTask(e, task.id)}
+              className="flex items-center gap-3 p-2 hover:bg-white/5 transition-colors group/task cursor-pointer"
+            >
+              <div className={clsx(
+                "w-3 h-3 border transition-all flex items-center justify-center",
+                task.completed ? "bg-primary border-primary" : "border-white/20 group-hover/task:border-primary/50"
+              )}>
+                {task.completed && <div className="w-1.5 h-1.5 bg-black" />}
+              </div>
+              <span className={clsx(
+                "text-xs transition-colors",
+                task.completed ? "text-white/20 line-through" : "text-white/70"
+              )}>
+                {task.text}
+              </span>
+            </div>
+          ))}
+          {goal.tasks.length === 0 && (
+            <p className="text-[10px] text-white/10 uppercase tracking-widest p-4 text-center">No mission tasks</p>
+          )}
+        </div>
+      </div>
+
+      {/* Progress Bar at the absolute bottom */}
       <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/5">
         <div 
-          className="h-full bg-primary transition-all duration-500 ease-out" 
+          className={clsx("h-full transition-all duration-700 ease-in-out", getProgressColor())} 
           style={{ width: `${progress}%` }} 
         />
       </div>
