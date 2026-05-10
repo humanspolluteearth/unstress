@@ -73,8 +73,8 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
                   {new Date(goal.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                 </div>
               )}
-              <div className="flex items-center gap-1.5 text-[9px] font-black text-white/20 uppercase tracking-[0.2em]">
-                <span className="w-1 h-1 rounded-full bg-white/20" />
+              <div className="flex items-center gap-1.5 text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em]">
+                <span className="w-1 h-1 rounded-full bg-white/10" />
                 {goal.time_frame}
               </div>
             </div>
