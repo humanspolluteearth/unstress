@@ -63,11 +63,43 @@ transactions_db: List[Transaction] = [
         tags=["side-hustle"],
         date=datetime.now(timezone.utc),
         description="Logo Design"
+    ),
+    Transaction(
+        id=uuid.uuid4(),
+        amount=1500.00,
+        type="expense",
+        category="Equipment",
+        tags=["workstation", "hardware"],
+        date=datetime.now(timezone.utc),
+        description="Arch Linux Workstation Upgrade"
+    ),
+    Transaction(
+        id=uuid.uuid4(),
+        amount=300.00,
+        type="income",
+        category="Consulting",
+        tags=["expert-advice"],
+        date=datetime.now(timezone.utc),
+        description="System Architecture Review"
     )
 ]
 
 # Seed Net Worth for charts
 net_worth_db: List[NetWorthSnapshot] = [
+    NetWorthSnapshot(
+        id=uuid.uuid4(),
+        date=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        assets=12000.0,
+        liabilities=2500.0,
+        total=9500.0
+    ),
+    NetWorthSnapshot(
+        id=uuid.uuid4(),
+        date=datetime(2026, 2, 1, tzinfo=timezone.utc),
+        assets=13500.0,
+        liabilities=2200.0,
+        total=11300.0
+    ),
     NetWorthSnapshot(
         id=uuid.uuid4(),
         date=datetime(2026, 3, 1, tzinfo=timezone.utc),
