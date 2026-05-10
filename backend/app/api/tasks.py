@@ -18,8 +18,9 @@ class Task(TaskCreate):
     id: str
     status: str = "Todo"
 
-router = APIRouter(prefix="/api/tasks", tags=["tasks"])
+router = APIRouter()
 
+@router.get("")
 @router.get("/")
 async def get_tasks() -> Result[List[Task], str]:
     from app.core.dispatcher import TaskService

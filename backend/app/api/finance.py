@@ -1,13 +1,10 @@
-from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, Field
-from typing import List, Optional, Literal
+from fastapi import APIRouter, HTTPException, Query, Request
+from pydantic import BaseModel, Field, HttpUrl
+from typing import List, Optional, Literal, Any
 from datetime import datetime, timezone
 import uuid
 
-router = APIRouter(prefix="/api/finance", tags=["finance"])
-
-# --- Schemas ---
-
+# Schema Definitions
 class TransactionBase(BaseModel):
     amount: float
     type: Literal["income", "expense"]
@@ -24,7 +21,7 @@ class NetWorthSnapshot(BaseModel):
     date: datetime
     assets: float
     liabilities: float
-    total: float # Calculated field
+    total: float
 
 # --- In-Memory Store ---
 transactions_db: List[Transaction] = [
@@ -63,43 +60,10 @@ transactions_db: List[Transaction] = [
         tags=["side-hustle"],
         date=datetime.now(timezone.utc),
         description="Logo Design"
-    ),
-    Transaction(
-        id=uuid.uuid4(),
-        amount=1500.00,
-        type="expense",
-        category="Equipment",
-        tags=["workstation", "hardware"],
-        date=datetime.now(timezone.utc),
-        description="Arch Linux Workstation Upgrade"
-    ),
-    Transaction(
-        id=uuid.uuid4(),
-        amount=300.00,
-        type="income",
-        category="Consulting",
-        tags=["expert-advice"],
-        date=datetime.now(timezone.utc),
-        description="System Architecture Review"
     )
 ]
 
-# Seed Net Worth for charts
 net_worth_db: List[NetWorthSnapshot] = [
-    NetWorthSnapshot(
-        id=uuid.uuid4(),
-        date=datetime(2026, 1, 1, tzinfo=timezone.utc),
-        assets=12000.0,
-        liabilities=2500.0,
-        total=9500.0
-    ),
-    NetWorthSnapshot(
-        id=uuid.uuid4(),
-        date=datetime(2026, 2, 1, tzinfo=timezone.utc),
-        assets=13500.0,
-        liabilities=2200.0,
-        total=11300.0
-    ),
     NetWorthSnapshot(
         id=uuid.uuid4(),
         date=datetime(2026, 3, 1, tzinfo=timezone.utc),
@@ -123,15 +87,14 @@ net_worth_db: List[NetWorthSnapshot] = [
     )
 ]
 
-# --- Endpoints ---
+# Router without internal prefix to avoid doubling
+router = APIRouter()
 
 @router.get("/transactions", response_model=List[Transaction])
+@router.get("/transactions/", response_model=List[Transaction])
 async def get_transactions(
     timeframe: Optional[str] = Query(None, description="weekly, monthly, or yearly")
 ):
-    """
-    Returns transactions, optionally filtered by timeframe.
-    """
     now = datetime.now(timezone.utc)
     if not timeframe:
         return transactions_db
@@ -153,32 +116,25 @@ async def get_transactions(
     return filtered
 
 @router.post("/transactions", response_model=Transaction)
+@router.post("/transactions/", response_model=Transaction)
 async def create_transaction(tx_data: TransactionBase):
-    """
-    Creates a new transaction.
-    """
     new_tx = Transaction(id=uuid.uuid4(), **tx_data.model_dump())
     transactions_db.append(new_tx)
     return new_tx
 
 @router.delete("/transactions/{transaction_id}")
+@router.delete("/transactions/{transaction_id}/")
 async def delete_transaction(transaction_id: uuid.UUID):
-    """
-    Deletes a transaction.
-    """
     global transactions_db
     transactions_db = [t for t in transactions_db if t.id != transaction_id]
     return {"success": True, "status": "deleted"}
 
 @router.get("/summaries")
+@router.get("/summaries/")
 async def get_summaries():
-    """
-    Calculates weekly and yearly net flow summaries.
-    """
     from datetime import timedelta
     now = datetime.now(timezone.utc)
     
-    # Weekly (last 7 days)
     weekly = []
     for i in range(6, -1, -1):
         day = now - timedelta(days=i)
@@ -193,16 +149,12 @@ async def get_summaries():
                     total_expense += tx.amount
         weekly.append({"label": day_str, "value": total_income - total_expense})
 
-    # Yearly (last 12 months)
     yearly = []
     for i in range(11, -1, -1):
-        # Specific month and year
         month = (now.month - i - 1) % 12 + 1
         year = now.year + (now.month - i - 1) // 12
-        
         month_date = datetime(year, month, 1, tzinfo=timezone.utc)
         month_str = month_date.strftime("%b")
-        
         total_income = 0
         total_expense = 0
         for tx in transactions_db:
@@ -216,8 +168,6 @@ async def get_summaries():
     return {"success": True, "data": {"weekly": weekly, "yearly": yearly}}
 
 @router.get("/net-worth", response_model=List[NetWorthSnapshot])
+@router.get("/net-worth/", response_model=List[NetWorthSnapshot])
 async def get_net_worth():
-    """
-    Returns monthly/yearly aggregated net worth data.
-    """
     return net_worth_db

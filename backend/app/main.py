@@ -23,12 +23,17 @@ app.add_middleware(
 )
 
 # Route Mounting - Registered in order of module hierarchy
-app.include_router(finance_router)
-app.include_router(api_finance_router)
-app.include_router(actions_router)
-app.include_router(habits_router)
+# Consolidate all API routes under /api for consistency
 app.include_router(goals_router, prefix="/api/goals", tags=["goals"])
-app.include_router(tasks_router, prefix="/api")
+app.include_router(tasks_router, prefix="/api/tasks", tags=["tasks"])
+app.include_router(api_finance_router, prefix="/api/finance", tags=["finance"])
+
+# Legacy / Infrastructure Routes
+app.include_router(actions_router)
+app.include_router(finance_router)
+app.include_router(habits_router)
 app.include_router(schedules_router)
 
-# Note: Start using: python -m uvicorn app.main:app --port 8000
+@app.get("/")
+async def root():
+    return {"status": "unstress_api_v1_online"}
