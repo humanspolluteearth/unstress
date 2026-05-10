@@ -131,27 +131,6 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
         <h3 className="text-sm font-bold text-white tracking-tight mb-2 group-hover:text-primary transition-colors">
           {goal.title}
         </h3>
-
-        {/* Linked Tasks Preview (Top 3) */}
-        <div className="mb-4 space-y-1">
-          {goal.external_tasks && goal.external_tasks.slice(0, 3).map((task) => (
-            <div 
-              key={task.id} 
-              onClick={handleTaskClick}
-              className="flex items-center gap-2 text-[10px] text-white/40 hover:text-primary transition-colors cursor-pointer group/item"
-            >
-              <div className={clsx(
-                "w-1 h-3 rounded-full shrink-0",
-                task.status === 'Done' ? "bg-primary/20" : "bg-primary/60"
-              )} />
-              <span className="truncate flex-1">{task.title}</span>
-              <ExternalLink size={8} className="opacity-0 group-hover/item:opacity-100" />
-            </div>
-          ))}
-          {(!goal.external_tasks || goal.external_tasks.length === 0) && (
-            <p className="text-[10px] text-white/10 italic">No linked system tasks</p>
-          )}
-        </div>
         
         <p className="text-xs text-muted-foreground mb-4 font-sans leading-relaxed line-clamp-2 min-h-[2.5rem]">
           {goal.description 
