@@ -59,18 +59,11 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
   };
 
   const getPriorityColor = () => {
-    switch (goal.priority) {
-      case 'critical': return 'text-red-500 border-red-500/30 bg-red-500/5';
-      case 'high': return 'text-orange-500 border-orange-500/30 bg-orange-500/5';
-      case 'medium': return 'text-primary border-primary/30 bg-primary/5';
-      default: return 'text-muted-foreground border-border bg-muted/5';
-    }
+    return 'text-white/60 border-white/10 bg-white/5';
   };
 
   const getProgressColor = () => {
-    if (goal.priority === 'critical') return 'bg-red-500';
-    if (goal.priority === 'high') return 'bg-orange-500';
-    return 'bg-primary';
+    return 'bg-white/40';
   };
 
   const unassignedTasks = availableTasks.filter(t => t.goalId !== goal.id);
@@ -86,17 +79,12 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
       )}
     >
       <div 
-        className="absolute top-0 left-0 w-full h-1" 
-        style={{ backgroundColor: goal.label_color }} 
-      />
-
-      <div 
         onClick={() => onSelect(goal)}
         className="p-4 pt-5 cursor-pointer"
       >
         <div className="flex justify-between items-start mb-3">
           <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80">{goal.category}</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{goal.category}</span>
             {goal.deadline && !isNaN(new Date(goal.deadline).getTime()) && (
                <div className="flex items-center gap-1.5 text-[9px] font-bold text-muted-foreground uppercase tracking-tight">
                  <Calendar size={10} className="text-white/40" />
@@ -116,9 +104,6 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
                <Pencil size={12} />
              </button>
 
-             <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white/5 border border-white/10 text-[8px] font-black text-white/60 uppercase">
-               {goal.assignee_initials}
-             </div>
              <span className={clsx(
                "text-[8px] font-black px-1.5 py-0.5 rounded-none border uppercase tracking-widest",
                getPriorityColor()
