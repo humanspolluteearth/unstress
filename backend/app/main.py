@@ -38,7 +38,7 @@ app.include_router(focus_router, prefix="/api/focus", tags=["focus"])
 app.include_router(habits_router, prefix="/api/habits", tags=["habits"])
 app.include_router(schedules_router, prefix="/api/schedules", tags=["schedules"])
 
-# Infrastructure
+# Infrastructure & Legacy Actions (Mounted under /api/actions)
 app.include_router(actions_router, prefix="/api/actions", tags=["infrastructure"])
 
 @app.get("/")

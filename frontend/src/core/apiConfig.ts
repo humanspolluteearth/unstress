@@ -28,4 +28,5 @@ export const API_ENDPOINTS = {
   HABITS: '/api/habits',
   SCHEDULES: '/api/schedules',
   FOCUS: '/api/focus',
+  ACTIONS: '/api/actions',
 };

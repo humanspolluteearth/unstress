@@ -5,7 +5,7 @@ from typing import List, Any
 from sqlalchemy.orm import Session
 from app.database import get_db
 
-router = APIRouter(prefix="/schedules", tags=["schedules"])
+router = APIRouter(tags=["schedules"])
 
 @router.get("/")
 async def get_schedule(db: Session = Depends(get_db)) -> Result[List[dict], str]:

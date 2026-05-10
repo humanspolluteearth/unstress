@@ -5,7 +5,7 @@ from app.modules.habits.service import HabitLogCreate
 from app.core.results import Result
 from typing import Any
 
-router = APIRouter(prefix="/actions", tags=["actions"])
+router = APIRouter(tags=["actions"])
 
 @router.post("/finance/transaction")
 async def create_transaction(data: TransactionCreate) -> Result[dict, str]:

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Result } from '../../core/results';
-import { getBaseUrl } from '../../core/apiConfig';
+import { getBaseUrl, API_ENDPOINTS } from '../../core/apiConfig';
 
 export interface Transaction {
   id: string;
@@ -50,8 +50,8 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     try {
       const baseUrl = getBaseUrl();
       const url = timeframe 
-        ? `${baseUrl}/api/finance/transactions?timeframe=${timeframe}`
-        : `${baseUrl}/api/finance/transactions`;
+        ? `${baseUrl}${API_ENDPOINTS.FINANCE}/transactions?timeframe=${timeframe}`
+        : `${baseUrl}${API_ENDPOINTS.FINANCE}/transactions`;
       
       const response = await fetch(url);
       const data = await response.json();
@@ -72,7 +72,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   fetchNetWorth: async () => {
     try {
       const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}/api/finance/net-worth`);
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.FINANCE}/net-worth`);
       const data = await response.json();
       
       if (response.ok) {
@@ -88,7 +88,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   fetchSummaries: async () => {
     try {
       const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}/api/finance/summaries`);
+      const response = await fetch(`${baseUrl}${API_ENDPOINTS.FINANCE}/summaries`);
       const result = await response.json();
       
       if (result.success && result.data) {

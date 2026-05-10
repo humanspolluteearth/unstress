@@ -5,7 +5,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from app.database import get_db
 
-router = APIRouter(prefix="/habits", tags=["habits"])
+router = APIRouter(tags=["habits"])
 
 @router.get("/")
 async def get_habits(db: Session = Depends(get_db)) -> Result[List[Habit], str]:
