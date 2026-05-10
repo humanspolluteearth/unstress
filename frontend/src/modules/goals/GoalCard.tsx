@@ -87,7 +87,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
             {goal.deadline && !isNaN(new Date(goal.deadline).getTime()) && (
                <div className="flex items-center gap-1.5 text-[9px] font-bold text-muted-foreground uppercase tracking-tight">
                  <Calendar size={10} className="text-white/40" />
-                 {new Date(goal.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                 {new Date(goal.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                </div>
              )}
           </div>
