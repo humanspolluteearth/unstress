@@ -20,11 +20,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Route Mounting
-app.include_router(goals_router, prefix="/api/goals", tags=["goals"])
+# Route Mounting - Registered in order of module hierarchy
 app.include_router(finance_router)
 app.include_router(actions_router)
 app.include_router(habits_router)
+app.include_router(goals_router, prefix="/api/goals", tags=["goals"])
 app.include_router(schedules_router)
 
 # Note: Start using: python -m uvicorn app.main:app --port 8000
