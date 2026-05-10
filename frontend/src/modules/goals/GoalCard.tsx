@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { Tag, CheckSquare, ChevronDown, ChevronUp, User, Pencil, Calendar } from 'lucide-react';
+import { Tag, CheckSquare, ChevronDown, ChevronUp, User, Pencil, Calendar, Plus, Link as LinkIcon, ExternalLink } from 'lucide-react';
 import { Goal, GoalService } from '../../services/GoalService';
 import { clsx } from 'clsx';
+import { Task } from '../tasks/useTaskStore';
+import { ActionService } from '../../core/ActionService';
+import { useNavigationStore } from '../../core/useNavigationStore';
 
 interface GoalCardProps {
   goal: Goal;
@@ -9,10 +12,14 @@ interface GoalCardProps {
   onSelect: (goal: Goal) => void;
   onUpdate: () => void;
   onEdit: (goal: Goal) => void;
+  availableTasks?: Task[];
 }
 
-export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, onUpdate, onEdit }) => {
+export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, onUpdate, onEdit, availableTasks = [] }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const { navigate } = useNavigationStore();
+  
   const progress = goal.progress || 0;
 
   const handleToggleTask = async (e: React.MouseEvent, taskId: string) => {
@@ -25,6 +32,30 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
     if (result.success) {
       onUpdate();
     }
+  };
+
+  const handleAssignTask = async (taskId: string) => {
+    const task = availableTasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const result = await ActionService.updateTask(taskId, {
+      title: task.title,
+      description: task.description,
+      priority: task.priority,
+      tags: task.tags,
+      deadline: task.deadline,
+      goal_id: goal.id
+    } as any);
+
+    if (result.success) {
+      setIsAssigning(false);
+      onUpdate();
+    }
+  };
+
+  const handleTaskClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate('tasks');
   };
 
   const getPriorityColor = () => {
@@ -42,6 +73,8 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
     return 'bg-primary';
   };
 
+  const unassignedTasks = availableTasks.filter(t => t.goalId !== goal.id);
+
   return (
     <div 
       className={clsx(
@@ -52,13 +85,11 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
         "bg-[#0a0a0a]"
       )}
     >
-      {/* Label Color Stripe */}
       <div 
         className="absolute top-0 left-0 w-full h-1" 
         style={{ backgroundColor: goal.label_color }} 
       />
 
-      {/* Clickable Header Area */}
       <div 
         onClick={() => onSelect(goal)}
         className="p-4 pt-5 cursor-pointer"
@@ -66,21 +97,14 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
         <div className="flex justify-between items-start mb-3">
           <div className="flex flex-col gap-1">
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80">{goal.category}</span>
-            <div className="flex items-center gap-3">
-              {goal.deadline && !isNaN(new Date(goal.deadline).getTime()) && (
-                <div className="flex items-center gap-1.5 text-[9px] font-bold text-muted-foreground uppercase tracking-tight">
-                  <Calendar size={10} className="text-white/40" />
-                  {new Date(goal.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                </div>
-              )}
-              <div className="flex items-center gap-1.5 text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em]">
-                <span className="w-1 h-1 rounded-full bg-white/10" />
-                {goal.time_frame}
-              </div>
-            </div>
+            {goal.deadline && !isNaN(new Date(goal.deadline).getTime()) && (
+               <div className="flex items-center gap-1.5 text-[9px] font-bold text-muted-foreground uppercase tracking-tight">
+                 <Calendar size={10} className="text-white/40" />
+                 {new Date(goal.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+               </div>
+             )}
           </div>
           <div className="flex items-center gap-2">
-             {/* Edit Button */}
              <button 
                 onClick={(e) => {
                   e.stopPropagation();
@@ -92,7 +116,6 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
                <Pencil size={12} />
              </button>
 
-             {/* Assignee Initials Badge */}
              <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white/5 border border-white/10 text-[8px] font-black text-white/60 uppercase">
                {goal.assignee_initials}
              </div>
@@ -108,6 +131,27 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
         <h3 className="text-sm font-bold text-white tracking-tight mb-2 group-hover:text-primary transition-colors">
           {goal.title}
         </h3>
+
+        {/* Linked Tasks Preview (Top 3) */}
+        <div className="mb-4 space-y-1">
+          {goal.external_tasks && goal.external_tasks.slice(0, 3).map((task) => (
+            <div 
+              key={task.id} 
+              onClick={handleTaskClick}
+              className="flex items-center gap-2 text-[10px] text-white/40 hover:text-primary transition-colors cursor-pointer group/item"
+            >
+              <div className={clsx(
+                "w-1 h-3 rounded-full shrink-0",
+                task.status === 'Done' ? "bg-primary/20" : "bg-primary/60"
+              )} />
+              <span className="truncate flex-1">{task.title}</span>
+              <ExternalLink size={8} className="opacity-0 group-hover/item:opacity-100" />
+            </div>
+          ))}
+          {(!goal.external_tasks || goal.external_tasks.length === 0) && (
+            <p className="text-[10px] text-white/10 italic">No linked system tasks</p>
+          )}
+        </div>
         
         <p className="text-xs text-muted-foreground mb-4 font-sans leading-relaxed line-clamp-2 min-h-[2.5rem]">
           {goal.description 
@@ -121,7 +165,6 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
               {tag}
             </span>
           ))}
-          {goal.tags.length === 0 && <span className="text-[10px] text-white/10 italic">#untagged</span>}
         </div>
 
         <div className="flex items-center justify-between">
@@ -135,19 +178,54 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
              </div>
           </div>
           
-          <button 
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsExpanded(!isExpanded);
-            }}
-            className="p-1 hover:bg-white/5 text-white/20 hover:text-white transition-colors"
-          >
-            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsAssigning(!isAssigning);
+              }}
+              className="p-1 hover:bg-white/5 text-white/20 hover:text-primary transition-colors"
+              title="Assign Existing Task"
+            >
+              <Plus size={14} />
+            </button>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(!isExpanded);
+              }}
+              className="p-1 hover:bg-white/5 text-white/20 hover:text-white transition-colors"
+            >
+              {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Collapsible Tasks */}
+      {isAssigning && (
+        <div className="border-t border-white/5 bg-black/60 p-3 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[9px] font-black uppercase tracking-widest text-white/40 text-primary">Eligible Tasks</span>
+            <button onClick={(e) => { e.stopPropagation(); setIsAssigning(false); }} className="text-white/20 hover:text-white"><X size={10} /></button>
+          </div>
+          <div className="max-h-[150px] overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+            {unassignedTasks.map(task => (
+              <button
+                key={task.id}
+                onClick={(e) => { e.stopPropagation(); handleAssignTask(task.id); }}
+                className="w-full text-left p-2 bg-white/5 hover:bg-white/10 text-[11px] text-white/70 border border-white/5 transition-colors flex items-center justify-between group/assign"
+              >
+                <span className="truncate">{task.title}</span>
+                <Plus size={10} className="opacity-0 group-hover/assign:opacity-100 text-primary" />
+              </button>
+            ))}
+            {unassignedTasks.length === 0 && (
+              <p className="text-[9px] text-white/20 text-center py-4 italic uppercase">No available tasks</p>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className={clsx(
         "overflow-hidden transition-all duration-300 ease-in-out border-t border-white/5 bg-black/40",
         isExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
@@ -173,13 +251,33 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
               </span>
             </div>
           ))}
-          {goal.tasks.length === 0 && (
+          
+          {goal.external_tasks && goal.external_tasks.map((task) => (
+            <div 
+              key={task.id}
+              className="flex items-center gap-3 p-2 hover:bg-white/5 transition-colors group/task"
+            >
+              <div className="flex items-center justify-center w-3 h-3 border border-primary/40 text-primary/60">
+                 <LinkIcon size={8} />
+              </div>
+              <div className="flex-1 flex items-center justify-between">
+                <span className={clsx(
+                  "text-xs transition-colors",
+                  task.status === 'Done' ? "text-white/20 line-through" : "text-white/70"
+                )}>
+                  {task.title}
+                </span>
+                <span className="text-[8px] font-black uppercase text-white/20 px-1 border border-white/5">{task.status}</span>
+              </div>
+            </div>
+          ))}
+
+          {goal.tasks.length === 0 && (!goal.external_tasks || goal.external_tasks.length === 0) && (
             <p className="text-[10px] text-white/10 uppercase tracking-widest p-4 text-center">No mission tasks</p>
           )}
         </div>
       </div>
 
-      {/* Progress Bar at the absolute bottom */}
       <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/5">
         <div 
           className={clsx("h-full transition-all duration-700 ease-in-out", getProgressColor())} 
@@ -189,3 +287,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
     </div>
   );
 };
+
+const X = ({ size }: { size: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+);
