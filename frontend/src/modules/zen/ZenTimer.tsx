@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, BarChart2, X } from 'lucide-react';
+import { Play, Pause, RotateCcw, BarChart2, ChevronLeft, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { getBaseUrl, API_ENDPOINTS } from '../../core/apiConfig';
 
@@ -19,10 +19,8 @@ export const ZenTimer: React.FC = () => {
   
   const [stats, setStats] = useState<{ total_hours: number } | null>(null);
   const [showStats, setShowStats] = useState(false);
-  const [showExit, setShowExit] = useState(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const exitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Audio Feedback: Standard Web Audio API Chime
   const playChime = () => {
@@ -64,27 +62,15 @@ export const ZenTimer: React.FC = () => {
     };
   }, [isActive, timer]);
 
-  // Handle ESC key and Mouse movement in Focus Mode
+  // Handle ESC key in Focus Mode
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isFocusMode) {
         setIsFocusMode(false);
       }
     };
-
-    const handleMouseMove = () => {
-      if (!isFocusMode) return;
-      setShowExit(true);
-      if (exitTimeoutRef.current) clearTimeout(exitTimeoutRef.current);
-      exitTimeoutRef.current = setTimeout(() => setShowExit(false), 3000);
-    };
-
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isFocusMode]);
 
   const handleTimerComplete = async () => {
@@ -154,30 +140,49 @@ export const ZenTimer: React.FC = () => {
 
   if (isFocusMode) {
     return (
-      <div className="fixed inset-0 z-[200] bg-[#000000] flex flex-col items-center justify-center animate-in fade-in duration-1000 cursor-none">
+      <div className="fixed inset-0 z-[200] bg-background flex flex-col items-center justify-center animate-in fade-in duration-700">
         <button 
           onClick={() => setIsFocusMode(false)}
-          className={clsx(
-            "absolute top-8 right-8 text-white/10 hover:text-white transition-opacity duration-500 flex items-center gap-2 uppercase text-[10px] font-black tracking-widest",
-            showExit ? "opacity-100" : "opacity-0"
-          )}
+          className="absolute top-8 left-8 text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 uppercase text-[10px] font-black tracking-widest"
         >
-          <X size={20} />
+          <ChevronLeft size={16} /> Exit Zen
         </button>
 
-        <div className="text-center">
-          <h1 className="text-[14rem] font-extralight tracking-tighter leading-none tabular-nums select-none text-white/90">
-            {formatTime(timer)}
-          </h1>
+        <div className="text-center space-y-8">
+          <div className="space-y-2">
+            <span className={clsx(
+              "text-[10px] font-black uppercase tracking-[0.4em]",
+              isBreak ? "text-emerald-500" : "text-primary"
+            )}>
+              {isBreak ? 'Interval: Break' : `Focus: Session ${loopCount + 1}/${targetLoops}`}
+            </span>
+            <h1 className="text-[12rem] font-black tracking-tighter leading-none tabular-nums select-none">
+              {formatTime(timer)}
+            </h1>
+          </div>
+
+          <div className="flex items-center justify-center gap-6">
+            <button 
+              onClick={toggleTimer}
+              className="w-20 h-20 rounded-none border border-white/10 flex items-center justify-center hover:bg-white/5 transition-all active:scale-95"
+            >
+              {isActive ? <Pause size={32} /> : <Play size={32} className="ml-1" />}
+            </button>
+            <button 
+              onClick={resetTimer}
+              className="w-20 h-20 rounded-none border border-white/10 flex items-center justify-center hover:bg-white/5 transition-all active:scale-95 text-muted-foreground"
+            >
+              <RotateCcw size={28} />
+            </button>
+          </div>
         </div>
 
-        <div className="absolute bottom-12 flex flex-col items-center gap-2">
-          <span className={clsx(
-            "text-[9px] font-black uppercase tracking-[0.6em]",
-            isBreak ? "text-emerald-500" : "text-white/20"
-          )}>
-            {isBreak ? 'Interval: Refresh' : `Loop ${loopCount + 1} / ${targetLoops}`}
-          </span>
+        {/* Progress Bar */}
+        <div className="absolute bottom-0 left-0 h-1 bg-primary/20 w-full">
+          <div 
+            className={clsx("h-full transition-all duration-1000 ease-linear", isBreak ? "bg-emerald-500" : "bg-primary")}
+            style={{ width: `${(timer / ((isBreak ? breakTime : focusTime) * 60)) * 100}%` }}
+          />
         </div>
       </div>
     );
@@ -195,8 +200,8 @@ export const ZenTimer: React.FC = () => {
 
   return (
     <div className="p-12 flex flex-col items-center justify-center min-h-full space-y-12 animate-in fade-in duration-500 overflow-hidden">
-      <div className="max-w-4xl text-center leading-[1.4]">
-        <h1 className="text-2xl md:text-4xl font-bold tracking-tight text-white/90 uppercase">
+      <div className="max-w-4xl text-center leading-[1.6]">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white/90 uppercase">
           Focus for <InlineInput value={focusTime} onChange={setFocusTime} /> minutes 
           <br className="hidden md:block" /> with <InlineInput value={breakTime} onChange={setBreakTime} /> minutes breaks 
           <br className="hidden md:block" /> for <InlineInput value={targetLoops} onChange={setTargetLoops} /> times.
