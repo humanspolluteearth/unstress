@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.goals import router as goals_router
 from app.api.tasks import router as tasks_router
+from app.api.finance import router as api_finance_router
 from app.modules.finance.router import router as finance_router
 from app.core.actions_router import router as actions_router
 from app.modules.habits.router import router as habits_router
@@ -23,6 +24,7 @@ app.add_middleware(
 
 # Route Mounting - Registered in order of module hierarchy
 app.include_router(finance_router)
+app.include_router(api_finance_router)
 app.include_router(actions_router)
 app.include_router(habits_router)
 app.include_router(goals_router, prefix="/api/goals", tags=["goals"])

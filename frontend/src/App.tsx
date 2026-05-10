@@ -9,7 +9,7 @@ const GoalDashboard = lazy(() => import('./modules/goals/GoalDashboard').then(m 
 const ScheduleGrid = lazy(() => import('./modules/schedules/ScheduleGrid').then(m => ({ default: m.ScheduleGrid })));
 const TaskDashboard = lazy(() => import('./modules/tasks/TaskDashboard').then(m => ({ default: m.TaskDashboard })));
 const HabitChecklist = lazy(() => import('./modules/habits/HabitChecklist').then(m => ({ default: m.HabitChecklist })));
-const FinanceLedger = lazy(() => import('./modules/finance/FinanceLedger').then(m => ({ default: m.FinanceLedger })));
+const FinanceDashboard = lazy(() => import('./modules/finance/FinanceDashboard').then(m => ({ default: m.FinanceDashboard })));
 const SettingsPage = lazy(() => import('./core/SettingsPage').then(m => ({ default: m.SettingsPage })));
 
 const ModuleLoader = () => (
@@ -82,7 +82,7 @@ export const App: React.FC = () => {
             case 'schedule': return <div className={pageClass}><ScheduleGrid /></div>;
             case 'tasks': return <div className={pageClass}><TaskDashboard /></div>;
             case 'habits': return <div className={pageClass}><HabitChecklist /></div>;
-            case 'finance': return <div className={pageClass}><FinanceLedger /></div>;
+            case 'finance': return <div className={pageClass}><FinanceDashboard /></div>;
             case 'settings': return <div className={pageClass}><SettingsPage /></div>;
             default: return <div className={pageClass}><Dashboard /></div>;
           }

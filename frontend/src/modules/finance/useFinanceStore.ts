@@ -2,58 +2,57 @@ import { create } from 'zustand';
 import { Result } from '../../core/results';
 import { getBaseUrl } from '../../core/apiConfig';
 
-export interface Posting {
-  id?: string;
-  account_id: string;
-  amount: number;
-  memo?: string | null;
-}
-
 export interface Transaction {
   id: string;
-  description: string;
-  date: string;
-  postings: Posting[];
+  amount: number;
+  type: 'income' | 'expense';
+  category: string;
   tags: string[];
-  notes?: string;
-  is_recurring: boolean;
+  date: string;
+  description: string;
 }
 
-interface SummaryItem {
-  label: string;
-  value: number;
+export interface NetWorthSnapshot {
+  id: string;
+  date: string;
+  assets: number;
+  liabilities: number;
+  total: number;
 }
 
 interface FinanceState {
   transactions: Transaction[];
-  weeklySummary: SummaryItem[];
-  yearlySummary: SummaryItem[];
+  netWorthHistory: NetWorthSnapshot[];
   isLoading: boolean;
   error: string | null;
-  fetchTransactions: () => Promise<Result<Transaction[], string>>;
-  fetchSummaries: () => Promise<Result<{ weekly: SummaryItem[], yearly: SummaryItem[] }, string>>;
+  fetchTransactions: (timeframe?: string) => Promise<Result<Transaction[], string>>;
+  fetchNetWorth: () => Promise<Result<NetWorthSnapshot[], string>>;
 }
 
-export const useFinanceStore = create<FinanceState>((set, get) => ({
+export const useFinanceStore = create<FinanceState>((set) => ({
   transactions: [],
-  weeklySummary: [],
-  yearlySummary: [],
+  netWorthHistory: [],
   isLoading: false,
   error: null,
 
-  fetchTransactions: async () => {
+  fetchTransactions: async (timeframe) => {
     set({ isLoading: true, error: null });
     try {
       const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}/finance/transactions`);
-      const result: Result<Transaction[], string> = await response.json();
+      const url = timeframe 
+        ? `${baseUrl}/api/finance/transactions?timeframe=${timeframe}`
+        : `${baseUrl}/api/finance/transactions`;
       
-      if (result.success && result.data) {
-        set({ transactions: result.data, isLoading: false });
-        return result;
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      // The new api/finance returns raw list, not Result object
+      if (response.ok) {
+        set({ transactions: data, isLoading: false });
+        return { success: true, data };
       } else {
-        set({ error: result.error || 'Failed', isLoading: false });
-        return { success: false, error: result.error || 'Failed' };
+        set({ error: 'Failed to fetch', isLoading: false });
+        return { success: false, error: 'Failed to fetch' };
       }
     } catch (err) {
       set({ error: 'Network error', isLoading: false });
@@ -61,18 +60,15 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     }
   },
 
-  fetchSummaries: async () => {
+  fetchNetWorth: async () => {
     try {
       const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}/finance/summaries`);
-      const result: Result<{ weekly: SummaryItem[], yearly: SummaryItem[] }, string> = await response.json();
+      const response = await fetch(`${baseUrl}/api/finance/net-worth`);
+      const data = await response.json();
       
-      if (result.success && result.data) {
-        set({ 
-          weeklySummary: result.data.weekly, 
-          yearlySummary: result.data.yearly 
-        });
-        return result;
+      if (response.ok) {
+        set({ netWorthHistory: data });
+        return { success: true, data };
       }
       return { success: false, error: 'Failed' };
     } catch (err) {
