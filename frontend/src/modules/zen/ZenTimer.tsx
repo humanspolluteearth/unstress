@@ -199,7 +199,7 @@ export const ZenTimer: React.FC = () => {
   );
 
   return (
-    <div className="p-12 flex flex-col items-center justify-center min-h-full space-y-12 animate-in fade-in duration-500 overflow-hidden">
+    <div className="p-12 flex flex-col items-center justify-center min-h-full space-y-12 animate-in fade-in duration-500 overflow-hidden relative">
       <div className="max-w-4xl text-center leading-[1.6]">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white/90 uppercase">
           Focus for <InlineInput value={focusTime} onChange={setFocusTime} /> minutes 
@@ -215,22 +215,23 @@ export const ZenTimer: React.FC = () => {
         </h1>
       </div>
 
-      <div className="flex flex-col items-center gap-4">
-        <button 
-          onClick={fetchStats}
-          className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors"
-        >
-          <BarChart2 size={14} /> {showStats ? 'Hide Metrics' : 'System Stats'}
-        </button>
-
+      {/* System Stats in Corner */}
+      <div className="absolute bottom-8 right-8 flex flex-col items-end gap-4">
         {showStats && stats && (
-          <div className="bg-card border border-white/5 p-4 animate-in zoom-in-95 duration-200">
+          <div className="bg-card border border-white/5 p-4 animate-in slide-in-from-bottom-2 duration-200 shadow-2xl">
             <span className="text-[9px] font-black uppercase text-muted-foreground block mb-1">Total Cumulative Focus</span>
             <span className="text-2xl font-black tabular-nums tracking-tighter text-primary">
               {stats.total_hours?.toFixed(2) ?? '0.00'} <small className="text-[10px] uppercase ml-1 opacity-50">Hours</small>
             </span>
           </div>
         )}
+
+        <button 
+          onClick={fetchStats}
+          className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors bg-background/50 backdrop-blur-sm px-3 py-1.5 border border-white/5"
+        >
+          <BarChart2 size={14} /> {showStats ? 'Hide Metrics' : 'System Stats'}
+        </button>
       </div>
     </div>
   );
