@@ -5,19 +5,40 @@ from app.modules.finance.service import FinanceService, TransactionCreate
 from app.modules.habits.service import HabitsService, HabitLogCreate
 from app.modules.goals.service import GoalService, GoalCreate
 from app.core.broker import broker, BaseEvent
-
-class TaskCreate(BaseModel):
-    title: str
-    description: Optional[str] = None
-    priority: int = 0  # 0: Low, 1: Med, 2: High
-    tags: Optional[list[str]] = []
-    deadline: Optional[str] = None
-    project_link: Optional[str] = None
-    goal_id: Optional[str] = None
+from app.api.tasks import TaskCreate, Task
 
 class TaskService:
     # In-memory store to link tasks to goals for event routing
-    _tasks: Dict[str, dict] = {}
+    _tasks: Dict[str, dict] = {
+        "task-1": {
+            "id": "task-1",
+            "title": "Implement ActionService",
+            "description": "Implement the core action service for backend communication.",
+            "status": "In Progress",
+            "priority": 2,
+            "tags": ["core", "frontend"],
+            "deadline": "2026-05-15",
+            "project_link": "https://github.com/unstress/core",
+            "goal_id": None
+        },
+        "task-2": {
+            "id": "task-2",
+            "title": "Fix Sidecar Path",
+            "description": "Ensure the sidecar executable is correctly located in all environments.",
+            "status": "Done",
+            "priority": 1,
+            "tags": ["tauri", "linux"],
+            "deadline": "2026-05-10",
+            "goal_id": None
+        }
+    }
+
+    @staticmethod
+    async def get_tasks() -> Result[list[dict], str]:
+        """
+        Retrieves all tasks.
+        """
+        return Result.ok(list(TaskService._tasks.values()))
 
     @staticmethod
     async def create_task(data: TaskCreate) -> Result[dict, str]:
@@ -140,6 +161,10 @@ class ActionDispatcher:
     """
     Centralized dispatcher for handling creation actions across the system.
     """
+    @staticmethod
+    async def dispatch_get_tasks() -> Result[list[dict], str]:
+        return await TaskService.get_tasks()
+
     @staticmethod
     async def dispatch_finance_transaction(data: TransactionCreate) -> Result[dict, str]:
         return await FinanceService.add_transaction(data)

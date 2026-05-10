@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, HttpUrl
 from typing import List, Optional
 import uuid
+from app.core.dispatcher import TaskService
 
 # Schema Definitions
 class GoalModel(BaseModel):
@@ -24,13 +25,32 @@ class Goal(GoalModel):
     progress: float = 0.0
     total_tasks: int = 0
     completed_tasks: int = 0
+    active_tasks_count: int = 0 # Specifically requested field
 
 # Helper Logic
 def sync_goal_stats(goal: Goal):
-    """Recalculates progress and task counts for a goal."""
-    tasks = goal.tasks
-    goal.total_tasks = len(tasks)
-    goal.completed_tasks = len([t for t in tasks if t.get('completed') is True])
+    """Recalculates progress and task counts for a goal, including external tasks."""
+    # Internal tasks (checklist)
+    internal_tasks = goal.tasks
+    
+    # External tasks (linked via TaskService)
+    # TaskService uses string IDs, so we convert goal.id to string for matching
+    external_tasks = [t for t in TaskService._tasks.values() if t.get('goal_id') == str(goal.id)]
+    
+    total_internal = len(internal_tasks)
+    completed_internal = len([t for t in internal_tasks if t.get('completed') is True])
+    
+    total_external = len(external_tasks)
+    completed_external = len([t for t in external_tasks if t.get('status') == 'Done'])
+    
+    # Active tasks are those not in 'Done' status (for external) or not completed (for internal)
+    active_internal = total_internal - completed_internal
+    active_external = len([t for t in external_tasks if t.get('status') != 'Done'])
+    
+    goal.total_tasks = total_internal + total_external
+    goal.completed_tasks = completed_internal + completed_external
+    goal.active_tasks_count = active_internal + active_external
+    
     if goal.total_tasks > 0:
         goal.progress = round((goal.completed_tasks / goal.total_tasks) * 100, 2)
     else:
@@ -43,7 +63,9 @@ router = APIRouter()
 
 @router.get("")
 async def get_goals() -> List[Goal]:
-    """Retrieves all goals from the in-memory store."""
+    """Retrieves all goals with updated stats from TaskService."""
+    for goal in goals_db:
+        sync_goal_stats(goal)
     return goals_db
 
 @router.post("")

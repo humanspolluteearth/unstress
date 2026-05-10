@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.goals import router as goals_router
+from app.api.tasks import router as tasks_router
 from app.modules.finance.router import router as finance_router
 from app.core.actions_router import router as actions_router
 from app.modules.habits.router import router as habits_router
@@ -25,6 +26,7 @@ app.include_router(finance_router)
 app.include_router(actions_router)
 app.include_router(habits_router)
 app.include_router(goals_router, prefix="/api/goals", tags=["goals"])
+app.include_router(tasks_router, prefix="/api")
 app.include_router(schedules_router)
 
 # Note: Start using: python -m uvicorn app.main:app --port 8000
