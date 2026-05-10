@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, BarChart2, ChevronLeft } from 'lucide-react';
+import { Play, Pause, RotateCcw, BarChart2, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { getBaseUrl, API_ENDPOINTS } from '../../core/apiConfig';
 
+/**
+ * Immersive Zen Pomodoro Timer
+ */
 export const ZenTimer: React.FC = () => {
   const [focusTime, setFocusTime] = useState(25);
   const [breakTime, setBreakTime] = useState(5);
@@ -12,12 +15,38 @@ export const ZenTimer: React.FC = () => {
   const [isActive, setIsActive] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
   const [loopCount, setLoopCount] = useState(0);
-  const [isFocusMode, setIsFocusMode] = useState(false); // Controls the full-screen "Focus View"
+  const [isFocusMode, setIsFocusMode] = useState(false);
   
   const [stats, setStats] = useState<{ total_hours: number } | null>(null);
   const [showStats, setShowStats] = useState(false);
+  const [showExit, setShowExit] = useState(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const exitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Audio Feedback: Standard Web Audio API Chime
+  const playChime = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+      oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.5); // A4
+
+      gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.5);
+    } catch (e) {
+      console.error('[Zen] Audio Failed:', e);
+    }
+  };
 
   useEffect(() => {
     if (isActive && timer > 0) {
@@ -25,6 +54,7 @@ export const ZenTimer: React.FC = () => {
         setTimer((prev) => prev - 1);
       }, 1000);
     } else if (timer === 0) {
+      playChime();
       handleTimerComplete();
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -34,15 +64,36 @@ export const ZenTimer: React.FC = () => {
     };
   }, [isActive, timer]);
 
+  // Handle ESC key and Mouse movement in Focus Mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFocusMode) {
+        setIsFocusMode(false);
+      }
+    };
+
+    const handleMouseMove = () => {
+      if (!isFocusMode) return;
+      setShowExit(true);
+      if (exitTimeoutRef.current) clearTimeout(exitTimeoutRef.current);
+      exitTimeoutRef.current = setTimeout(() => setShowExit(false), 3000);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, [isFocusMode]);
+
   const handleTimerComplete = async () => {
     if (timerRef.current) clearInterval(timerRef.current);
     
     if (!isBreak) {
-      // Focus session completed
       const newLoopCount = loopCount + 1;
       setLoopCount(newLoopCount);
       
-      // Log to backend
       try {
         await fetch(`${getBaseUrl()}${API_ENDPOINTS.FOCUS}/log`, {
           method: 'POST',
@@ -62,17 +113,15 @@ export const ZenTimer: React.FC = () => {
       } else {
         setIsActive(false);
         setIsFocusMode(false);
-        alert('Target loops reached. Great work.');
+        alert('Protocol Complete. Systems Calibrated.');
       }
     } else {
-      // Break completed
       setIsBreak(false);
       setTimer(focusTime * 60);
     }
   };
 
   const toggleTimer = () => setIsActive(!isActive);
-  
   const resetTimer = () => {
     setIsActive(false);
     setIsBreak(false);
@@ -105,49 +154,30 @@ export const ZenTimer: React.FC = () => {
 
   if (isFocusMode) {
     return (
-      <div className="fixed inset-0 z-[200] bg-background flex flex-col items-center justify-center animate-in fade-in duration-700">
+      <div className="fixed inset-0 z-[200] bg-[#000000] flex flex-col items-center justify-center animate-in fade-in duration-1000 cursor-none">
         <button 
           onClick={() => setIsFocusMode(false)}
-          className="absolute top-8 left-8 text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2 uppercase text-[10px] font-black tracking-widest"
+          className={clsx(
+            "absolute top-8 right-8 text-white/10 hover:text-white transition-opacity duration-500 flex items-center gap-2 uppercase text-[10px] font-black tracking-widest",
+            showExit ? "opacity-100" : "opacity-0"
+          )}
         >
-          <ChevronLeft size={16} /> Exit Zen
+          <X size={20} />
         </button>
 
-        <div className="text-center space-y-8">
-          <div className="space-y-2">
-            <span className={clsx(
-              "text-[10px] font-black uppercase tracking-[0.4em]",
-              isBreak ? "text-emerald-500" : "text-primary"
-            )}>
-              {isBreak ? 'Interval: Break' : `Focus: Session ${loopCount + 1}/${targetLoops}`}
-            </span>
-            <h1 className="text-[12rem] font-black tracking-tighter leading-none tabular-nums select-none">
-              {formatTime(timer)}
-            </h1>
-          </div>
-
-          <div className="flex items-center justify-center gap-6">
-            <button 
-              onClick={toggleTimer}
-              className="w-20 h-20 rounded-none border border-white/10 flex items-center justify-center hover:bg-white/5 transition-all active:scale-95"
-            >
-              {isActive ? <Pause size={32} /> : <Play size={32} className="ml-1" />}
-            </button>
-            <button 
-              onClick={resetTimer}
-              className="w-20 h-20 rounded-none border border-white/10 flex items-center justify-center hover:bg-white/5 transition-all active:scale-95 text-muted-foreground"
-            >
-              <RotateCcw size={28} />
-            </button>
-          </div>
+        <div className="text-center">
+          <h1 className="text-[14rem] font-extralight tracking-tighter leading-none tabular-nums select-none text-white/90">
+            {formatTime(timer)}
+          </h1>
         </div>
 
-        {/* Progress Bar */}
-        <div className="absolute bottom-0 left-0 h-1 bg-primary/20 w-full">
-          <div 
-            className={clsx("h-full transition-all duration-1000 ease-linear", isBreak ? "bg-emerald-500" : "bg-primary")}
-            style={{ width: `${(timer / ((isBreak ? breakTime : focusTime) * 60)) * 100}%` }}
-          />
+        <div className="absolute bottom-12 flex flex-col items-center gap-2">
+          <span className={clsx(
+            "text-[9px] font-black uppercase tracking-[0.6em]",
+            isBreak ? "text-emerald-500" : "text-white/20"
+          )}>
+            {isBreak ? 'Interval: Refresh' : `Loop ${loopCount + 1} / ${targetLoops}`}
+          </span>
         </div>
       </div>
     );
@@ -160,7 +190,6 @@ export const ZenTimer: React.FC = () => {
         <p className="text-muted-foreground text-sm tracking-wide">Calibrate your focus intervals for maximum cognitive throughput.</p>
       </div>
 
-      {/* Configuration Grid */}
       <div className="grid grid-cols-3 gap-8 w-full max-w-2xl">
         <div className="space-y-2">
           <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Focus (Mins)</label>
