@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, HttpUrl
 from typing import List, Optional
 import uuid
@@ -36,8 +36,63 @@ def sync_goal_stats(goal: Goal):
     else:
         goal.progress = 0.0
 
-# In-memory store
-goals_db: List[Goal] = []
+# In-memory store seeded with mockup data INCLUDING DEADLINES
+goals_db: List[Goal] = [
+    Goal(
+        id=uuid.uuid4(),
+        title="Stabilize Arch Linux Sidecar",
+        description="Ensure the FastAPI backend runs natively on Python 3.14 without binary conflicts.",
+        markdown_content="## Objective\nEnsure zero `uvloop` compilation errors and port 8000 consistency across reboots.",
+        priority="critical",
+        category="Infrastructure",
+        time_frame="weekly",
+        deadline="2026-05-15",
+        label_color="#ef4444",
+        assignee_initials="MH",
+        tags=["arch", "python", "sys"],
+        tasks=[
+            {"id": "t1", "text": "Remove uvloop dependency", "completed": True},
+            {"id": "t2", "text": "Verify system-level networking", "completed": False}
+        ]
+    ),
+    Goal(
+        id=uuid.uuid4(),
+        title="Implement High-Density Goal UI",
+        description="Refactor the goal dashboard to use adaptive grid cards and Trello-style metadata.",
+        markdown_content="Refactor the goal dashboard to use a three-column detail panel and grid cards with progress bars.",
+        priority="high",
+        category="Frontend",
+        time_frame="weekly",
+        deadline="2026-05-12",
+        label_color="#f97316",
+        assignee_initials="MH",
+        tags=["react", "lucide", "ui"],
+        tasks=[
+            {"id": "t4", "text": "Create GoalCard component", "completed": True},
+            {"id": "t5", "text": "Implement GoalDetailPanel layout", "completed": True}
+        ]
+    ),
+    Goal(
+        id=uuid.uuid4(),
+        title="Double-Entry Bookkeeping Audit",
+        description="Audit all financial postings to ensure Assets = Liabilities + Equity remains true.",
+        markdown_content="Audit all financial postings to ensure Assets = Liabilities + Equity remains true for the quarter.",
+        priority="medium",
+        category="Finance",
+        time_frame="monthly",
+        deadline="2026-06-01",
+        label_color="#3b82f6",
+        assignee_initials="AS",
+        tags=["audit", "finance"],
+        tasks=[
+            {"id": "t7", "text": "Verify ledger integrity", "completed": False}
+        ]
+    )
+]
+
+# Recalculate stats for seeded data
+for g in goals_db:
+    sync_goal_stats(g)
 
 router = APIRouter()
 
