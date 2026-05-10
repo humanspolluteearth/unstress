@@ -7,11 +7,12 @@ import {
   RotateCcw, 
   Wallet, 
   Settings,
+  PencilLine,
   X
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
-export type PageId = 'dashboard' | 'goals' | 'schedule' | 'tasks' | 'habits' | 'finance' | 'settings';
+export type PageId = 'dashboard' | 'goals' | 'schedule' | 'tasks' | 'habits' | 'finance' | 'settings' | 'blackboard';
 
 interface SidebarProps {
   activePage: PageId;
@@ -25,6 +26,7 @@ const NAV_ITEMS: { id: PageId; label: string; icon: any }[] = [
   { id: 'tasks', label: 'Tasks', icon: CheckSquare },
   { id: 'habits', label: 'Habits', icon: RotateCcw },
   { id: 'finance', label: 'Finance', icon: Wallet },
+  { id: 'blackboard', label: 'Blackboard', icon: PencilLine },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
