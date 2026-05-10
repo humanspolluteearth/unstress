@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTaskStore, Task } from './useTaskStore';
-import { useGoalStore } from '../goals/useGoalStore';
+import { GoalService, Goal } from '../../services/GoalService';
 import { X, Tag, Calendar, Link as LinkIcon, AlertCircle, Target } from 'lucide-react';
 import { CustomSelect } from '../../core/CustomSelect';
 import { clsx } from 'clsx';
@@ -13,7 +13,7 @@ interface TaskModalProps {
 
 export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task }) => {
   const { createTask, updateTask } = useTaskStore();
-  const { goals, fetchGoals } = useGoalStore();
+  const [availableGoals, setAvailableGoals] = useState<Goal[]>([]);
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -27,7 +27,14 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task }) =
 
   useEffect(() => {
     if (isOpen) {
+      const fetchGoals = async () => {
+        const result = await GoalService.getGoals();
+        if (result.success && result.data) {
+          setAvailableGoals(result.data);
+        }
+      };
       fetchGoals();
+
       if (task) {
         setTitle(task.title);
         setDescription(task.description || '');
@@ -47,7 +54,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task }) =
         setGoalId('');
       }
     }
-  }, [isOpen, fetchGoals, task]);
+  }, [isOpen, task]);
 
   if (!isOpen) return null;
 
@@ -88,122 +95,96 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task }) =
     { label: 'High', value: 2 },
   ];
 
-  const goalOptions = [
-    { label: 'No linked goal', value: '' },
-    ...goals.map(g => ({ label: `[${g.tier}] ${g.title}`, value: g.id }))
-  ];
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-      <div className="bg-card border rounded-none shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h3 className="text-lg font-semibold">{task ? 'Edit Task' : 'Add New Task'}</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X size={20} />
+      <div className="bg-[#050505] border border-white/10 rounded-none shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="flex items-center justify-between p-4 border-b border-white/5">
+          <h3 className="text-xs font-black uppercase tracking-[0.3em] text-white">
+            {task ? 'Modify System Task' : 'Initialize New Task'}
+          </h3>
+          <button onClick={onClose} className="text-white/20 hover:text-white transition-colors">
+            <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && (
-            <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive text-sm rounded-none border border-destructive/20">
-              <AlertCircle size={16} />
-              {error}
+            <div className="bg-red-500/10 border border-red-500/20 p-3 flex items-center gap-3 text-red-500 text-[10px] font-bold uppercase tracking-widest">
+              <AlertCircle size={14} /> {error}
             </div>
           )}
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Title</label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Task Title</label>
             <input
-              autoFocus
-              required
+              autoFocus required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-muted/50 border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-              placeholder="What needs to be done?"
+              className="w-full bg-[#0a0a0a] border border-white/10 p-3 text-sm text-white focus:border-primary outline-none transition-colors"
+              placeholder="Operational objective..."
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Description</label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-muted/50 border rounded-none px-3 py-2 text-sm min-h-[80px] focus:outline-none focus:ring-1 focus:ring-primary/50"
-              placeholder="Add more details..."
+              className="w-full bg-[#0a0a0a] border border-white/10 p-3 text-sm text-white min-h-[80px] focus:border-primary outline-none resize-none"
+              placeholder="Detailed parameters..."
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <CustomSelect
-              label="Priority"
-              value={priority}
-              onChange={setPriority}
-              options={priorityOptions}
-            />
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-1.5">
-                <Calendar size={14} /> Deadline
+            <div className="space-y-1.5">
+               <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Priority</label>
+               <select 
+                 value={priority}
+                 onChange={(e) => setPriority(Number(e.target.value))}
+                 className="w-full bg-[#0a0a0a] border border-white/10 p-2.5 text-xs text-white focus:border-primary outline-none appearance-none"
+               >
+                 <option value={0}>LOW</option>
+                 <option value={1}>MEDIUM</option>
+                 <option value={2}>HIGH</option>
+               </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase text-white/30 tracking-widest flex items-center gap-1.5">
+                <Calendar size={10} /> Deadline
               </label>
               <input
                 type="date"
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
-                className="w-full bg-muted/50 border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                className="w-full bg-[#0a0a0a] border border-white/10 p-2 text-xs text-white focus:border-primary outline-none"
               />
             </div>
           </div>
 
-          <CustomSelect
-            label="Strategic Goal (Optional)"
-            icon={<Target size={14} />}
-            value={goalId}
-            onChange={setGoalId}
-            options={goalOptions}
-            placeholder="No linked goal"
-          />
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium flex items-center gap-1.5">
-              <Tag size={14} /> Tags (comma separated)
+          {/* Link to Goal Section */}
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase text-white/30 tracking-widest flex items-center gap-1.5">
+              <Target size={10} /> Link to Goal
             </label>
-            <input
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              className="w-full bg-muted/50 border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-              placeholder="e.g. work, urgent, hobby"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium flex items-center gap-1.5">
-              <LinkIcon size={14} /> Project Link
-            </label>
-            <input
-              type="url"
-              value={projectLink}
-              onChange={(e) => setProjectLink(e.target.value)}
-              className="w-full bg-muted/50 border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-              placeholder="https://..."
-            />
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-none transition-colors"
+            <select 
+              value={goalId}
+              onChange={(e) => setGoalId(e.target.value)}
+              className="w-full bg-[#0a0a0a] border border-white/10 p-2.5 text-xs text-white focus:border-primary outline-none appearance-none"
             >
-              Cancel
-            </button>
+              <option value="">NO LINKED GOAL</option>
+              {availableGoals.map(g => (
+                <option key={g.id} value={g.id}>{g.title.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1.5 pt-2">
             <button
               type="submit"
-              disabled={isSubmitting}
-              className={clsx(
-                "px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-none shadow-sm transition-all hover:bg-primary/90",
-                isSubmitting && "opacity-50 cursor-not-allowed"
-              )}
+              disabled={isSubmitting || !title.trim()}
+              className="w-full bg-white text-black py-3 text-[10px] font-black uppercase tracking-[0.3em] hover:bg-primary transition-all disabled:opacity-30 shadow-lg"
             >
-              {isSubmitting ? (task ? 'Saving...' : 'Adding...') : (task ? 'Save Changes' : 'Add Task')}
+              {isSubmitting ? 'PROCESSING...' : (task ? 'UPDATE SYSTEM TASK' : 'INITIALIZE TASK')}
             </button>
           </div>
         </form>
@@ -211,3 +192,4 @@ export const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task }) =
     </div>
   );
 };
+
