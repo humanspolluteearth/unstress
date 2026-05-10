@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Result } from './results';
 
-export type PageId = 'dashboard' | 'goals' | 'schedule' | 'tasks' | 'habits' | 'finance' | 'settings' | 'blackboard';
+export type PageId = 'dashboard' | 'goals' | 'schedule' | 'tasks' | 'habits' | 'finance' | 'settings' | 'blackboard' | 'zen';
 
 export const useKeyboardNavigation = (onNavigate: (page: PageId) => Result<null, string>) => {
   useEffect(() => {
@@ -18,6 +18,7 @@ export const useKeyboardNavigation = (onNavigate: (page: PageId) => Result<null,
           case 's': targetPage = 'schedule'; break;
           case 'g': targetPage = 'goals'; break;
           case 'b': targetPage = 'blackboard'; break;
+          case 'z': targetPage = 'zen'; break;
         }
 
         if (targetPage) {

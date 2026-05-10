@@ -17,10 +17,15 @@ export const getBaseUrl = (): string => {
   return `http://127.0.0.1:${getBackendPort()}`;
 };
 
+/**
+ * Standardized API Endpoints
+ * All domain routes are prefixed with /api
+ */
 export const API_ENDPOINTS = {
   GOALS: '/api/goals',
-  ACTIONS: '/actions',
-  FINANCE: '/finance',
-  HABITS: '/habits',
-  SCHEDULES: '/schedules',
+  TASKS: '/api/tasks',
+  FINANCE: '/api/finance',
+  HABITS: '/api/habits',
+  SCHEDULES: '/api/schedules',
+  FOCUS: '/api/focus',
 };

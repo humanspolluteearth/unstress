@@ -13,6 +13,7 @@ const COMMAND_MAP: Record<string, string> = {
   'g': 'goals',
   'b': 'blackboard',
   'blackboard': 'blackboard',
+  'z': 'zen',
   'db': 'dashboard',
   'settings': 'settings',
 };

@@ -11,6 +11,7 @@ const TaskDashboard = lazy(() => import('./modules/tasks/TaskDashboard').then(m 
 const HabitChecklist = lazy(() => import('./modules/habits/HabitChecklist').then(m => ({ default: m.HabitChecklist })));
 const FinanceLedger = lazy(() => import('./modules/finance/FinanceLedger').then(m => ({ default: m.FinanceLedger })));
 const Blackboard = lazy(() => import('./modules/blackboard/Blackboard').then(m => ({ default: m.Blackboard })));
+const ZenTimer = lazy(() => import('./modules/zen/ZenTimer').then(m => ({ default: m.ZenTimer })));
 const SettingsPage = lazy(() => import('./core/SettingsPage').then(m => ({ default: m.SettingsPage })));
 
 const ModuleLoader = () => (
@@ -85,6 +86,7 @@ export const App: React.FC = () => {
             case 'habits': return <div className={pageClass}><HabitChecklist /></div>;
             case 'finance': return <div className={pageClass}><FinanceLedger /></div>;
             case 'blackboard': return <div className={pageClass}><Blackboard /></div>;
+            case 'zen': return <div className={pageClass}><ZenTimer /></div>;
             case 'settings': return <div className={pageClass}><SettingsPage /></div>;
             default: return <div className={pageClass}><Dashboard /></div>;
           }
