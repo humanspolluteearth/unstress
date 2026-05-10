@@ -20,10 +20,13 @@ const ModuleLoader = () => (
 );
 
 const SidecarHealthCheck: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [port, setPort] = React.useState<number | null>((window as any).__BACKEND_PORT__);
+  const [port, setPort] = React.useState<number | null>((window as any).__BACKEND_PORT__ || 8000);
   
   React.useEffect(() => {
-    if (port) return;
+    if ((window as any).__BACKEND_PORT__) {
+      setPort((window as any).__BACKEND_PORT__);
+      return;
+    }
 
     // Poll for the port being injected by Rust eval
     const interval = setInterval(() => {
@@ -35,7 +38,7 @@ const SidecarHealthCheck: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 100);
 
     return () => clearInterval(interval);
-  }, [port]);
+  }, []);
 
   if (!port) {
     return (

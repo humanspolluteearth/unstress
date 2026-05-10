@@ -18,7 +18,7 @@ export interface Goal {
   tasks: { id: string; text: string; completed: boolean }[];
 }
 
-const API_BASE = "http://localhost:8000/api";
+const API_BASE = "http://127.0.0.1:8000/api";
 
 export class GoalService {
   static async createGoal(data: Omit<Goal, 'id' | 'progress' | 'total_tasks' | 'completed_tasks'>): Promise<Result<any>> {

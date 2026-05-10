@@ -91,9 +91,11 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
             : "No mission brief provided."}
         </p>
         
-        <div className="flex flex-wrap gap-x-3 gap-y-1 mb-4">
+        <div className="flex flex-wrap gap-1 mb-4">
           {goal.tags.map(tag => (
-            <span key={tag} className="text-[10px] font-medium text-white/30 lowercase tracking-tight">#{tag}</span>
+            <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded-none bg-white/5 text-white/50 border border-white/5 lowercase tracking-tight">
+              {tag}
+            </span>
           ))}
           {goal.tags.length === 0 && <span className="text-[10px] text-white/10 italic">#untagged</span>}
         </div>
