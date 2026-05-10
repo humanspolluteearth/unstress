@@ -11,18 +11,18 @@ interface GoalDetailPanelProps {
 }
 
 export const GoalDetailPanel: React.FC<GoalDetailPanelProps> = ({ goal, onClose, onUpdate }) => {
-  const [description, setDescription] = useState(goal.description);
+  const [markdownContent, setMarkdownContent] = useState(goal.markdown_content || '');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // Sync with goal prop changes
   useEffect(() => {
-    setDescription(goal.description);
-  }, [goal.id, goal.description]);
+    setMarkdownContent(goal.markdown_content || '');
+  }, [goal.id, goal.markdown_content]);
 
   const handleSave = async () => {
     setIsSaving(true);
-    const result = await GoalService.updateGoal(goal.id, { ...goal, description });
+    const result = await GoalService.updateGoal(goal.id, { ...goal, markdown_content: markdownContent });
     if (result.success) {
       setIsEditing(false);
       onUpdate();
@@ -87,14 +87,14 @@ export const GoalDetailPanel: React.FC<GoalDetailPanelProps> = ({ goal, onClose,
           {isEditing ? (
             <textarea
               autoFocus
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={markdownContent}
+              onChange={(e) => setMarkdownContent(e.target.value)}
               className="w-full h-full bg-transparent border-none outline-none resize-none font-mono text-sm text-white/80 leading-relaxed custom-scrollbar"
-              placeholder="Enter mission brief in Markdown..."
+              placeholder="Enter detailed intelligence in Markdown..."
             />
           ) : (
             <div className="prose prose-sm prose-invert max-w-none prose-p:text-white/70 prose-headings:text-white prose-strong:text-primary">
-              <ReactMarkdown>{description || "*No mission brief provided.*"}</ReactMarkdown>
+              <ReactMarkdown>{markdownContent || "*No detailed intelligence provided.*"}</ReactMarkdown>
             </div>
           )}
         </div>

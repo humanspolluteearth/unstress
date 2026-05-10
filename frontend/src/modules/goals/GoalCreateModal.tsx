@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Trophy, AlertCircle, BarChart3, CalendarDays, Calendar, Palette, User } from 'lucide-react';
-import { GoalService } from '../../services/GoalService';
+import { GoalService, Goal } from '../../services/GoalService';
 import { clsx } from 'clsx';
 
 interface GoalCreateModalProps {
@@ -13,6 +13,7 @@ interface GoalCreateModalProps {
 export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClose, onSuccess, goal }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [markdownContent, setMarkdownContent] = useState('');
   const [priority, setPriority] = useState<'critical' | 'high' | 'medium' | 'low'>('medium');
   const [timeFrame, setTimeFrame] = useState<'weekly' | 'monthly' | 'yearly'>('weekly');
   const [category, setCategory] = useState('General');
@@ -29,6 +30,7 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
     if (goal) {
       setTitle(goal.title);
       setDescription(goal.description);
+      setMarkdownContent(goal.markdown_content || '');
       setPriority(goal.priority);
       setTimeFrame(goal.time_frame);
       setCategory(goal.category);
@@ -40,6 +42,7 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
     } else {
       setTitle('');
       setDescription('');
+      setMarkdownContent('');
       setPriority('medium');
       setTimeFrame('weekly');
       setCategory('General');
@@ -74,6 +77,7 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
       const payload = {
         title,
         description,
+        markdown_content: markdownContent,
         priority,
         time_frame: timeFrame,
         category,
@@ -199,12 +203,22 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Description (Markdown)</label>
-            <textarea
+            <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Brief Description (Card Preview)</label>
+            <input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-white/5 border border-white/5 p-3 text-sm text-white h-24 focus:border-primary outline-none resize-none"
-              placeholder="Detailed brief..."
+              className="w-full bg-white/5 border border-white/5 p-3 text-sm text-white focus:border-primary outline-none transition-colors"
+              placeholder="Short summary for the card..."
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Detailed Intelligence (Markdown Panel)</label>
+            <textarea
+              value={markdownContent}
+              onChange={(e) => setMarkdownContent(e.target.value)}
+              className="w-full bg-white/5 border border-white/5 p-3 text-sm text-white h-32 focus:border-primary outline-none resize-none"
+              placeholder="Detailed brief for the side panel..."
             />
           </div>
 

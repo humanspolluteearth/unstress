@@ -4,6 +4,7 @@ export interface Goal {
   id: string;
   title: string;
   description: string;
+  markdown_content: string;
   priority: 'critical' | 'high' | 'medium' | 'low';
   category: string;
   time_frame: 'weekly' | 'monthly' | 'yearly';

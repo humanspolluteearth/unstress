@@ -64,9 +64,12 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
         className="p-4 pt-5 cursor-pointer"
       >
         <div className="flex justify-between items-start mb-3">
-          <div className="flex items-center gap-2">
-            <Target size={14} className={isSelected ? "text-primary" : "text-white/20"} />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">{goal.category}</span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80">{goal.category}</span>
+            <div className="flex items-center gap-2">
+              <Target size={12} className={isSelected ? "text-primary" : "text-white/20"} />
+              <span className="text-[8px] font-bold uppercase tracking-widest text-white/30">{goal.time_frame}</span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
              {/* Edit Button */}
@@ -121,9 +124,6 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
              )}>
                <CheckSquare size={10} />
                <span>{goal.completed_tasks}/{goal.total_tasks}</span>
-             </div>
-             <div className="flex items-center gap-1.5 lowercase tracking-normal font-medium text-white/40">
-               {goal.time_frame}
              </div>
           </div>
           

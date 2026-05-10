@@ -7,6 +7,7 @@ import uuid
 class GoalModel(BaseModel):
     title: str
     description: str
+    markdown_content: str = "" # Detailed intelligence for the side panel
     priority: str  # 'critical', 'high', 'medium', 'low'
     category: str
     time_frame: str # 'weekly', 'monthly', 'yearly'
