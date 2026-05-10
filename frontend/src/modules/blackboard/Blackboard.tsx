@@ -66,6 +66,48 @@ export const Blackboard: React.FC = () => {
     }
   }, [saveState]);
 
+  const undo = useCallback(() => {
+    if (historyRef.current.length <= 1 || !contextRef.current) return;
+    redoStackRef.current.push(historyRef.current.pop()!);
+    const prevState = historyRef.current[historyRef.current.length - 1];
+    contextRef.current.putImageData(prevState, 0, 0);
+  }, []);
+
+  const redo = useCallback(() => {
+    if (redoStackRef.current.length === 0 || !contextRef.current) return;
+    const nextState = redoStackRef.current.pop()!;
+    historyRef.current.push(nextState);
+    contextRef.current.putImageData(nextState, 0, 0);
+  }, []);
+
+  const clearCanvas = () => {
+    if (!contextRef.current || !canvasRef.current) return;
+    const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--background').trim() || '#0a0a0a';
+    contextRef.current.fillStyle = bgColor;
+    contextRef.current.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    saveState();
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        if (e.shiftKey) {
+          e.preventDefault();
+          redo();
+        } else {
+          e.preventDefault();
+          undo();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+        e.preventDefault();
+        redo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
+
   useEffect(() => {
     initCanvas();
     window.addEventListener('resize', initCanvas);
@@ -84,8 +126,8 @@ export const Blackboard: React.FC = () => {
     if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
-    const clientX = 'touches' in e.nativeEvent ? e.nativeEvent.touches[0].clientX : (e as React.MouseEvent).clientX;
-    const clientY = 'touches' in e.nativeEvent ? e.nativeEvent.touches[0].clientY : (e as React.MouseEvent).clientY;
+    const clientX = 'touches' in e.nativeEvent ? (e.nativeEvent as TouchEvent).touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e.nativeEvent ? (e.nativeEvent as TouchEvent).touches[0].clientY : (e as React.MouseEvent).clientY;
 
     return {
       x: clientX - rect.left,
@@ -137,28 +179,6 @@ export const Blackboard: React.FC = () => {
       midPoint.current = null;
       saveState();
     }
-  };
-
-  const undo = () => {
-    if (historyRef.current.length <= 1 || !contextRef.current) return;
-    redoStackRef.current.push(historyRef.current.pop()!);
-    const prevState = historyRef.current[historyRef.current.length - 1];
-    contextRef.current.putImageData(prevState, 0, 0);
-  };
-
-  const redo = () => {
-    if (redoStackRef.current.length === 0 || !contextRef.current) return;
-    const nextState = redoStackRef.current.pop()!;
-    historyRef.current.push(nextState);
-    contextRef.current.putImageData(nextState, 0, 0);
-  };
-
-  const clearCanvas = () => {
-    if (!contextRef.current || !canvasRef.current) return;
-    const bgColor = getComputedStyle(document.documentElement).getPropertyValue('--background').trim() || '#0a0a0a';
-    contextRef.current.fillStyle = bgColor;
-    contextRef.current.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    saveState();
   };
 
   return (

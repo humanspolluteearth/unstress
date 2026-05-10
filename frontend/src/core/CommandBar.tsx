@@ -11,6 +11,8 @@ const COMMAND_MAP: Record<string, string> = {
   't': 'tasks',
   's': 'schedule',
   'g': 'goals',
+  'b': 'blackboard',
+  'blackboard': 'blackboard',
   'db': 'dashboard',
   'settings': 'settings',
 };
@@ -50,12 +52,13 @@ export const CommandBar: React.FC<CommandBarProps> = ({ onNavigate }) => {
   }, [isVisible]);
 
   const handleExecute = () => {
-    const cmd = command.startsWith(':') ? command.slice(1).trim() : command.trim();
+    const rawCmd = command.startsWith(':') ? command.slice(1).trim() : command.trim();
+    const cmd = rawCmd.toLowerCase();
     
     if (cmd === 'd' || cmd === 'delete') {
       window.dispatchEvent(new CustomEvent('command-delete-event'));
     } else {
-      const target = COMMAND_MAP[cmd];
+      const target = COMMAND_MAP[cmd] || (cmd === 'blackboard' ? 'blackboard' : null);
       if (target) {
         onNavigate(target);
       }
