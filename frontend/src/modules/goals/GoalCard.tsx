@@ -64,8 +64,14 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
         className="p-4 pt-5 cursor-pointer"
       >
         <div className="flex justify-between items-start mb-3">
-          <div className="flex flex-col gap-0.5">
+          <div className="flex flex-col gap-1">
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80">{goal.category}</span>
+            {goal.deadline && (
+               <div className="flex items-center gap-1.5 text-[9px] font-bold text-white/30 uppercase tracking-tight">
+                 <Calendar size={10} className="text-white/20" />
+                 {new Date(goal.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+               </div>
+             )}
           </div>
           <div className="flex items-center gap-2">
              {/* Edit Button */}
@@ -121,13 +127,6 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
                <CheckSquare size={10} />
                <span>{goal.completed_tasks}/{goal.total_tasks}</span>
              </div>
-
-             {goal.deadline && (
-               <div className="flex items-center gap-1.5 lowercase tracking-normal font-medium text-white/40">
-                 <Calendar size={10} />
-                 {new Date(goal.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-               </div>
-             )}
           </div>
           
           <button 
