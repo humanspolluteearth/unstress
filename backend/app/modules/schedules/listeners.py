@@ -1,7 +1,10 @@
+import logging
 from app.core.broker import BaseEvent, broker
 from app.core.results import Result
 from app.modules.schedules.service import SchedulesService
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 async def handle_task_completed(event: BaseEvent) -> Result[None, str]:
     """
@@ -9,7 +12,7 @@ async def handle_task_completed(event: BaseEvent) -> Result[None, str]:
     Checks for the next open slot and publishes a suggestion.
     """
     try:
-        print(f"[Schedules Module] Task {event.payload.get('task_id')} completed. Searching for next slot...")
+        logger.info(f"[Schedules Module] Task {event.payload.get('task_id')} completed. Searching for next slot...")
         
         # 1. Logic to find next open slot
         next_slot = await SchedulesService.find_next_open_slot()
@@ -30,7 +33,7 @@ async def handle_task_completed(event: BaseEvent) -> Result[None, str]:
                 }
             )
             await broker.publish(suggestion_event)
-            print(f"[Schedules Module] Suggested next task for slot at {next_slot['start_time']}")
+            logger.info(f"[Schedules Module] Suggested next task for slot at {next_slot['start_time']}")
             
         return Result.ok(None)
     except Exception as e:

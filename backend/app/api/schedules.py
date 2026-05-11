@@ -1,62 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from typing import List, Optional, Dict, Any
+import logging
 from sqlalchemy.orm import Session
-from app.database import get_db
-import app.models as models
-from pydantic import BaseModel, validator
+from app.core.database import get_db
+from app.models import schedule as models
+from app.schemas import schedules as schemas
 from datetime import datetime, timezone
 import uuid
 from app.core.results import Result
 
-# --- Schemas ---
-
-class EventCreate(BaseModel):
-    title: str
-    start_time: datetime
-    end_time: datetime
-    repeat_pattern: Optional[str] = None
-    goal_id: Optional[str] = None
-
-    @validator('start_time', 'end_time', pre=True)
-    def ensure_utc_aware(cls, v):
-        try:
-            if isinstance(v, str):
-                dt = datetime.fromisoformat(v.replace('Z', '+00:00'))
-            elif isinstance(v, datetime):
-                dt = v
-            else:
-                return v
-            if dt.tzinfo is None:
-                return dt.replace(tzinfo=timezone.utc)
-            return dt.astimezone(timezone.utc)
-        except Exception:
-            raise ValueError("TIMEZONE_MISMATCH")
-
-class EventUpdate(BaseModel):
-    title: Optional[str] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
-    repeat_pattern: Optional[str] = None
-    goal_id: Optional[str] = None
-
-    @validator('start_time', 'end_time', pre=True)
-    def ensure_utc_aware(cls, v):
-        if v is None:
-            return None
-        try:
-            if isinstance(v, str):
-                dt = datetime.fromisoformat(v.replace('Z', '+00:00'))
-            elif isinstance(v, datetime):
-                dt = v
-            else:
-                return v
-            if dt.tzinfo is None:
-                return dt.replace(tzinfo=timezone.utc)
-            return dt.astimezone(timezone.utc)
-        except Exception:
-            raise ValueError("TIMEZONE_MISMATCH")
-
-# --- Router ---
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -64,23 +17,27 @@ router = APIRouter()
 @router.get("/", response_model=Result[List[dict], str])
 async def get_schedule(db: Session = Depends(get_db)):
     """Retrieves all scheduled events from the database."""
-    events = db.query(models.ScheduledEvent).all()
-    results = [
-        {
-            "id": e.id,
-            "title": e.title,
-            "start_time": e.start_time,
-            "end_time": e.end_time,
-            "item_type": "event",
-            "is_conflict": e.is_conflict,
-            "goal_id": e.goal_id
-        } for e in events
-    ]
-    return Result.ok(results)
+    try:
+        events = db.query(models.ScheduledEvent).all()
+        results = [
+            {
+                "id": e.id,
+                "title": e.title,
+                "start_time": e.start_time,
+                "end_time": e.end_time,
+                "item_type": "event",
+                "is_conflict": e.is_conflict,
+                "goal_id": e.goal_id
+            } for e in events
+        ]
+        return Result.ok(results)
+    except Exception as e:
+        logger.error(f"Error fetching schedule: {e}")
+        return Result.fail(str(e))
 
 @router.post("", response_model=Result[dict, str])
 @router.post("/", response_model=Result[dict, str])
-async def create_event(data: EventCreate, db: Session = Depends(get_db)):
+async def create_event(data: schemas.EventCreate, db: Session = Depends(get_db)):
     """Creates a new event in the database."""
     try:
         # Simple overlap check for conflict flag
@@ -115,18 +72,19 @@ async def create_event(data: EventCreate, db: Session = Depends(get_db)):
         return Result.ok(event_dict)
     except Exception as e:
         db.rollback()
+        logger.error(f"Error creating event: {e}")
         return Result.fail(str(e))
 
 @router.put("/{event_id}", response_model=Result[dict, str])
 @router.put("/{event_id}/", response_model=Result[dict, str])
-async def update_event(event_id: str, data: EventUpdate, db: Session = Depends(get_db)):
+async def update_event(event_id: str, data: schemas.EventUpdate, db: Session = Depends(get_db)):
     """Updates an existing event in the database."""
     event = db.query(models.ScheduledEvent).filter(models.ScheduledEvent.id == event_id).first()
     if not event:
         return Result.fail("Event not found")
     
     try:
-        update_data = data.dict(exclude_unset=True)
+        update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(event, key, value)
             
@@ -155,6 +113,7 @@ async def update_event(event_id: str, data: EventUpdate, db: Session = Depends(g
         return Result.ok(event_dict)
     except Exception as e:
         db.rollback()
+        logger.error(f"Error updating event {event_id}: {e}")
         return Result.fail(str(e))
 
 @router.delete("/{event_id}", response_model=Result[dict, str])
@@ -171,4 +130,5 @@ async def delete_event(event_id: str, db: Session = Depends(get_db)):
         return Result.ok({"success": True, "status": "deleted"})
     except Exception as e:
         db.rollback()
+        logger.error(f"Error deleting event {event_id}: {e}")
         return Result.fail(str(e))

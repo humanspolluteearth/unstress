@@ -1,7 +1,8 @@
 from fastapi import APIRouter
-from app.core.dispatcher import ActionDispatcher, TaskCreate
-from app.modules.finance.service import TransactionCreate
-from app.modules.habits.service import HabitLogCreate
+from app.core.dispatcher import ActionDispatcher
+from app.schemas.tasks import TaskCreate
+from app.schemas.finance import TransactionCreate
+from app.schemas.habits import HabitLogCreate
 from app.core.results import Result
 from typing import Any
 

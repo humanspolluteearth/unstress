@@ -1,38 +1,17 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
-from pydantic import BaseModel, HttpUrl
 from typing import List, Optional, Any
 import uuid
+import logging
 from sqlalchemy.orm import Session
-from app.database import get_db
-import app.models as models
+from app.core.database import get_db
+from app.models import goals as models
+from app.schemas import goals as schemas
 from app.core.results import Result
 
-# Schema Definitions
-class GoalModel(BaseModel):
-    title: str
-    description: str
-    markdown_content: str = ""
-    priority: str
-    category: str
-    time_frame: str
-    deadline: Optional[str] = None
-    label_color: str = "#ffffff"
-    assignee_initials: str = "--"
-    tags: List[str] = []
-    links: List[HttpUrl] = []
-    references: List[str] = []
-    internal_tasks: List[dict] = []
-    is_current_focus: bool = False
-
-class Goal(GoalModel):
-    id: uuid.UUID
-    progress: float = 0.0
-    total_tasks: int = 0
-    completed_tasks: int = 0
-    active_tasks_count: int = 0
+logger = logging.getLogger(__name__)
 
 # Helper Logic
-def sync_goal_stats(goal_obj: models.Goal, db_tasks: List[models.Task]):
+def sync_goal_stats(goal_obj: models.Goal, db_tasks: List[Any]):
     """Recalculates progress and task counts for a goal."""
     internal_tasks = goal_obj.internal_tasks or []
     external_tasks = db_tasks
@@ -67,46 +46,52 @@ router = APIRouter()
 @router.get("/", response_model=Result[List[dict], str])
 async def get_goals(db: Session = Depends(get_db)):
     """Retrieves all goals with updated stats from the database."""
-    goals = db.query(models.Goal).all()
-    results = []
-    for goal in goals:
-        # Get tasks linked to this goal
-        external_tasks = db.query(models.Task).filter(models.Task.goal_id == goal.id).all()
-        stats = sync_goal_stats(goal, external_tasks)
-        
-        goal_dict = {
-            "id": goal.id,
-            "title": goal.title,
-            "description": goal.description,
-            "markdown_content": goal.markdown_content,
-            "priority": goal.priority,
-            "category": goal.category,
-            "time_frame": goal.time_frame,
-            "deadline": goal.deadline,
-            "label_color": goal.label_color,
-            "assignee_initials": goal.assignee_initials,
-            "tags": goal.tags,
-            "links": goal.links,
-            "references": goal.references,
-            "tasks": goal.internal_tasks,
-            "is_current_focus": goal.is_current_focus,
-            "external_tasks": [
-                {
-                    "id": t.id,
-                    "title": t.title,
-                    "status": t.status,
-                    "priority": t.priority,
-                    "goal_id": t.goal_id
-                } for t in external_tasks
-            ],
-            **stats
-        }
-        results.append(goal_dict)
-    return Result.ok(results)
+    try:
+        goals = db.query(models.Goal).all()
+        results = []
+        for goal in goals:
+            # Import models.Task here to avoid circular if any, though not likely now
+            # Actually models is app.models.goals which doesn't have Task if split
+            # Wait, Task is in app.models.goals in my current split.
+            external_tasks = db.query(models.Task).filter(models.Task.goal_id == goal.id).all()
+            stats = sync_goal_stats(goal, external_tasks)
+            
+            goal_dict = {
+                "id": goal.id,
+                "title": goal.title,
+                "description": goal.description,
+                "markdown_content": goal.markdown_content,
+                "priority": goal.priority,
+                "category": goal.category,
+                "time_frame": goal.time_frame,
+                "deadline": goal.deadline,
+                "label_color": goal.label_color,
+                "assignee_initials": goal.assignee_initials,
+                "tags": goal.tags,
+                "links": goal.links,
+                "references": goal.references,
+                "tasks": goal.internal_tasks,
+                "is_current_focus": goal.is_current_focus,
+                "external_tasks": [
+                    {
+                        "id": t.id,
+                        "title": t.title,
+                        "status": t.status,
+                        "priority": t.priority,
+                        "goal_id": t.goal_id
+                    } for t in external_tasks
+                ],
+                **stats
+            }
+            results.append(goal_dict)
+        return Result.ok(results)
+    except Exception as e:
+        logger.error(f"Error fetching goals: {e}")
+        return Result.fail(str(e))
 
 @router.post("", response_model=Result[dict, str])
 @router.post("/", response_model=Result[dict, str])
-async def create_goal(goal_data: GoalModel, db: Session = Depends(get_db)):
+async def create_goal(goal_data: schemas.GoalBase, db: Session = Depends(get_db)):
     """Creates a new goal in the database."""
     try:
         new_goal = models.Goal(
@@ -152,11 +137,12 @@ async def create_goal(goal_data: GoalModel, db: Session = Depends(get_db)):
         return Result.ok({**goal_dict, **stats})
     except Exception as e:
         db.rollback()
+        logger.error(f"Error creating goal: {e}")
         return Result.fail(str(e))
 
 @router.put("/{goal_id}", response_model=Result[dict, str])
 @router.put("/{goal_id}/", response_model=Result[dict, str])
-async def update_goal(goal_id: uuid.UUID, goal_data: GoalModel, db: Session = Depends(get_db)):
+async def update_goal(goal_id: uuid.UUID, goal_data: schemas.GoalBase, db: Session = Depends(get_db)):
     """Updates an existing goal in the database."""
     goal = db.query(models.Goal).filter(models.Goal.id == str(goal_id)).first()
     if not goal:
@@ -203,6 +189,7 @@ async def update_goal(goal_id: uuid.UUID, goal_data: GoalModel, db: Session = De
         return Result.ok({**goal_dict, **stats})
     except Exception as e:
         db.rollback()
+        logger.error(f"Error updating goal {goal_id}: {e}")
         return Result.fail(str(e))
 
 @router.delete("/{goal_id}", response_model=Result[bool, str])
@@ -222,6 +209,7 @@ async def delete_goal(goal_id: uuid.UUID, db: Session = Depends(get_db)):
         return Result.ok(True)
     except Exception as e:
         db.rollback()
+        logger.error(f"Error deleting goal {goal_id}: {e}")
         return Result.fail(str(e))
 
 @router.post("/{goal_id}/focus", response_model=Result[bool, str])
@@ -242,4 +230,5 @@ async def set_goal_focus(goal_id: uuid.UUID, db: Session = Depends(get_db)):
         return Result.ok(True)
     except Exception as e:
         db.rollback()
+        logger.error(f"Error setting goal focus {goal_id}: {e}")
         return Result.fail(str(e))

@@ -1,7 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import Base, engine
-import app.models as models
+import logging
+from app.core.database import engine
+from app.models.base import Base
+# Import all models to ensure they are registered with Base.metadata
+from app.models import finance, goals, focus, habits, schedule
 
 from app.api.goals import router as goals_router
 from app.api.tasks import router as tasks_router
@@ -17,21 +20,25 @@ import asyncio
 import time
 from sqlalchemy.exc import OperationalError
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # --- Database Persistence Activation with Retry Logic ---
 def init_db(retries=5, delay=2):
     """Wait for the database to be ready and initialize tables."""
-    print(f"[Backend] Attempting to connect to PostgreSQL...")
+    logger.info("Attempting to connect to PostgreSQL...")
     for i in range(retries):
         try:
-            models.Base.metadata.create_all(bind=engine)
-            print("[Backend] Database connection established and tables synchronized.")
+            Base.metadata.create_all(bind=engine)
+            logger.info("Database connection established and tables synchronized.")
             return True
         except OperationalError as e:
-            print(f"[Backend] Database not ready (attempt {i+1}/{retries}): {e}")
+            logger.warning(f"Database not ready (attempt {i+1}/{retries}): {e}")
             if i < retries - 1:
                 time.sleep(delay)
             else:
-                print("[Backend] CRITICAL: Could not connect to database after multiple attempts.")
+                logger.error("CRITICAL: Could not connect to database after multiple attempts.")
                 return False
 
 init_db()

@@ -1,5 +1,8 @@
+import logging
 from app.core.broker import BaseEvent
 from app.core.results import Result
+
+logger = logging.getLogger(__name__)
 
 async def handle_finance_goal_update(event: BaseEvent) -> Result[None, str]:
     """
@@ -16,7 +19,7 @@ async def handle_finance_goal_update(event: BaseEvent) -> Result[None, str]:
             # For simplicity, we assume the whole transaction is toward the goal
             amount = sum(p.get("amount", 0) for p in payload.get("postings", []))
             
-            print(f"[Goals Module] Financial update for Goal {goal_id}: +{amount} cents.")
+            logger.info(f"[Goals Module] Financial update for Goal {goal_id}: +{amount} cents.")
             # Logic: GoalsService.update_progress(goal_id, amount)
             
             from app.core.broker import broker
@@ -34,11 +37,11 @@ async def handle_task_goal_update(event: BaseEvent) -> Result[None, str]:
     Updates Project Goals when tasks are completed.
     """
     try:
-        from app.modules.goals.service import GoalsService
+        from app.modules.goals.service import GoalService
         goal_id = event.payload.get("goal_id")
         if goal_id:
-            print(f"[Goals Module] Task completion update for Goal {goal_id}.")
-            await GoalsService.increment_progress(goal_id)
+            logger.info(f"[Goals Module] Task completion update for Goal {goal_id}.")
+            await GoalService.increment_progress(goal_id)
             
         return Result.ok(None)
     except Exception as e:
@@ -54,7 +57,7 @@ async def handle_habit_goal_update(event: BaseEvent) -> Result[None, str]:
         goal_id = payload.get("goal_id")
         
         if goal_id and payload.get("status") == "success":
-            print(f"[Goals Module] Habit success update for Goal {goal_id}.")
+            logger.info(f"[Goals Module] Habit success update for Goal {goal_id}.")
             # Logic: GoalsService.update_streak(goal_id)
             
             from app.core.broker import broker

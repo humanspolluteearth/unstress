@@ -1,36 +1,20 @@
 from fastapi import APIRouter, HTTPException, Query, Request, Depends
-from pydantic import BaseModel, Field, HttpUrl
-from typing import List, Optional, Literal, Any
+from typing import List, Optional, Any
 from datetime import datetime, timezone, timedelta
 import uuid
+import logging
 from sqlalchemy.orm import Session
-from app.database import get_db
-import app.models as models
+from app.core.database import get_db
+from app.models import finance as models
+from app.schemas import finance as schemas
 from app.core.results import Result
 
-# Schema Definitions
-class TransactionBase(BaseModel):
-    amount: float
-    type: Literal["income", "expense"]
-    category: str
-    tags: List[str] = []
-    date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    description: str
-
-class Transaction(TransactionBase):
-    id: uuid.UUID
-
-class NetWorthSnapshot(BaseModel):
-    id: uuid.UUID
-    date: datetime
-    assets: float
-    liabilities: float
-    total: float
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.get("/transactions", response_model=Result[List[Transaction], str])
-@router.get("/transactions/", response_model=Result[List[Transaction], str])
+@router.get("/transactions", response_model=Result[List[schemas.Transaction], str])
+@router.get("/transactions/", response_model=Result[List[schemas.Transaction], str])
 async def get_transactions(
     timeframe: Optional[str] = Query(None, description="weekly, monthly, or yearly"),
     db: Session = Depends(get_db)
@@ -54,11 +38,12 @@ async def get_transactions(
         transactions = query.order_by(models.Transaction.date.desc()).all()
         return Result.ok(transactions)
     except Exception as e:
+        logger.error(f"Error fetching transactions: {e}")
         return Result.fail(str(e))
 
-@router.post("/transactions", response_model=Result[Transaction, str])
-@router.post("/transactions/", response_model=Result[Transaction, str])
-async def create_transaction(tx_data: TransactionBase, db: Session = Depends(get_db)):
+@router.post("/transactions", response_model=Result[schemas.Transaction, str])
+@router.post("/transactions/", response_model=Result[schemas.Transaction, str])
+async def create_transaction(tx_data: schemas.TransactionBase, db: Session = Depends(get_db)):
     try:
         new_tx = models.Transaction(
             id=str(uuid.uuid4()),
@@ -75,11 +60,12 @@ async def create_transaction(tx_data: TransactionBase, db: Session = Depends(get
         return Result.ok(new_tx)
     except Exception as e:
         db.rollback()
+        logger.error(f"Error creating transaction: {e}")
         return Result.fail(str(e))
 
-@router.put("/transactions/{transaction_id}", response_model=Result[Transaction, str])
-@router.put("/transactions/{transaction_id}/", response_model=Result[Transaction, str])
-async def update_transaction(transaction_id: uuid.UUID, tx_data: TransactionBase, db: Session = Depends(get_db)):
+@router.put("/transactions/{transaction_id}", response_model=Result[schemas.Transaction, str])
+@router.put("/transactions/{transaction_id}/", response_model=Result[schemas.Transaction, str])
+async def update_transaction(transaction_id: uuid.UUID, tx_data: schemas.TransactionBase, db: Session = Depends(get_db)):
     tx = db.query(models.Transaction).filter(models.Transaction.id == str(transaction_id)).first()
     if not tx:
         return Result.fail("Transaction not found")
@@ -96,6 +82,7 @@ async def update_transaction(transaction_id: uuid.UUID, tx_data: TransactionBase
         return Result.ok(tx)
     except Exception as e:
         db.rollback()
+        logger.error(f"Error updating transaction {transaction_id}: {e}")
         return Result.fail(str(e))
 
 @router.delete("/transactions/{transaction_id}", response_model=Result[dict, str])
@@ -110,6 +97,7 @@ async def delete_transaction(transaction_id: uuid.UUID, db: Session = Depends(ge
         return Result.ok({"success": True, "status": "deleted"})
     except Exception as e:
         db.rollback()
+        logger.error(f"Error deleting transaction {transaction_id}: {e}")
         return Result.fail(str(e))
 
 @router.get("/summaries")
@@ -151,13 +139,15 @@ async def get_summaries(db: Session = Depends(get_db)):
 
         return Result.ok({"weekly": weekly, "yearly": yearly})
     except Exception as e:
+        logger.error(f"Error generating summaries: {e}")
         return Result.fail(str(e))
 
-@router.get("/net-worth", response_model=Result[List[NetWorthSnapshot], str])
-@router.get("/net-worth/", response_model=Result[List[NetWorthSnapshot], str])
+@router.get("/net-worth", response_model=Result[List[schemas.NetWorthSnapshot], str])
+@router.get("/net-worth/", response_model=Result[List[schemas.NetWorthSnapshot], str])
 async def get_net_worth(db: Session = Depends(get_db)):
     try:
         snapshots = db.query(models.NetWorthSnapshot).order_by(models.NetWorthSnapshot.date.asc()).all()
         return Result.ok(snapshots)
     except Exception as e:
+        logger.error(f"Error fetching net worth: {e}")
         return Result.fail(str(e))

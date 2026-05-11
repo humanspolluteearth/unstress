@@ -47,25 +47,10 @@ class SearchService:
                             metadata={"status": event.payload.get("status")}
                         ))
 
-            # 2. Search in Mocked Data (Simulating SQL table scans)
+            # 2. Search in Database (Simulating SQL table scans)
             # This is where we'd do: SELECT * FROM tasks WHERE title ILIKE '%query%'
-            # For this scaffolding, we'll return some relevant mock results if query matches
-            if "task" in q or "fix" in q:
-                results.append(SearchResult(
-                    id="mock-task-1",
-                    title="Fix search utility latency",
-                    type="task",
-                    metadata={"priority": "high"}
-                ))
+            # TODO: Implement real database search across modules
             
-            if "habit" in q or "gym" in q:
-                 results.append(SearchResult(
-                    id="mock-habit-1",
-                    title="Go to the gym",
-                    type="habit",
-                    metadata={"streak": 5}
-                ))
-
             # Deduplicate by ID
             unique_results = {r.id: r for r in results}.values()
 

@@ -1,93 +1,53 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import List, Optional
+import logging
 from sqlalchemy.orm import Session
-from app.database import get_db
-import app.models as models
-from pydantic import BaseModel
-from datetime import datetime, date, timezone
+from app.core.database import get_db
+from app.models import habits as models
+from app.schemas import habits as schemas
+from datetime import datetime, timezone
 import uuid
 from app.core.results import Result
 
-# --- Schemas ---
-
-class HabitLog(BaseModel):
-    id: str
-    timestamp: str
-    value: float
-
-class Habit(BaseModel):
-    id: str
-    name: str
-    frequency: str
-    unit: str = 'rep'
-    habit_type: str = 'numeric'
-    two_min_threshold: float
-    normal_threshold: float
-    hard_threshold: float
-    impossible_threshold: float
-    logs: List[HabitLog] = []
-
-    model_config = {"from_attributes": True}
-
-class HabitCreate(BaseModel):
-    name: str
-    frequency: str
-    unit: str = 'rep'
-    habit_type: str = 'numeric'
-    two_min_threshold: float
-    normal_threshold: float
-    hard_threshold: float
-    impossible_threshold: float
-
-class HabitUpdate(BaseModel):
-    name: Optional[str] = None
-    frequency: Optional[str] = None
-    unit: Optional[str] = None
-    habit_type: Optional[str] = None
-    two_min_threshold: Optional[float] = None
-    normal_threshold: Optional[float] = None
-    hard_threshold: Optional[float] = None
-    impossible_threshold: Optional[float] = None
-
-class HabitLogCreate(BaseModel):
-    habit_id: str
-    value: float
-
-# --- Router ---
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.get("", response_model=Result[List[Habit], str])
-@router.get("/", response_model=Result[List[Habit], str])
+@router.get("", response_model=Result[List[schemas.Habit], str])
+@router.get("/", response_model=Result[List[schemas.Habit], str])
 async def get_habits(db: Session = Depends(get_db)):
     """Returns all habits with their logs from the database."""
-    db_habits = db.query(models.Habit).all()
-    results = []
-    for h in db_habits:
-        habit_data = Habit(
-            id=h.id,
-            name=h.name,
-            frequency=h.frequency,
-            unit=h.unit,
-            habit_type=h.habit_type or 'numeric',
-            two_min_threshold=h.two_min_threshold,
-            normal_threshold=h.normal_threshold,
-            hard_threshold=h.hard_threshold,
-            impossible_threshold=h.impossible_threshold,
-            logs=[
-                HabitLog(
-                    id=l.id,
-                    timestamp=l.timestamp.isoformat(),
-                    value=l.value
-                ) for l in h.logs
-            ]
-        )
-        results.append(habit_data)
-    return Result.ok(results)
+    try:
+        db_habits = db.query(models.Habit).all()
+        results = []
+        for h in db_habits:
+            habit_data = schemas.Habit(
+                id=h.id,
+                name=h.name,
+                frequency=h.frequency,
+                unit=h.unit,
+                habit_type=h.habit_type or 'numeric',
+                two_min_threshold=h.two_min_threshold,
+                normal_threshold=h.normal_threshold,
+                hard_threshold=h.hard_threshold,
+                impossible_threshold=h.impossible_threshold,
+                logs=[
+                    schemas.HabitLog(
+                        id=l.id,
+                        timestamp=l.timestamp.isoformat(),
+                        value=l.value
+                    ) for l in h.logs
+                ]
+            )
+            results.append(habit_data)
+        return Result.ok(results)
+    except Exception as e:
+        logger.error(f"Error fetching habits: {e}")
+        return Result.fail(str(e))
 
-@router.post("", response_model=Result[Habit, str])
-@router.post("/", response_model=Result[Habit, str])
-async def create_habit(data: HabitCreate, db: Session = Depends(get_db)):
+@router.post("", response_model=Result[schemas.Habit, str])
+@router.post("/", response_model=Result[schemas.Habit, str])
+async def create_habit(data: schemas.HabitCreate, db: Session = Depends(get_db)):
     """Creates a new habit definition in the database."""
     try:
         new_habit = models.Habit(
@@ -105,7 +65,7 @@ async def create_habit(data: HabitCreate, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(new_habit)
         
-        habit_item = Habit(
+        habit_item = schemas.Habit(
             id=new_habit.id,
             name=new_habit.name,
             frequency=new_habit.frequency,
@@ -120,26 +80,28 @@ async def create_habit(data: HabitCreate, db: Session = Depends(get_db)):
         return Result.ok(habit_item)
     except Exception as e:
         db.rollback()
+        logger.error(f"Error creating habit: {e}")
         return Result.fail(str(e))
 
-@router.put("/{habit_id}", response_model=Result[Habit, str])
-@router.put("/{habit_id}/", response_model=Result[Habit, str])
-async def update_habit(habit_id: str, data: HabitUpdate, db: Session = Depends(get_db)):
+@router.put("/{habit_id}", response_model=Result[schemas.Habit, str])
+@router.put("/{habit_id}/", response_model=Result[schemas.Habit, str])
+async def update_habit(habit_id: str, data: schemas.HabitUpdate, db: Session = Depends(get_db)):
     """Updates an existing habit in the database."""
     habit = db.query(models.Habit).filter(models.Habit.id == habit_id).first()
     if not habit:
         return Result.fail("Habit not found")
     
     try:
-        update_data = data.dict(exclude_unset=True)
+        update_data = data.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(habit, key, value)
         
         db.commit()
         db.refresh(habit)
-        return Result.ok(Habit.from_attributes(habit))
+        return Result.ok(schemas.Habit.model_validate(habit))
     except Exception as e:
         db.rollback()
+        logger.error(f"Error updating habit {habit_id}: {e}")
         return Result.fail(str(e))
 
 @router.delete("/{habit_id}", response_model=Result[dict, str])
@@ -156,11 +118,12 @@ async def delete_habit(habit_id: str, db: Session = Depends(get_db)):
         return Result.ok({"success": True, "status": "deleted"})
     except Exception as e:
         db.rollback()
+        logger.error(f"Error deleting habit {habit_id}: {e}")
         return Result.fail(str(e))
 
 @router.post("/log", response_model=Result[dict, str])
 @router.post("/log/", response_model=Result[dict, str])
-async def add_habit_log(data: HabitLogCreate, db: Session = Depends(get_db)):
+async def add_habit_log(data: schemas.HabitLogCreate, db: Session = Depends(get_db)):
     """Adds a new log entry to the database."""
     habit = db.query(models.Habit).filter(models.Habit.id == data.habit_id).first()
     if not habit:
@@ -178,4 +141,5 @@ async def add_habit_log(data: HabitLogCreate, db: Session = Depends(get_db)):
         return Result.ok({"success": True, "status": "logged"})
     except Exception as e:
         db.rollback()
+        logger.error(f"Error adding habit log: {e}")
         return Result.fail(str(e))

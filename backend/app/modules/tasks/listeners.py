@@ -1,5 +1,8 @@
+import logging
 from app.core.broker import BaseEvent
 from app.core.results import Result
+
+logger = logging.getLogger(__name__)
 
 async def handle_finance_transaction_added(event: BaseEvent) -> Result[None, str]:
     """
@@ -16,7 +19,7 @@ async def handle_finance_transaction_added(event: BaseEvent) -> Result[None, str
             task_id = description.split("TASK_ID:")[1].split()[0]
             
             # 1. Logic to update Task Status
-            print(f"[Tasks Module] Detected funding for Task {task_id}. Updating status to 'Funded'.")
+            logger.info(f"[Tasks Module] Detected funding for Task {task_id}. Updating status to 'Funded'.")
             
             # 2. Publish TASK_FUNDED event
             from app.core.broker import broker

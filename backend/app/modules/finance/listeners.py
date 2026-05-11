@@ -1,7 +1,10 @@
+import logging
 from uuid import UUID
 from app.core.broker import BaseEvent
 from app.core.results import Result
 from app.modules.finance.service import FinanceService, TransactionCreate, PostingCreate
+
+logger = logging.getLogger(__name__)
 
 # Mock Account IDs for the reinforcement logic
 REWARDS_EXPENSE_ACCOUNT = UUID("00000000-0000-0000-0000-000000000001")
@@ -44,7 +47,7 @@ async def handle_habit_logged(event: BaseEvent) -> Result[None, str]:
             if not result.success:
                 return Result.fail(f"Failed to apply micro-reward: {result.error}")
 
-            print(f"[Finance Module] Applied $0.50 micro-reward for habit {habit_id}.")
+            logger.info(f"[Finance Module] Applied $0.50 micro-reward for habit {habit_id}.")
             return Result.ok(None)
 
         return Result.ok(None) # Not a successful habit log

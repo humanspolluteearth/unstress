@@ -1,48 +1,14 @@
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, UUID4
+import logging
 from app.core.results import Result
 from app.core.broker import broker, BaseEvent
 from datetime import datetime, date, timezone
 import uuid
 from sqlalchemy.orm import Session
-import app.models as models
+from app.models import habits as models
+from app.schemas import habits as schemas
 
-class HabitLog(BaseModel):
-    timestamp: str
-    value: float
-
-class Habit(BaseModel):
-    id: str
-    name: str
-    frequency: str
-    unit: str = 'rep'
-    two_min_threshold: float
-    normal_threshold: float
-    hard_threshold: float
-    impossible_threshold: float
-    logs: List[HabitLog] = []
-
-class HabitCreate(BaseModel):
-    name: str
-    frequency: str
-    unit: str = 'rep'
-    two_min_threshold: float
-    normal_threshold: float
-    hard_threshold: float
-    impossible_threshold: float
-
-class HabitUpdate(BaseModel):
-    name: Optional[str] = None
-    frequency: Optional[str] = None
-    unit: Optional[str] = None
-    two_min_threshold: Optional[float] = None
-    normal_threshold: Optional[float] = None
-    hard_threshold: Optional[float] = None
-    impossible_threshold: Optional[float] = None
-
-class HabitLogCreate(BaseModel):
-    habit_id: str
-    value: float
+logger = logging.getLogger(__name__)
 
 class HabitsService:
     @staticmethod
@@ -63,13 +29,13 @@ class HabitsService:
         return points
 
     @staticmethod
-    async def get_habits(db: Session) -> Result[List[Habit], str]:
+    async def get_habits(db: Session) -> Result[List[schemas.Habit], str]:
         """Returns all habits with their logs from the database."""
         try:
             db_habits = db.query(models.Habit).all()
             results = []
             for h in db_habits:
-                habit_data = Habit(
+                habit_data = schemas.Habit(
                     id=h.id,
                     name=h.name,
                     frequency=h.frequency,
@@ -79,7 +45,7 @@ class HabitsService:
                     hard_threshold=h.hard_threshold,
                     impossible_threshold=h.impossible_threshold,
                     logs=[
-                        HabitLog(
+                        schemas.HabitLog(
                             timestamp=l.timestamp.isoformat(),
                             value=l.value
                         ) for l in h.logs
@@ -88,10 +54,11 @@ class HabitsService:
                 results.append(habit_data)
             return Result.ok(results)
         except Exception as e:
+            logger.error(f"Error fetching habits: {e}")
             return Result.fail(str(e))
 
     @staticmethod
-    async def create_habit(data: HabitCreate, db: Session) -> Result[Habit, str]:
+    async def create_habit(data: schemas.HabitCreate, db: Session) -> Result[schemas.Habit, str]:
         """Creates a new habit definition in the database."""
         try:
             new_habit = models.Habit(
@@ -108,7 +75,7 @@ class HabitsService:
             db.commit()
             db.refresh(new_habit)
             
-            return Result.ok(Habit(
+            return Result.ok(schemas.Habit(
                 id=new_habit.id,
                 name=new_habit.name,
                 frequency=new_habit.frequency,
@@ -120,27 +87,27 @@ class HabitsService:
                 logs=[]
             ))
         except Exception as e:
+            db.rollback()
+            logger.error(f"Error creating habit: {e}")
             return Result.fail(str(e))
 
     @staticmethod
-    async def update_habit(habit_id: str, data: HabitUpdate, db: Session) -> Result[dict, str]:
+    async def update_habit(habit_id: str, data: schemas.HabitUpdate, db: Session) -> Result[dict, str]:
         """Updates habit configuration in the database."""
         try:
             habit = db.query(models.Habit).filter(models.Habit.id == habit_id).first()
             if not habit:
                 return Result.fail("Habit not found")
                 
-            if data.name is not None: habit.name = data.name
-            if data.frequency is not None: habit.frequency = data.frequency
-            if data.unit is not None: habit.unit = data.unit
-            if data.two_min_threshold is not None: habit.two_min_threshold = data.two_min_threshold
-            if data.normal_threshold is not None: habit.normal_threshold = data.normal_threshold
-            if data.hard_threshold is not None: habit.hard_threshold = data.hard_threshold
-            if data.impossible_threshold is not None: habit.impossible_threshold = data.impossible_threshold
+            update_data = data.model_dump(exclude_unset=True)
+            for key, value in update_data.items():
+                setattr(habit, key, value)
             
             db.commit()
             return Result.ok({"id": habit_id, "status": "updated"})
         except Exception as e:
+            db.rollback()
+            logger.error(f"Error updating habit {habit_id}: {e}")
             return Result.fail(str(e))
 
     @staticmethod
@@ -161,10 +128,12 @@ class HabitsService:
             
             return Result.ok({"id": habit_id, "status": "deleted"})
         except Exception as e:
+            db.rollback()
+            logger.error(f"Error deleting habit {habit_id}: {e}")
             return Result.fail(str(e))
 
     @staticmethod
-    async def add_habit_log(data: HabitLogCreate, db: Session) -> Result[dict, str]:
+    async def add_habit_log(data: schemas.HabitLogCreate, db: Session) -> Result[dict, str]:
         """Adds a new log entry to the database."""
         try:
             habit = db.query(models.Habit).filter(models.Habit.id == data.habit_id).first()
@@ -199,10 +168,12 @@ class HabitsService:
                 "status": "logged"
             })
         except Exception as e:
+            db.rollback()
+            logger.error(f"Error adding habit log: {e}")
             return Result.fail(str(e))
 
     @staticmethod
-    async def update_habit_log(data: HabitLogCreate, db: Session) -> Result[dict, str]:
+    async def update_habit_log(data: schemas.HabitLogCreate, db: Session) -> Result[dict, str]:
         """Updates the daily total for a habit by replacing today's logs."""
         try:
             habit = db.query(models.Habit).filter(models.Habit.id == data.habit_id).first()
@@ -244,4 +215,6 @@ class HabitsService:
                 "status": "updated"
             })
         except Exception as e:
+            db.rollback()
+            logger.error(f"Error updating habit log: {e}")
             return Result.fail(str(e))

@@ -1,64 +1,14 @@
 from datetime import datetime, timezone
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, UUID4, validator
+import logging
 from app.core.results import Result
 from app.core.broker import broker, BaseEvent
 from sqlalchemy.orm import Session
-import app.models as models
+from app.models import schedule as models
+from app.schemas import schedules as schemas
 import uuid
 
-class EventCreate(BaseModel):
-    title: str
-    start_time: datetime
-    end_time: datetime
-    repeat_pattern: Optional[str] = None
-    goal_id: Optional[str] = None
-
-    @validator('start_time', 'end_time', pre=True)
-    def ensure_utc_aware(cls, v):
-        try:
-            if isinstance(v, str):
-                dt = datetime.fromisoformat(v.replace('Z', '+00:00'))
-            elif isinstance(v, datetime):
-                dt = v
-            else:
-                return v
-            if dt.tzinfo is None:
-                return dt.replace(tzinfo=timezone.utc)
-            return dt.astimezone(timezone.utc)
-        except Exception:
-            raise ValueError("TIMEZONE_MISMATCH")
-
-class EventUpdate(BaseModel):
-    title: Optional[str] = None
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
-    repeat_pattern: Optional[str] = None
-
-    @validator('start_time', 'end_time', pre=True)
-    def ensure_utc_aware(cls, v):
-        if v is None: return None
-        try:
-            if isinstance(v, str):
-                dt = datetime.fromisoformat(v.replace('Z', '+00:00'))
-            elif isinstance(v, datetime):
-                dt = v
-            else:
-                return v
-            if dt.tzinfo is None:
-                return dt.replace(tzinfo=timezone.utc)
-            return dt.astimezone(timezone.utc)
-        except Exception:
-            raise ValueError("TIMEZONE_MISMATCH")
-
-class ScheduledItem(BaseModel):
-    id: str
-    title: str
-    start_time: datetime
-    end_time: datetime
-    item_type: str
-    is_conflict: bool = False
-    repeat_pattern: Optional[str] = None
+logger = logging.getLogger(__name__)
 
 class SchedulesService:
     @staticmethod
@@ -82,6 +32,7 @@ class SchedulesService:
             ]
             return Result.ok(results)
         except Exception as e:
+            logger.error(f"Error fetching schedule items: {e}")
             return Result.fail(str(e))
 
     @staticmethod
@@ -93,7 +44,7 @@ class SchedulesService:
         return conflicts
 
     @staticmethod
-    async def create_event(data: EventCreate, db: Session) -> Result[Dict[str, Any], str]:
+    async def create_event(data: schemas.EventCreate, db: Session) -> Result[Dict[str, Any], str]:
         try:
             existing_events = db.query(models.ScheduledEvent).all()
             conflicts = await SchedulesService.detect_conflicts(data.start_time, data.end_time, existing_events)
@@ -106,7 +57,7 @@ class SchedulesService:
                 await broker.publish(BaseEvent(
                     event_type="SCHEDULE_CONFLICT_DETECTED",
                     payload={
-                        "new_event": data.dict(),
+                        "new_event": data.model_dump(),
                         "conflicts": [c.id for c in conflicts]
                     }
                 ))
@@ -134,10 +85,12 @@ class SchedulesService:
             })
 
         except Exception as e:
+            db.rollback()
+            logger.error(f"Error creating schedule event: {e}")
             return Result.fail(str(e))
 
     @staticmethod
-    async def update_event(event_id: str, data: EventUpdate, db: Session) -> Result[Dict[str, Any], str]:
+    async def update_event(event_id: str, data: schemas.EventUpdate, db: Session) -> Result[Dict[str, Any], str]:
         try:
             event = db.query(models.ScheduledEvent).filter(models.ScheduledEvent.id == event_id).first()
             if not event:
@@ -162,6 +115,8 @@ class SchedulesService:
                 "is_conflict": event.is_conflict
             })
         except Exception as e:
+            db.rollback()
+            logger.error(f"Error updating schedule event {event_id}: {e}")
             return Result.fail(str(e))
 
     @staticmethod
@@ -180,4 +135,6 @@ class SchedulesService:
             ))
             return Result.ok(True)
         except Exception as e:
+            db.rollback()
+            logger.error(f"Error deleting schedule event {event_id}: {e}")
             return Result.fail(str(e))
