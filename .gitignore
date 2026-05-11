@@ -2,6 +2,9 @@
 frontend/dist/
 frontend/src-tauri/target/
 frontend/src-tauri/binaries/backend-*
+backend/dist/
+backend/build/
+backend/*.spec
 
 # Dependencies
 node_modules/

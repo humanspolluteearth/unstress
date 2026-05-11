@@ -103,7 +103,7 @@ fn show_error_window<R: Runtime>(app_handle: &tauri::AppHandle<R>, error: String
 
 async fn handle_sidecar_startup<R: Runtime>(app_handle: tauri::AppHandle<R>) -> ProcessResult<(u16, CommandChild), String> {
     let shell = app_handle.shell();
-    let sidecar = match shell.sidecar("backend") {
+    let sidecar = match shell.sidecar("binaries/backend") {
         Ok(s) => s,
         Err(e) => return ProcessResult::fail(format!("Sidecar lookup failed: {}", e)),
     };
