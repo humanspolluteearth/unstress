@@ -17,9 +17,29 @@ class TaskCreate(BaseModel):
     project_link: Optional[str] = None
     goal_id: Optional[str] = None # Linking to Goal ID
 
-class Task(TaskCreate):
+class TaskPatchRequest(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    priority: Optional[int] = None
+    status: Optional[str] = None
+    tags: Optional[List[str]] = None
+    deadline: Optional[str] = None
+    project_link: Optional[str] = None
+    goal_id: Optional[str] = None
+
+class Task(BaseModel):
     id: str
+    title: str
+    description: Optional[str] = None
+    priority: int = 0
     status: str = "Todo"
+    tags: List[str] = []
+    deadline: Optional[str] = None
+    project_link: Optional[str] = None
+    goal_id: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 router = APIRouter()
 
@@ -55,20 +75,16 @@ async def create_task(data: TaskCreate, db: Session = Depends(get_db)):
         return Result.fail(str(e))
 
 @router.patch("/{task_id}", response_model=Result[Task, str])
-async def update_task(task_id: str, data: TaskCreate, db: Session = Depends(get_db)):
-    """Updates an existing task in the database."""
+async def update_task(task_id: str, data: TaskPatchRequest, db: Session = Depends(get_db)):
+    """Updates an existing task in the database with support for partial updates."""
     task = db.query(models.Task).filter(models.Task.id == task_id).first()
     if not task:
         return Result.fail("Task not found")
     
     try:
-        task.title = data.title
-        task.description = data.description
-        task.priority = data.priority
-        task.tags = data.tags
-        task.deadline = data.deadline
-        task.project_link = data.project_link
-        task.goal_id = data.goal_id
+        update_data = data.dict(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(task, key, value)
         
         db.commit()
         db.refresh(task)

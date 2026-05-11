@@ -14,6 +14,7 @@ export interface Goal {
   progress: number;
   total_tasks: number;
   completed_tasks: number;
+  is_current_focus: boolean;
   tags: string[];
   links: string[];
   references: string[];
@@ -50,5 +51,13 @@ export class GoalService {
 
   static async updateGoal(id: string, data: Partial<Goal>): Promise<Result<Goal, string>> {
     return this.request('PUT', `${API_BASE}/goals/${id}`, data);
+  }
+
+  static async deleteGoal(id: string): Promise<Result<boolean, string>> {
+    return this.request('DELETE', `${API_BASE}/goals/${id}`);
+  }
+
+  static async setFocus(id: string): Promise<Result<boolean, string>> {
+    return this.request('POST', `${API_BASE}/goals/${id}/focus`);
   }
 }

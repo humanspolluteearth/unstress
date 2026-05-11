@@ -19,16 +19,20 @@ class Habit(BaseModel):
     name: str
     frequency: str
     unit: str = 'rep'
+    habit_type: str = 'numeric'
     two_min_threshold: float
     normal_threshold: float
     hard_threshold: float
     impossible_threshold: float
     logs: List[HabitLog] = []
 
+    model_config = {"from_attributes": True}
+
 class HabitCreate(BaseModel):
     name: str
     frequency: str
     unit: str = 'rep'
+    habit_type: str = 'numeric'
     two_min_threshold: float
     normal_threshold: float
     hard_threshold: float
@@ -38,6 +42,7 @@ class HabitUpdate(BaseModel):
     name: Optional[str] = None
     frequency: Optional[str] = None
     unit: Optional[str] = None
+    habit_type: Optional[str] = None
     two_min_threshold: Optional[float] = None
     normal_threshold: Optional[float] = None
     hard_threshold: Optional[float] = None
@@ -63,6 +68,7 @@ async def get_habits(db: Session = Depends(get_db)):
             name=h.name,
             frequency=h.frequency,
             unit=h.unit,
+            habit_type=h.habit_type or 'numeric',
             two_min_threshold=h.two_min_threshold,
             normal_threshold=h.normal_threshold,
             hard_threshold=h.hard_threshold,
@@ -87,6 +93,7 @@ async def create_habit(data: HabitCreate, db: Session = Depends(get_db)):
             name=data.name,
             frequency=data.frequency,
             unit=data.unit,
+            habit_type=data.habit_type,
             two_min_threshold=data.two_min_threshold,
             normal_threshold=data.normal_threshold,
             hard_threshold=data.hard_threshold,
@@ -101,6 +108,7 @@ async def create_habit(data: HabitCreate, db: Session = Depends(get_db)):
             name=new_habit.name,
             frequency=new_habit.frequency,
             unit=new_habit.unit,
+            habit_type=new_habit.habit_type,
             two_min_threshold=new_habit.two_min_threshold,
             normal_threshold=new_habit.normal_threshold,
             hard_threshold=new_habit.hard_threshold,
@@ -108,6 +116,26 @@ async def create_habit(data: HabitCreate, db: Session = Depends(get_db)):
             logs=[]
         )
         return Result.ok(habit_item)
+    except Exception as e:
+        db.rollback()
+        return Result.fail(str(e))
+
+@router.put("/{habit_id}", response_model=Result[Habit, str])
+@router.put("/{habit_id}/", response_model=Result[Habit, str])
+async def update_habit(habit_id: str, data: HabitUpdate, db: Session = Depends(get_db)):
+    """Updates an existing habit in the database."""
+    habit = db.query(models.Habit).filter(models.Habit.id == habit_id).first()
+    if not habit:
+        return Result.fail("Habit not found")
+    
+    try:
+        update_data = data.dict(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(habit, key, value)
+        
+        db.commit()
+        db.refresh(habit)
+        return Result.ok(Habit.from_attributes(habit))
     except Exception as e:
         db.rollback()
         return Result.fail(str(e))

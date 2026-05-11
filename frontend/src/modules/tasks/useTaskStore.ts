@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import { Result } from '../../core/results';
-import { ActionService, TaskCreate } from '../../core/ActionService';
+import { ActionService, TaskCreate, TaskUpdate } from '../../core/ActionService';
 import { getBaseUrl, API_ENDPOINTS } from '../../core/apiConfig';
 
 export interface Task {
@@ -26,7 +26,7 @@ interface TaskState {
   setViewMode: (mode: ViewMode) => void;
   fetchTasks: () => Promise<Result<Task[], string>>;
   createTask: (task: TaskCreate) => Promise<Result<Task, string>>;
-  updateTask: (taskId: string, task: TaskCreate) => Promise<Result<Task, string>>;
+  updateTask: (taskId: string, task: TaskUpdate) => Promise<Result<Task, string>>;
   deleteTask: (taskId: string) => Promise<Result<void, string>>;
   updateTaskStatus: (taskId: string, newStatus: Task['status']) => Promise<Result<any, string>>;
 }

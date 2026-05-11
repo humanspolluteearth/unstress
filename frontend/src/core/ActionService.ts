@@ -25,6 +25,17 @@ export interface TaskCreate {
   goal_id?: string;
 }
 
+export interface TaskUpdate {
+  title?: string;
+  description?: string;
+  priority?: number;
+  status?: string;
+  tags?: string[];
+  deadline?: string;
+  project_link?: string;
+  goal_id?: string;
+}
+
 export interface HabitLogCreate {
   habit_id: string;
   value: number;
@@ -58,6 +69,7 @@ export interface HabitCreate {
   name: string;
   frequency: string;
   unit?: string;
+  habit_type?: 'numeric' | 'binary';
   two_min_threshold: number;
   normal_threshold: number;
   hard_threshold: number;
@@ -136,7 +148,7 @@ export class ActionService {
     return this.request('POST', `${API_ENDPOINTS.TASKS}`, data);
   }
 
-  static async updateTask(id: string, data: TaskCreate): Promise<Result<any>> {
+  static async updateTask(id: string, data: TaskUpdate): Promise<Result<any>> {
     return this.request('PATCH', `${API_ENDPOINTS.TASKS}/${id}`, data);
   }
 

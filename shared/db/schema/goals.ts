@@ -1,28 +1,23 @@
-import { pgTable, uuid, varchar, text, boolean, primaryKey, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, text, boolean, jsonb } from "drizzle-orm/pg-core";
 
 /**
  * GOALS Table
- * Defines hierarchical goals with self-referencing relationships.
+ * Defines hierarchical goals with attributes aligned with SQLAlchemy models.
  */
 export const goals = pgTable("goals", {
   id: uuid("id").primaryKey().defaultRandom(),
-  name: varchar("name", { length: 255 }).notNull(),
-  description: text("description"),
-  type: varchar("type", { length: 20 }).notNull(), // 'weekly', 'monthly', 'yearly'
-  is_current_focus: boolean("is_current_focus").default(false).notNull(),
-  parent_id: uuid("parent_id").references(() => goals.id),
-  metadata: jsonb("metadata").default({}),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  markdown_content: text("markdown_content").default(""),
+  priority: varchar("priority", { length: 20 }), // critical, high, medium, low
+  category: varchar("category", { length: 100 }),
+  time_frame: varchar("time_frame", { length: 20 }), // weekly, monthly, yearly
+  deadline: varchar("deadline", { length: 50 }),
+  label_color: varchar("label_color", { length: 20 }).default("#ffffff"),
+  assignee_initials: varchar("assignee_initials", { length: 10 }).default("--"),
+  tags: jsonb("tags").default([]),
+  links: jsonb("links").default([]),
+  references: jsonb("references").default([]),
+  internal_tasks: jsonb("internal_tasks").default([]),
+  is_current_focus: boolean("is_current_focus").default(false),
 });
-
-});
-
-/**
- * GOAL_TASKS Join Table
- * Links goals to tasks for automated progress tracking.
- */
-export const goal_tasks = pgTable("goal_tasks", {
-  goal_id: uuid("goal_id").references(() => goals.id, { onDelete: "cascade" }).notNull(),
-  task_id: uuid("task_id").references(() => tasks.id, { onDelete: "cascade" }).notNull(),
-}, (t) => ({
-  pk: primaryKey({ columns: [t.goal_id, t.task_id] }),
-}));

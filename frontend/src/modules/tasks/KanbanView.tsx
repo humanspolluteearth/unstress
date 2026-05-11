@@ -76,13 +76,9 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ onEdit }) => {
                     draggedTaskId === task.id && "opacity-50 scale-95"
                   )}
                 >
-                  <div className="flex gap-3">
-                    <div className="mt-1 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0">
-                      <GripVertical size={16} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <p className="text-sm font-bold leading-tight truncate">{task.title}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                        <p className="text-sm font-bold leading-tight">{task.title}</p>
                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button 
                             onClick={(e) => { e.stopPropagation(); onEdit(task); }}
@@ -138,7 +134,6 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ onEdit }) => {
                         )}
                       </div>
                     </div>
-                  </div>
                 </div>
               ))}
           </div>

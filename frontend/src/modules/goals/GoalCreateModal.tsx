@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trophy, AlertCircle, BarChart3, CalendarDays, Calendar, Palette, User } from 'lucide-react';
+import { X, Trophy, AlertCircle, BarChart3, Calendar, ListTodo, Tag, AlignLeft } from 'lucide-react';
 import { GoalService, Goal } from '../../services/GoalService';
+import { CustomSelect } from '../../core/CustomSelect';
 import { clsx } from 'clsx';
 
 interface GoalCreateModalProps {
@@ -13,16 +14,11 @@ interface GoalCreateModalProps {
 export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClose, onSuccess, goal }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [markdownContent, setMarkdownContent] = useState('');
   const [priority, setPriority] = useState<'critical' | 'high' | 'medium' | 'low'>('medium');
   const [timeFrame, setTimeFrame] = useState<'weekly' | 'monthly' | 'yearly'>('weekly');
   const [deadline, setDeadline] = useState<string>('');
   const [category, setCategory] = useState('General');
-  const [labelColor, setLabelColor] = useState('#ffffff');
-  const [assigneeInitials, setAssigneeInitials] = useState('UN');
   const [tags, setTags] = useState<string>('');
-  const [links, setLinks] = useState<string[]>(['']);
-  const [references, setReferences] = useState<string[]>(['']);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,29 +27,19 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
     if (goal) {
       setTitle(goal.title);
       setDescription(goal.description);
-      setMarkdownContent(goal.markdown_content || '');
       setPriority(goal.priority);
       setTimeFrame(goal.time_frame);
       setDeadline(goal.deadline || '');
       setCategory(goal.category);
-      setLabelColor(goal.label_color);
-      setAssigneeInitials(goal.assignee_initials);
       setTags(goal.tags.join(', '));
-      setLinks(goal.links.length > 0 ? goal.links : ['']);
-      setReferences(goal.references.length > 0 ? goal.references : ['']);
     } else {
       setTitle('');
       setDescription('');
-      setMarkdownContent('');
       setPriority('medium');
       setTimeFrame('weekly');
       setDeadline('');
       setCategory('General');
-      setLabelColor('#ffffff');
-      setAssigneeInitials('UN');
       setTags('');
-      setLinks(['']);
-      setReferences(['']);
     }
   }, [goal, isOpen]);
 
@@ -80,17 +66,17 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
       const payload = {
         title,
         description,
-        markdown_content: markdownContent,
         priority,
         time_frame: timeFrame,
         deadline: deadline || null,
         category,
-        label_color: labelColor,
-        assignee_initials: assigneeInitials,
         tags: tags.split(',').map(t => t.trim()).filter(t => t !== ""),
-        links: links.filter(l => l.trim() !== "").map(l => l.trim()),
-        references: references.filter(r => r.trim() !== "").map(r => r.trim()),
-        tasks: goal ? goal.tasks : []
+        links: goal?.links || [],
+        references: goal?.references || [],
+        tasks: goal ? goal.tasks : [],
+        markdown_content: goal?.markdown_content || "",
+        label_color: goal?.label_color || "#ffffff",
+        assignee_initials: goal?.assignee_initials || "UN"
       };
 
       let result;
@@ -113,160 +99,132 @@ export const GoalCreateModal: React.FC<GoalCreateModalProps> = ({ isOpen, onClos
     }
   };
 
+  const priorityOptions = [
+    { label: 'Critical', value: 'critical' },
+    { label: 'High', value: 'high' },
+    { label: 'Medium', value: 'medium' },
+    { label: 'Low', value: 'low' },
+  ];
+
+  const tierOptions = [
+    { label: 'Weekly', value: 'weekly' },
+    { label: 'Monthly', value: 'monthly' },
+    { label: 'Yearly', value: 'yearly' },
+  ];
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-[#050505] border border-white/10 w-full max-w-xl shadow-2xl flex flex-col max-h-[90vh]">
-        <header className="p-4 border-b border-white/5 flex items-center justify-between">
-          <h3 className="text-xs font-black uppercase tracking-[0.3em] flex items-center gap-2 text-white">
-             <Trophy size={14} className="text-primary" />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+      <div className="bg-card border rounded-none shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+        <header className="p-4 border-b flex items-center justify-between">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+             <Trophy size={18} className="text-primary" />
              {goal ? 'Modify Objective' : 'Establish New Goal'}
           </h3>
-          <button onClick={onClose} className="text-white/20 hover:text-white transition-colors">
-            <X size={18} />
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+            <X size={20} />
           </button>
         </header>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto custom-scrollbar text-white">
+        <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto custom-scrollbar">
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 p-3 flex items-center gap-3 text-red-500 text-[10px] font-bold uppercase tracking-widest">
-              <AlertCircle size={14} /> {error}
+            <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive text-sm rounded-none border border-destructive/20">
+              <AlertCircle size={16} /> {error}
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Title</label>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Objective Title</label>
             <input
               autoFocus required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-white/5 border border-white/5 p-3 text-sm text-white focus:border-primary outline-none transition-colors"
-              placeholder="Primary objective..."
+              className="w-full bg-muted/50 border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+              placeholder="Primary mission objective..."
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Tier</label>
-              <div className="flex bg-white/5 p-1 border border-white/5">
-                {(['weekly', 'monthly', 'yearly'] as const).map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setTimeFrame(t)}
-                    className={clsx(
-                      "flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[9px] font-black uppercase tracking-wider transition-all",
-                      timeFrame === t ? "bg-white text-black" : "text-white/40 hover:text-white"
-                    )}
-                  >
-                    {t === 'weekly' && <BarChart3 size={10} />}
-                    {t === 'monthly' && <CalendarDays size={10} />}
-                    {t === 'yearly' && <Trophy size={10} />}
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Priority</label>
-              <select 
-                value={priority}
-                onChange={(e: any) => setPriority(e.target.value)}
-                className="w-full bg-white/5 border border-white/5 p-2.5 text-sm text-white focus:border-primary outline-none appearance-none"
-              >
-                <option value="critical">CRITICAL</option>
-                <option value="high">HIGH</option>
-                <option value="medium">MEDIUM</option>
-                <option value="low">LOW</option>
-              </select>
-            </div>
+            <CustomSelect
+              label="Priority"
+              icon={<ListTodo size={14} />}
+              value={priority}
+              onChange={setPriority}
+              options={priorityOptions}
+            />
+            <CustomSelect
+              label="Tier"
+              icon={<BarChart3 size={14} />}
+              value={timeFrame}
+              onChange={setTimeFrame}
+              options={tierOptions}
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase text-white/30 tracking-widest flex items-center gap-2">
-                <Palette size={10} /> Label Color
-              </label>
-              <input
-                type="color"
-                value={labelColor}
-                onChange={(e) => setLabelColor(e.target.value)}
-                className="w-full h-10 bg-white/5 border border-white/5 p-1 cursor-pointer"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase text-white/30 tracking-widest flex items-center gap-2">
-                <User size={10} /> Assignee Initials
-              </label>
-              <input
-                maxLength={2}
-                value={assigneeInitials}
-                onChange={(e) => setAssigneeInitials(e.target.value.toUpperCase())}
-                className="w-full bg-white/5 border border-white/5 p-2.5 text-sm text-white focus:border-primary outline-none text-center"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Brief Description (Card Preview)</label>
-            <input
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-1.5">
+              <AlignLeft size={14} /> Description
+            </label>
+            <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-white/5 border border-white/5 p-3 text-sm text-white focus:border-primary outline-none transition-colors"
-              placeholder="Short summary for the card..."
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Detailed Intelligence (Markdown Panel)</label>
-            <textarea
-              value={markdownContent}
-              onChange={(e) => setMarkdownContent(e.target.value)}
-              className="w-full bg-white/5 border border-white/5 p-3 text-sm text-white h-32 focus:border-primary outline-none resize-none"
-              placeholder="Detailed brief for the side panel..."
+              className="w-full bg-muted/50 border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 h-32 resize-none"
+              placeholder="Primary mission objective parameters..."
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Category</label>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category</label>
               <input
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full bg-white/5 border border-white/5 p-2.5 text-sm text-white focus:border-primary outline-none"
+                className="w-full bg-muted/50 border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                placeholder="Finance, Health, etc."
               />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase text-white/30 tracking-widest flex items-center gap-2">
-                <Calendar size={10} /> Deadline
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-1.5">
+                <Calendar size={14} /> Deadline
               </label>
               <input
                 type="date"
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
-                className="w-full bg-white/5 border border-white/5 p-2.5 text-sm text-white focus:border-primary outline-none"
+                className="w-full bg-muted/50 border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
               />
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase text-white/30 tracking-widest">Tags (comma separated)</label>
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-1.5">
+              <Tag size={14} /> Tags
+            </label>
             <input
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              className="w-full bg-white/5 border border-white/5 p-2.5 text-sm text-white focus:border-primary outline-none"
-              placeholder="focus, health, arch..."
+              className="w-full bg-muted/50 border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+              placeholder="focus, annual, milestone..."
             />
           </div>
         </form>
 
-        <footer className="p-4 border-t border-white/5 flex justify-end gap-4 bg-black/20">
-          <button onClick={onClose} className="text-[10px] font-black uppercase text-white/20 hover:text-white transition-colors">Cancel</button>
+        <footer className="p-4 border-t flex justify-end gap-3 bg-muted/10">
+          <button 
+            type="button"
+            onClick={onClose} 
+            className="px-4 py-2 text-sm font-medium hover:bg-muted rounded-none transition-colors"
+          >
+            Cancel
+          </button>
           <button
             onClick={() => handleSubmit()}
             disabled={isSubmitting || !title.trim()}
-            className="bg-white text-black px-8 py-2 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className={clsx(
+              "px-6 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-none shadow-sm transition-all hover:bg-primary/90",
+              (isSubmitting || !title.trim()) && "opacity-50 cursor-not-allowed"
+            )}
           >
-            {isSubmitting ? 'Establishing...' : 'Establish Goal'}
+            {isSubmitting ? 'Processing...' : (goal ? 'Update Objective' : 'Establish Goal')}
           </button>
         </footer>
       </div>

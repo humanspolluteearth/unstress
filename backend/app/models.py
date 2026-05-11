@@ -24,6 +24,7 @@ class Goal(Base):
     links = Column(JSON, default=list)
     references = Column(JSON, default=list)
     internal_tasks = Column(JSON, default=list)  # In-goal checklist
+    is_current_focus = Column(Boolean, default=False)
 
     # Relationships
     tasks = relationship("Task", back_populates="goal")
@@ -78,6 +79,7 @@ class Habit(Base):
     name = Column(String, nullable=False)
     unit = Column(String, default="mins")
     frequency = Column(String, default="daily")
+    habit_type = Column(String, default="numeric") # numeric, binary
     two_min_threshold = Column(Float)
     normal_threshold = Column(Float)
     hard_threshold = Column(Float)

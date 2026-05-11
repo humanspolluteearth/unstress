@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tag, CheckSquare, ChevronDown, ChevronUp, User, Pencil, Calendar, Plus, Link as LinkIcon, ExternalLink } from 'lucide-react';
+import { Tag, CheckSquare, ChevronDown, ChevronUp, User, Pencil, Calendar, Plus, Link as LinkIcon, ExternalLink, Trash2, Target } from 'lucide-react';
 import { Goal, GoalService } from '../../services/GoalService';
 import { clsx } from 'clsx';
 import { Task } from '../tasks/useTaskStore';
@@ -58,8 +58,37 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
     navigate('tasks');
   };
 
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm("Establishment termination? This objective will be deleted.")) {
+      const result = await GoalService.deleteGoal(goal.id);
+      if (result.success) {
+        onUpdate();
+      }
+    }
+  };
+
+  const handleSetFocus = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const result = await GoalService.setFocus(goal.id);
+    if (result.success) {
+      onUpdate();
+    }
+  };
+
   const getPriorityColor = () => {
-    return 'text-white/60 border-white/10 bg-white/5';
+    switch (goal.priority) {
+      case 'critical':
+        return 'text-red-500 border-red-500/50 bg-red-500/10';
+      case 'high':
+        return 'text-orange-500 border-orange-500/50 bg-orange-500/10';
+      case 'medium':
+        return 'text-blue-500 border-blue-500/50 bg-blue-500/10';
+      case 'low':
+        return 'text-green-500 border-green-500/50 bg-green-500/10';
+      default:
+        return 'text-white/60 border-white/10 bg-white/5';
+    }
   };
 
   const getProgressColor = () => {
@@ -75,6 +104,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
         isSelected 
           ? "border-primary/50 shadow-[0_0_20px_rgba(255,255,255,0.05)]" 
           : "border-white/10 hover:border-white/20",
+        goal.is_current_focus && "border-primary shadow-[0_0_15px_rgba(255,255,255,0.1)]",
         "bg-[#0a0a0a]"
       )}
     >
@@ -101,6 +131,25 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal, isSelected, onSelect, 
                 title="Edit Goal"
              >
                <Pencil size={12} />
+             </button>
+
+             <button 
+                onClick={handleSetFocus}
+                className={clsx(
+                  "p-1 hover:bg-white/5 transition-colors",
+                  goal.is_current_focus ? "text-primary" : "text-white/20 hover:text-primary"
+                )}
+                title="Set as Current Focus"
+             >
+               <Target size={12} />
+             </button>
+
+             <button 
+                onClick={handleDelete}
+                className="p-1 hover:bg-white/5 text-white/20 hover:text-red-500 transition-colors"
+                title="Delete Goal"
+             >
+               <Trash2 size={12} />
              </button>
 
              <span className={clsx(

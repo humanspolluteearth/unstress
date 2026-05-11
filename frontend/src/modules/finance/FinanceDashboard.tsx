@@ -87,7 +87,6 @@ export const FinanceDashboard: React.FC = () => {
               <thead>
                 <tr className="border-b border-border bg-muted/10">
                   <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Date</th>
-                  <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Category</th>
                   <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tags</th>
                   <th className="px-6 py-3 text-right text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Amount</th>
                 </tr>
@@ -97,11 +96,6 @@ export const FinanceDashboard: React.FC = () => {
                   <tr key={tx.id} className="hover:bg-muted/5 transition-colors group">
                     <td className="px-6 py-4 text-xs text-muted-foreground">
                       {new Date(tx.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                    </td>
-                    <td className="px-6 py-4">
-                       <span className="text-[10px] font-black uppercase tracking-tighter text-foreground px-2 py-1 bg-muted rounded-none border border-white/5">
-                        {tx.category}
-                       </span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex gap-1">

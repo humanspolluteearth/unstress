@@ -22,6 +22,7 @@ class GoalModel(BaseModel):
     links: List[HttpUrl] = []
     references: List[str] = []
     internal_tasks: List[dict] = []
+    is_current_focus: bool = False
 
 class Goal(GoalModel):
     id: uuid.UUID
@@ -63,6 +64,7 @@ def sync_goal_stats(goal_obj: models.Goal, db_tasks: List[models.Task]):
 router = APIRouter()
 
 @router.get("", response_model=Result[List[dict], str])
+@router.get("/", response_model=Result[List[dict], str])
 async def get_goals(db: Session = Depends(get_db)):
     """Retrieves all goals with updated stats from the database."""
     goals = db.query(models.Goal).all()
@@ -87,6 +89,7 @@ async def get_goals(db: Session = Depends(get_db)):
             "links": goal.links,
             "references": goal.references,
             "tasks": goal.internal_tasks,
+            "is_current_focus": goal.is_current_focus,
             "external_tasks": [
                 {
                     "id": t.id,
@@ -102,6 +105,7 @@ async def get_goals(db: Session = Depends(get_db)):
     return Result.ok(results)
 
 @router.post("", response_model=Result[dict, str])
+@router.post("/", response_model=Result[dict, str])
 async def create_goal(goal_data: GoalModel, db: Session = Depends(get_db)):
     """Creates a new goal in the database."""
     try:
@@ -119,7 +123,8 @@ async def create_goal(goal_data: GoalModel, db: Session = Depends(get_db)):
             tags=goal_data.tags,
             links=[str(l) for l in goal_data.links],
             references=goal_data.references,
-            internal_tasks=goal_data.internal_tasks
+            internal_tasks=goal_data.internal_tasks,
+            is_current_focus=goal_data.is_current_focus
         )
         db.add(new_goal)
         db.commit()
@@ -127,12 +132,30 @@ async def create_goal(goal_data: GoalModel, db: Session = Depends(get_db)):
         
         # Return with initial stats
         stats = sync_goal_stats(new_goal, [])
-        return Result.ok({**new_goal.__dict__, **stats})
+        goal_dict = {
+            "id": new_goal.id,
+            "title": new_goal.title,
+            "description": new_goal.description,
+            "markdown_content": new_goal.markdown_content,
+            "priority": new_goal.priority,
+            "category": new_goal.category,
+            "time_frame": new_goal.time_frame,
+            "deadline": new_goal.deadline,
+            "label_color": new_goal.label_color,
+            "assignee_initials": new_goal.assignee_initials,
+            "tags": new_goal.tags,
+            "links": new_goal.links,
+            "references": new_goal.references,
+            "tasks": new_goal.internal_tasks,
+            "is_current_focus": new_goal.is_current_focus,
+        }
+        return Result.ok({**goal_dict, **stats})
     except Exception as e:
         db.rollback()
         return Result.fail(str(e))
 
 @router.put("/{goal_id}", response_model=Result[dict, str])
+@router.put("/{goal_id}/", response_model=Result[dict, str])
 async def update_goal(goal_id: uuid.UUID, goal_data: GoalModel, db: Session = Depends(get_db)):
     """Updates an existing goal in the database."""
     goal = db.query(models.Goal).filter(models.Goal.id == str(goal_id)).first()
@@ -153,13 +176,70 @@ async def update_goal(goal_id: uuid.UUID, goal_data: GoalModel, db: Session = De
         goal.links = [str(l) for l in goal_data.links]
         goal.references = goal_data.references
         goal.internal_tasks = goal_data.internal_tasks
+        goal.is_current_focus = goal_data.is_current_focus
         
         db.commit()
         db.refresh(goal)
         
         external_tasks = db.query(models.Task).filter(models.Task.goal_id == goal.id).all()
         stats = sync_goal_stats(goal, external_tasks)
-        return Result.ok({**goal.__dict__, **stats})
+        goal_dict = {
+            "id": goal.id,
+            "title": goal.title,
+            "description": goal.description,
+            "markdown_content": goal.markdown_content,
+            "priority": goal.priority,
+            "category": goal.category,
+            "time_frame": goal.time_frame,
+            "deadline": goal.deadline,
+            "label_color": goal.label_color,
+            "assignee_initials": goal.assignee_initials,
+            "tags": goal.tags,
+            "links": goal.links,
+            "references": goal.references,
+            "tasks": goal.internal_tasks,
+            "is_current_focus": goal.is_current_focus,
+        }
+        return Result.ok({**goal_dict, **stats})
+    except Exception as e:
+        db.rollback()
+        return Result.fail(str(e))
+
+@router.delete("/{goal_id}", response_model=Result[bool, str])
+@router.delete("/{goal_id}/", response_model=Result[bool, str])
+async def delete_goal(goal_id: uuid.UUID, db: Session = Depends(get_db)):
+    """Deletes a goal and unlinks its tasks."""
+    goal = db.query(models.Goal).filter(models.Goal.id == str(goal_id)).first()
+    if not goal:
+        return Result.fail("Goal not found")
+    
+    try:
+        # Unlink tasks
+        db.query(models.Task).filter(models.Task.goal_id == str(goal_id)).update({"goal_id": None})
+        
+        db.delete(goal)
+        db.commit()
+        return Result.ok(True)
+    except Exception as e:
+        db.rollback()
+        return Result.fail(str(e))
+
+@router.post("/{goal_id}/focus", response_model=Result[bool, str])
+@router.post("/{goal_id}/focus/", response_model=Result[bool, str])
+async def set_goal_focus(goal_id: uuid.UUID, db: Session = Depends(get_db)):
+    """Sets a goal as the current focus and unsets others."""
+    goal = db.query(models.Goal).filter(models.Goal.id == str(goal_id)).first()
+    if not goal:
+        return Result.fail("Goal not found")
+    
+    try:
+        # Unset focus for all other goals
+        db.query(models.Goal).update({"is_current_focus": False})
+        
+        # Set focus for this goal
+        goal.is_current_focus = True
+        db.commit()
+        return Result.ok(True)
     except Exception as e:
         db.rollback()
         return Result.fail(str(e))

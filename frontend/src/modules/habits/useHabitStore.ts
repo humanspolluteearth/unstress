@@ -12,7 +12,8 @@ export interface Habit {
   id: string;
   name: string;
   frequency: 'daily' | 'weekly' | 'monthly';
-  unit: 'rep' | 'min';
+  unit: string;
+  habit_type: 'numeric' | 'binary';
   two_min_threshold: number;
   normal_threshold: number;
   hard_threshold: number;

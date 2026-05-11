@@ -47,6 +47,21 @@ export const GoalDashboard: React.FC = () => {
     ? goals 
     : goals.filter(g => g.time_frame === filter);
 
+  const priorityWeight: Record<string, number> = {
+    'critical': 0,
+    'high': 1,
+    'medium': 2,
+    'low': 3
+  };
+
+  const sortedGoals = [...filteredGoals].sort((a, b) => {
+    // Current focus always at top
+    if (a.is_current_focus && !b.is_current_focus) return -1;
+    if (!a.is_current_focus && b.is_current_focus) return 1;
+    
+    return (priorityWeight[a.priority] ?? 4) - (priorityWeight[b.priority] ?? 4);
+  });
+
   return (
     <div className="p-6 space-y-6 flex flex-col flex-1 min-h-0 bg-background/50 overflow-auto relative">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
@@ -88,7 +103,7 @@ export const GoalDashboard: React.FC = () => {
         {/* Main Grid List */}
         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredGoals.map((goal, index) => (
+            {sortedGoals.map((goal, index) => (
               <GoalCard 
                 key={goal.id || index}
                 goal={goal}
@@ -100,7 +115,7 @@ export const GoalDashboard: React.FC = () => {
               />
             ))}
           </div>
-          {!isLoading && filteredGoals.length === 0 && (
+          {!isLoading && sortedGoals.length === 0 && (
             <div className="h-64 border border-dashed border-white/10 flex flex-col items-center justify-center gap-4 text-center">
               <Trophy size={48} className="text-white/5" />
               <p className="text-white/20 text-xs font-black uppercase tracking-widest">No goals established in this tier</p>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
+  Minus,
   Trash2,
   X,
   LayoutGrid,
@@ -20,7 +21,6 @@ import {
 } from 'lucide-react';
 import { useHabitStore, Habit, HabitLog } from './useHabitStore';
 import { AddHabitModal } from './AddHabitModal';
-import { EditableLogValue } from './EditableLogValue';
 import { clsx } from 'clsx';
 
 type ViewType = 'daily' | 'weekly' | 'monthly';
@@ -67,22 +67,29 @@ export const HabitChecklist: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [fetchHabits]);
 
-  const handleLog = async (id: string) => {
-    const value = logValues[id] || 0;
-    if (value <= 0) return;
-    
+  const handleLog = async (id: string, multiplier: number = 1) => {
+    const inputValue = logValues[id];
+    const amount = (inputValue !== undefined && inputValue !== 0) ? inputValue : 1;
+    const value = amount * multiplier;
+
+    if (value === 0) return;
+
     const result = await logHabit(id, value);
     if (result.success) {
       setLogValues({ ...logValues, [id]: 0 });
     }
   };
-
   const filteredHabits = habits.filter(h => h.frequency === 'daily' || h.frequency === view);
   const today = new Date().toLocaleDateString('en-CA'); // Local YYYY-MM-DD
 
   const calculatePoints = (habit: Habit, dateStr: string) => {
     const logs = habit.logs.filter(l => l.timestamp.startsWith(dateStr));
     const total = logs.reduce((sum, l) => sum + l.value, 0);
+    
+    if (habit.habit_type === 'binary' || habit.unit === 'check') {
+      return total > 0 ? 1 : 0;
+    }
+
     if (total >= habit.impossible_threshold) return 4;
     if (total >= habit.hard_threshold) return 3;
     if (total >= habit.normal_threshold) return 2;
@@ -125,6 +132,7 @@ export const HabitChecklist: React.FC = () => {
         const streak = calculateStreak(habit);
         const dailyTotal = habit.logs.filter(l => l.timestamp.startsWith(today)).reduce((acc, l) => acc + l.value, 0);
         const active = calculatePoints(habit, today) > 0;
+        const isBinary = habit.habit_type === 'binary' || habit.unit === 'check';
 
         return (
           <div key={habit.id} className={clsx("group bg-card border p-5 transition-all duration-300 flex flex-col gap-5", active ? "border-primary/40" : "hover:border-primary/20 shadow-sm")}>
@@ -134,49 +142,93 @@ export const HabitChecklist: React.FC = () => {
                 <span className="text-[9px] font-black bg-muted px-1.5 py-0.5 rounded-none uppercase tracking-widest text-muted-foreground shrink-0">{streak}D Streak</span>
               </div>
               
-              <div className="grid grid-cols-4 gap-1 h-1.5">
-                {[
-                  { s: 0, e: habit.two_min_threshold, i: 0 },
-                  { s: habit.two_min_threshold, e: habit.normal_threshold, i: 1 },
-                  { s: habit.normal_threshold, e: habit.hard_threshold, i: 2 },
-                  { s: habit.hard_threshold, e: habit.impossible_threshold, i: 3 },
-                ].map((range) => {
-                  const isAchieved = dailyTotal >= range.e;
-                  const isFilling = dailyTotal > range.s && dailyTotal < range.e;
-                  const fillWidth = isAchieved ? '100%' : isFilling ? `${((dailyTotal - range.s) / (range.e - range.s)) * 100}%` : '0%';
-                  const opacity = isAchieved ? 1 : [0.4, 0.6, 0.8, 1][range.i];
-                  
-                  return (
-                    <div key={range.i} className="relative bg-muted overflow-hidden h-full">
-                      <div 
-                        className="h-full transition-all duration-500 bg-primary" 
-                        style={{ width: fillWidth, opacity: opacity }} 
-                      />
-                    </div>
-                  );
-                })}
-              </div>
+              {!isBinary ? (
+                <div className="grid grid-cols-4 gap-1 h-1.5">
+                  {[
+                    { s: 0, e: habit.two_min_threshold, i: 0 },
+                    { s: habit.two_min_threshold, e: habit.normal_threshold, i: 1 },
+                    { s: habit.normal_threshold, e: habit.hard_threshold, i: 2 },
+                    { s: habit.hard_threshold, e: habit.impossible_threshold, i: 3 },
+                  ].map((range) => {
+                    const isAchieved = dailyTotal >= range.e;
+                    const isFilling = dailyTotal > range.s && dailyTotal < range.e;
+                    const fillWidth = isAchieved ? '100%' : isFilling ? `${((dailyTotal - range.s) / (range.e - range.s)) * 100}%` : '0%';
+                    
+                    return (
+                      <div key={range.i} className="relative bg-muted overflow-hidden h-full">
+                        <div 
+                          className="h-full transition-all duration-500 bg-primary" 
+                          style={{ width: fillWidth }} 
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="bg-muted overflow-hidden h-1.5 w-full">
+                  <div 
+                    className="h-full transition-all duration-500 bg-primary" 
+                    style={{ width: dailyTotal > 0 ? '100%' : '0%' }} 
+                  />
+                </div>
+              )}
 
               <div className="flex items-center justify-between">
                 <div className="text-left">
                   <span className="text-[9px] font-bold text-muted-foreground uppercase block leading-none mb-1">Status</span>
-                  <EditableLogValue 
-                    habitId={habit.id} 
-                    initialValue={dailyTotal} 
-                    unit={habit.unit} 
-                  />
+                  <span className="text-sm font-black transition-all duration-300">
+                    {isBinary ? (dailyTotal > 0 ? 'Complete' : 'Incomplete') : `${dailyTotal} ${habit.unit}`}
+                  </span>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="number" 
-                    value={logValues[habit.id] || ''} 
-                    onChange={(e) => setLogValues({ ...logValues, [habit.id]: parseFloat(e.target.value) || 0 })} 
-                    onKeyDown={(e) => e.key === 'Enter' && handleLog(habit.id)}
-                    placeholder="+" 
-                    className="w-14 bg-muted/30 border border-white/5 rounded-none px-2 py-1 text-xs focus:outline-none focus:border-primary text-center appearance-none font-mono" 
-                  />
-                  <button onClick={() => deleteHabit(habit.id)} className="p-1.5 text-muted-foreground/20 hover:text-destructive transition-colors"><Trash2 size={14} /></button>
+                <div className="flex items-center gap-1">
+                  {isBinary ? (
+                    <button 
+                      onClick={() => handleLog(habit.id, dailyTotal > 0 ? -1 : 1)}
+                      className={clsx(
+                        "p-1.5 border transition-all rounded-none",
+                        dailyTotal > 0 ? "bg-primary text-primary-foreground border-primary" : "bg-muted/30 text-muted-foreground border-white/5 hover:border-primary/50"
+                      )}
+                      title={dailyTotal > 0 ? "Mark as Incomplete" : "Mark as Complete"}
+                    >
+                      <CheckCircle2 size={14} />
+                    </button>
+                  ) : (
+                    <>
+                      <button 
+                        onClick={() => handleLog(habit.id, -1)}
+                        className="p-1.5 text-muted-foreground/40 hover:text-destructive transition-colors bg-muted/20 border border-white/5"
+                        title="Subtract progress"
+                      >
+                        <Minus size={12} />
+                      </button>
+                      <input 
+                        type="number" 
+                        value={logValues[habit.id] || ''} 
+                        onChange={(e) => setLogValues({ ...logValues, [habit.id]: parseFloat(e.target.value) || 0 })} 
+                        onKeyDown={(e) => e.key === 'Enter' && handleLog(habit.id)}
+                        placeholder="1" 
+                        className="w-10 bg-muted/30 border border-white/5 rounded-none px-1 py-1 text-xs focus:outline-none focus:border-primary text-center appearance-none font-mono" 
+                      />
+                      <button 
+                        onClick={() => handleLog(habit.id, 1)}
+                        className="p-1.5 text-muted-foreground/40 hover:text-primary transition-colors bg-muted/20 border border-white/5"
+                        title="Add progress"
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </>
+                  )}
+                  <button 
+                    onClick={() => {
+                      if (confirm('Are you sure you want to delete this habit? All progress logs will be permanently removed.')) {
+                        deleteHabit(habit.id);
+                      }
+                    }} 
+                    className="ml-1 p-1.5 text-muted-foreground/20 hover:text-destructive transition-colors"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 </div>
               </div>
             </div>

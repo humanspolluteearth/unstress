@@ -139,13 +139,12 @@ export const FinanceLedger: React.FC = () => {
                   <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Transaction</th>
                   <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tags</th>
                   <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Amount</th>
-                  <th className="px-6 py-4 text-right text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {transactions.length === 0 && !isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-20 text-center text-zinc-500 italic text-xs uppercase tracking-widest">
+                    <td colSpan={4} className="px-6 py-20 text-center text-zinc-500 italic text-xs uppercase tracking-widest">
                       The ledger is empty. Start by logging your first transaction.
                     </td>
                   </tr>
@@ -156,12 +155,7 @@ export const FinanceLedger: React.FC = () => {
                         {new Date(tx.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                       </td>
                       <td className="px-6 py-5">
-                        <div className="space-y-1">
-                          <div className="font-bold text-sm text-white/90">{tx.description}</div>
-                          <span className="text-[10px] font-bold uppercase tracking-tighter text-zinc-400 px-2 py-0.5 bg-muted rounded-none border border-white/5 inline-block">
-                            {tx.category}
-                          </span>
-                        </div>
+                        <div className="font-bold text-sm text-white/90">{tx.description}</div>
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex flex-wrap gap-1">
@@ -175,22 +169,6 @@ export const FinanceLedger: React.FC = () => {
                         tx.type === 'income' ? "text-emerald-500" : "text-red-500"
                       )}>
                         {tx.type === 'income' ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
-                      </td>
-                      <td className="px-6 py-5 text-right">
-                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
-                            onClick={() => handleEdit(tx)}
-                            className="p-2 hover:bg-muted rounded-none text-muted-foreground hover:text-foreground transition-all"
-                          >
-                            <Pencil size={14} />
-                          </button>
-                          <button 
-                            onClick={() => handleDelete(tx.id)}
-                            className="p-2 hover:bg-destructive/10 rounded-none text-muted-foreground hover:text-destructive transition-all"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
                       </td>
                     </tr>
                   ))
