@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 from app.core.database import engine
@@ -45,6 +46,19 @@ init_db()
 
 app = FastAPI(title="unstress Backend")
 
+# --- Global Exception Handler ---
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Global Exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "success": False,
+            "error": "Internal Server Error",
+            "detail": str(exc) if app.debug else "An unexpected error occurred."
+        }
+    )
+
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
@@ -71,3 +85,7 @@ app.include_router(actions_router, prefix="/api/actions", tags=["infrastructure"
 @app.get("/")
 async def root():
     return {"status": "unstress_api_monolith_active"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)
