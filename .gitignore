@@ -1,21 +1,39 @@
-# Build artifacts
+# --- Frontend ---
+node_modules/
 frontend/dist/
+frontend/.next/
 frontend/src-tauri/target/
 frontend/src-tauri/binaries/backend-*
+
+# --- Backend ---
+backend/.venv/
+backend/.env
+backend/.env.*
+backend/__pycache__/
 backend/dist/
 backend/build/
 backend/*.spec
-
-# Dependencies
-node_modules/
-backend/.venv/
-__pycache__/
+backend/unstress_db/
 *.pyc
+*.pyo
+*.pyd
 
-# Environment & Secrets
-.env
-.env.*
+# --- Rust/Cargo ---
+target/
+Cargo.lock
 
-# OS files
+# --- OS & IDE ---
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
+.env
+.npm
+.gemini/
+! .gemini/GEMINI.md
+! .gemini/SOP.md
+
+# --- Database ---
+*.sqlite
+*.db
+postgresql.log
