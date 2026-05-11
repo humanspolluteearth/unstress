@@ -52,15 +52,15 @@ export const FinanceDashboard: React.FC = () => {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-[10px] uppercase font-bold text-muted-foreground">Assets</span>
-                <span className="font-mono text-emerald-500 font-bold">${currentSnapshot.assets.toFixed(2)}</span>
+                <span className="font-mono text-emerald-500 font-bold"><span className="mr-1">৳</span>{currentSnapshot.assets.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center text-xs">
                 <span className="text-[10px] uppercase font-bold text-muted-foreground">Liabilities</span>
-                <span className="font-mono text-crimson-500 font-bold">${currentSnapshot.liabilities.toFixed(2)}</span>
+                <span className="font-mono text-crimson-500 font-bold"><span className="mr-1">৳</span>{currentSnapshot.liabilities.toFixed(2)}</span>
               </div>
               <div className="pt-4 border-t flex justify-between items-center">
                 <span className="text-sm font-bold uppercase tracking-tight">Net Worth</span>
-                <span className="text-xl font-black tracking-tighter text-foreground">${currentSnapshot.total.toFixed(2)}</span>
+                <span className="text-xl font-black tracking-tighter text-foreground"><span className="mr-1">৳</span>{currentSnapshot.total.toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -87,6 +87,7 @@ export const FinanceDashboard: React.FC = () => {
               <thead>
                 <tr className="border-b border-border bg-muted/10">
                   <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Date</th>
+                  <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Category</th>
                   <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tags</th>
                   <th className="px-6 py-3 text-right text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Amount</th>
                 </tr>
@@ -98,9 +99,16 @@ export const FinanceDashboard: React.FC = () => {
                       {new Date(tx.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                     </td>
                     <td className="px-6 py-4">
+                       <span className="text-[10px] font-black uppercase tracking-tighter text-foreground px-2 py-1 bg-muted rounded-none border border-white/5">
+                        {tx.category}
+                       </span>
+                    </td>
+                    <td className="px-6 py-4">
                       <div className="flex gap-1">
                         {tx.tags.map(t => (
-                          <span key={t} className="text-[11px] text-muted-foreground/60">#{t}</span>
+                          <span key={t} className="text-[9px] px-1.5 py-0.5 rounded-none bg-white/5 text-white/50 border border-white/5 lowercase tracking-tight">
+                            {t}
+                          </span>
                         ))}
                       </div>
                     </td>
@@ -108,7 +116,7 @@ export const FinanceDashboard: React.FC = () => {
                       "px-6 py-4 text-right font-mono font-bold",
                       tx.type === 'income' ? "text-emerald-500" : "text-red-500"
                     )}>
-                      {tx.type === 'income' ? '+' : '-'}${Math.abs(tx.amount).toFixed(2)}
+                      {tx.type === 'income' ? '+' : '-'}<span className="mr-1">৳</span>{Math.abs(tx.amount).toFixed(2)}
                     </td>
                   </tr>
                 ))}

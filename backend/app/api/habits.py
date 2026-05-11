@@ -11,6 +11,7 @@ from app.core.results import Result
 # --- Schemas ---
 
 class HabitLog(BaseModel):
+    id: str
     timestamp: str
     value: float
 
@@ -75,6 +76,7 @@ async def get_habits(db: Session = Depends(get_db)):
             impossible_threshold=h.impossible_threshold,
             logs=[
                 HabitLog(
+                    id=l.id,
                     timestamp=l.timestamp.isoformat(),
                     value=l.value
                 ) for l in h.logs

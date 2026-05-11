@@ -13,6 +13,7 @@ export interface TransactionCreate {
   category: string;
   tags?: string[];
   description: string;
+  date?: string;
 }
 
 export interface TaskCreate {

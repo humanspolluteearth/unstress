@@ -1,46 +1,27 @@
-import { pgTable, uuid, varchar, integer, timestamp, check } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+import { pgTable, uuid, varchar, doublePrecision, timestamp, jsonb } from "drizzle-orm/pg-core";
 
 /**
- * ACCOUNTS Table
- * Represents the Chart of Accounts (Assets, Liabilities, Equity, Income, Expenses).
+ * FINANCE_TRANSACTIONS Table
+ * Simplified transaction ledger aligned with SQLAlchemy models.
  */
-export const accounts = pgTable("accounts", {
+export const finance_transactions = pgTable("finance_transactions", {
   id: uuid("id").primaryKey().defaultRandom(),
-  name: varchar("name", { length: 255 }).notNull(),
-  type: varchar("type", { length: 50 }).notNull(), // e.g., 'asset', 'liability', 'equity', 'revenue', 'expense'
-  description: varchar("description", { length: 1000 }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
-
-/**
- * TRANSACTIONS Table
- * The header for a financial event. 
- * Double-entry integrity is enforced by ensuring the sum of related postings is zero.
- */
-export const transactions = pgTable("transactions", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  description: varchar("description", { length: 1000 }).notNull(),
+  amount: doublePrecision("amount").notNull(),
+  type: varchar("type", { length: 20 }).notNull(), // 'income', 'expense'
+  category: varchar("category", { length: 100 }),
+  tags: jsonb("tags").default([]),
   date: timestamp("date", { withTimezone: true }).defaultNow().notNull(),
-  metadata: varchar("metadata", { length: 2000 }), // For external IDs or JSON-like strings
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  description: varchar("description", { length: 1000 }).notNull(),
 });
 
 /**
- * POSTINGS Table
- * Individual entries (debits/credits) belonging to a transaction.
- * Amount is stored in cents (Integer) to prevent floating point issues.
+ * FINANCE_NET_WORTH Table
+ * Snapshots of financial status over time.
  */
-export const postings = pgTable("postings", {
+export const finance_net_worth = pgTable("finance_net_worth", {
   id: uuid("id").primaryKey().defaultRandom(),
-  transactionId: uuid("transaction_id")
-    .references(() => transactions.id, { onDelete: "cascade" })
-    .notNull(),
-  accountId: uuid("account_id")
-    .references(() => accounts.id)
-    .notNull(),
-  amount: integer("amount").notNull(), // Positive for debit, negative for credit (or vice versa depending on logic)
-  memo: varchar("memo", { length: 255 }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  date: timestamp("date", { withTimezone: true }).defaultNow().notNull(),
+  assets: doublePrecision("assets").default(0.0),
+  liabilities: doublePrecision("liabilities").default(0.0),
+  total: doublePrecision("total").default(0.0),
 });

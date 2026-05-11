@@ -77,6 +77,27 @@ async def create_transaction(tx_data: TransactionBase, db: Session = Depends(get
         db.rollback()
         return Result.fail(str(e))
 
+@router.put("/transactions/{transaction_id}", response_model=Result[Transaction, str])
+@router.put("/transactions/{transaction_id}/", response_model=Result[Transaction, str])
+async def update_transaction(transaction_id: uuid.UUID, tx_data: TransactionBase, db: Session = Depends(get_db)):
+    tx = db.query(models.Transaction).filter(models.Transaction.id == str(transaction_id)).first()
+    if not tx:
+        return Result.fail("Transaction not found")
+    try:
+        tx.amount = tx_data.amount
+        tx.type = tx_data.type
+        tx.category = tx_data.category
+        tx.tags = tx_data.tags
+        tx.date = tx_data.date
+        tx.description = tx_data.description
+        
+        db.commit()
+        db.refresh(tx)
+        return Result.ok(tx)
+    except Exception as e:
+        db.rollback()
+        return Result.fail(str(e))
+
 @router.delete("/transactions/{transaction_id}", response_model=Result[dict, str])
 @router.delete("/transactions/{transaction_id}/", response_model=Result[dict, str])
 async def delete_transaction(transaction_id: uuid.UUID, db: Session = Depends(get_db)):
