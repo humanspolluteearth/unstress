@@ -90,8 +90,8 @@ export const AddHabitModal: React.FC<AddHabitModalProps> = ({ isOpen, onClose })
             <input
               autoFocus
               required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               className="w-full bg-muted/50 border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
               placeholder="e.g., Morning Meditation, Deep Work, Gym..."
             />

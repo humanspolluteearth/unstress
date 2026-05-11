@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Result } from '../../core/results';
 import { getBaseUrl, API_ENDPOINTS } from '../../core/apiConfig';
+import { ActionService } from '../../core/ActionService';
 
 export interface Transaction {
   id: string;
@@ -48,20 +49,14 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
   fetchTransactions: async (timeframe) => {
     set({ isLoading: true, error: null });
     try {
-      const baseUrl = getBaseUrl();
-      const url = timeframe 
-        ? `${baseUrl}${API_ENDPOINTS.FINANCE}/transactions?timeframe=${timeframe}`
-        : `${baseUrl}${API_ENDPOINTS.FINANCE}/transactions`;
+      const result = await ActionService.fetchTransactions(timeframe);
       
-      const response = await fetch(url);
-      const data = await response.json();
-      
-      if (response.ok) {
-        set({ transactions: data, isLoading: false });
-        return { success: true, data };
+      if (result.success && result.data) {
+        set({ transactions: result.data, isLoading: false });
+        return result;
       } else {
-        set({ error: 'Failed to fetch', isLoading: false });
-        return { success: false, error: 'Failed to fetch' };
+        set({ error: result.error || 'Failed to fetch', isLoading: false });
+        return result;
       }
     } catch (err) {
       set({ error: 'Network error', isLoading: false });
@@ -71,15 +66,13 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
 
   fetchNetWorth: async () => {
     try {
-      const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}${API_ENDPOINTS.FINANCE}/net-worth`);
-      const data = await response.json();
+      const result = await ActionService.fetchNetWorth();
       
-      if (response.ok) {
-        set({ netWorthHistory: data });
-        return { success: true, data };
+      if (result.success && result.data) {
+        set({ netWorthHistory: result.data });
+        return result;
       }
-      return { success: false, error: 'Failed' };
+      return result;
     } catch (err) {
       return { success: false, error: 'Network error' };
     }
@@ -87,9 +80,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
 
   fetchSummaries: async () => {
     try {
-      const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}${API_ENDPOINTS.FINANCE}/summaries`);
-      const result = await response.json();
+      const result = await ActionService.fetchSummaries();
       
       if (result.success && result.data) {
         set({ 
@@ -98,7 +89,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
         });
         return result;
       }
-      return { success: false, error: 'Failed' };
+      return result;
     } catch (err) {
       return { success: false, error: 'Network error' };
     }

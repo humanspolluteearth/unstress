@@ -23,59 +23,71 @@ class Task(TaskCreate):
 
 router = APIRouter()
 
-@router.get("", response_model=List[Task])
-@router.get("/", response_model=List[Task])
+@router.get("", response_model=Result[List[Task], str])
+@router.get("/", response_model=Result[List[Task], str])
 async def get_tasks(db: Session = Depends(get_db)):
     """Retrieves all tasks from the database."""
     tasks = db.query(models.Task).all()
-    return tasks
+    return Result.ok(tasks)
 
-@router.post("", response_model=Task)
-@router.post("/", response_model=Task)
+@router.post("", response_model=Result[Task, str])
+@router.post("/", response_model=Result[Task, str])
 async def create_task(data: TaskCreate, db: Session = Depends(get_db)):
     """Creates a new task in the database."""
-    new_task = models.Task(
-        id=str(uuid.uuid4()),
-        title=data.title,
-        description=data.description,
-        priority=data.priority,
-        status="Todo",
-        tags=data.tags,
-        deadline=data.deadline,
-        project_link=data.project_link,
-        goal_id=data.goal_id
-    )
-    db.add(new_task)
-    db.commit()
-    db.refresh(new_task)
-    return new_task
+    try:
+        new_task = models.Task(
+            id=str(uuid.uuid4()),
+            title=data.title,
+            description=data.description,
+            priority=data.priority,
+            status="Todo",
+            tags=data.tags,
+            deadline=data.deadline,
+            project_link=data.project_link,
+            goal_id=data.goal_id
+        )
+        db.add(new_task)
+        db.commit()
+        db.refresh(new_task)
+        return Result.ok(new_task)
+    except Exception as e:
+        db.rollback()
+        return Result.fail(str(e))
 
-@router.patch("/{task_id}", response_model=Task)
+@router.patch("/{task_id}", response_model=Result[Task, str])
 async def update_task(task_id: str, data: TaskCreate, db: Session = Depends(get_db)):
     """Updates an existing task in the database."""
     task = db.query(models.Task).filter(models.Task.id == task_id).first()
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        return Result.fail("Task not found")
     
-    task.title = data.title
-    task.description = data.description
-    task.priority = data.priority
-    task.tags = data.tags
-    task.deadline = data.deadline
-    task.project_link = data.project_link
-    task.goal_id = data.goal_id
-    
-    db.commit()
-    db.refresh(task)
-    return task
+    try:
+        task.title = data.title
+        task.description = data.description
+        task.priority = data.priority
+        task.tags = data.tags
+        task.deadline = data.deadline
+        task.project_link = data.project_link
+        task.goal_id = data.goal_id
+        
+        db.commit()
+        db.refresh(task)
+        return Result.ok(task)
+    except Exception as e:
+        db.rollback()
+        return Result.fail(str(e))
 
-@router.delete("/{task_id}")
+@router.delete("/{task_id}", response_model=Result[dict, str])
 async def delete_task(task_id: str, db: Session = Depends(get_db)):
     """Deletes a task from the database."""
     task = db.query(models.Task).filter(models.Task.id == task_id).first()
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        return Result.fail("Task not found")
     
-    db.delete(task)
-    db.commit()
-    return {"success": True, "status": "deleted"}
+    try:
+        db.delete(task)
+        db.commit()
+        return Result.ok({"success": True, "status": "deleted"})
+    except Exception as e:
+        db.rollback()
+        return Result.fail(str(e))

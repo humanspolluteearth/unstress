@@ -6,6 +6,7 @@ import app.models as models
 from pydantic import BaseModel
 from datetime import datetime, date, timezone
 import uuid
+from app.core.results import Result
 
 # --- Schemas ---
 
@@ -50,8 +51,8 @@ class HabitLogCreate(BaseModel):
 
 router = APIRouter()
 
-@router.get("", response_model=List[Habit])
-@router.get("/", response_model=List[Habit])
+@router.get("", response_model=Result[List[Habit], str])
+@router.get("/", response_model=Result[List[Habit], str])
 async def get_habits(db: Session = Depends(get_db)):
     """Returns all habits with their logs from the database."""
     db_habits = db.query(models.Habit).all()
@@ -74,64 +75,77 @@ async def get_habits(db: Session = Depends(get_db)):
             ]
         )
         results.append(habit_data)
-    return results
+    return Result.ok(results)
 
-@router.post("", response_model=Habit)
-@router.post("/", response_model=Habit)
+@router.post("", response_model=Result[Habit, str])
+@router.post("/", response_model=Result[Habit, str])
 async def create_habit(data: HabitCreate, db: Session = Depends(get_db)):
     """Creates a new habit definition in the database."""
-    new_habit = models.Habit(
-        id=str(uuid.uuid4()),
-        name=data.name,
-        frequency=data.frequency,
-        unit=data.unit,
-        two_min_threshold=data.two_min_threshold,
-        normal_threshold=data.normal_threshold,
-        hard_threshold=data.hard_threshold,
-        impossible_threshold=data.impossible_threshold
-    )
-    db.add(new_habit)
-    db.commit()
-    db.refresh(new_habit)
-    
-    return Habit(
-        id=new_habit.id,
-        name=new_habit.name,
-        frequency=new_habit.frequency,
-        unit=new_habit.unit,
-        two_min_threshold=new_habit.two_min_threshold,
-        normal_threshold=new_habit.normal_threshold,
-        hard_threshold=new_habit.hard_threshold,
-        impossible_threshold=new_habit.impossible_threshold,
-        logs=[]
-    )
+    try:
+        new_habit = models.Habit(
+            id=str(uuid.uuid4()),
+            name=data.name,
+            frequency=data.frequency,
+            unit=data.unit,
+            two_min_threshold=data.two_min_threshold,
+            normal_threshold=data.normal_threshold,
+            hard_threshold=data.hard_threshold,
+            impossible_threshold=data.impossible_threshold
+        )
+        db.add(new_habit)
+        db.commit()
+        db.refresh(new_habit)
+        
+        habit_item = Habit(
+            id=new_habit.id,
+            name=new_habit.name,
+            frequency=new_habit.frequency,
+            unit=new_habit.unit,
+            two_min_threshold=new_habit.two_min_threshold,
+            normal_threshold=new_habit.normal_threshold,
+            hard_threshold=new_habit.hard_threshold,
+            impossible_threshold=new_habit.impossible_threshold,
+            logs=[]
+        )
+        return Result.ok(habit_item)
+    except Exception as e:
+        db.rollback()
+        return Result.fail(str(e))
 
-@router.delete("/{habit_id}")
-@router.delete("/{habit_id}/")
+@router.delete("/{habit_id}", response_model=Result[dict, str])
+@router.delete("/{habit_id}/", response_model=Result[dict, str])
 async def delete_habit(habit_id: str, db: Session = Depends(get_db)):
     """Permanently deletes a habit from the database."""
     habit = db.query(models.Habit).filter(models.Habit.id == habit_id).first()
     if not habit:
-        raise HTTPException(status_code=404, detail="Habit not found")
+        return Result.fail("Habit not found")
     
-    db.delete(habit)
-    db.commit()
-    return {"success": True, "status": "deleted"}
+    try:
+        db.delete(habit)
+        db.commit()
+        return Result.ok({"success": True, "status": "deleted"})
+    except Exception as e:
+        db.rollback()
+        return Result.fail(str(e))
 
-@router.post("/log")
-@router.post("/log/")
+@router.post("/log", response_model=Result[dict, str])
+@router.post("/log/", response_model=Result[dict, str])
 async def add_habit_log(data: HabitLogCreate, db: Session = Depends(get_db)):
     """Adds a new log entry to the database."""
     habit = db.query(models.Habit).filter(models.Habit.id == data.habit_id).first()
     if not habit:
-        raise HTTPException(status_code=404, detail="Habit not found")
+        return Result.fail("Habit not found")
 
-    new_log = models.HabitLog(
-        id=str(uuid.uuid4()),
-        habit_id=data.habit_id,
-        value=data.value,
-        timestamp=datetime.now(timezone.utc)
-    )
-    db.add(new_log)
-    db.commit()
-    return {"success": True, "status": "logged"}
+    try:
+        new_log = models.HabitLog(
+            id=str(uuid.uuid4()),
+            habit_id=data.habit_id,
+            value=data.value,
+            timestamp=datetime.now(timezone.utc)
+        )
+        db.add(new_log)
+        db.commit()
+        return Result.ok({"success": True, "status": "logged"})
+    except Exception as e:
+        db.rollback()
+        return Result.fail(str(e))

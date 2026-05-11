@@ -14,9 +14,27 @@ from app.core.actions_router import router as actions_router
 # Python 3.14 Compatibility: Ensure standard asyncio is used
 import asyncio
 
-# --- Database Persistence Activation ---
-# This ensures tables are created in unstress_db on startup
-models.Base.metadata.create_all(bind=engine)
+import time
+from sqlalchemy.exc import OperationalError
+
+# --- Database Persistence Activation with Retry Logic ---
+def init_db(retries=5, delay=2):
+    """Wait for the database to be ready and initialize tables."""
+    print(f"[Backend] Attempting to connect to PostgreSQL...")
+    for i in range(retries):
+        try:
+            models.Base.metadata.create_all(bind=engine)
+            print("[Backend] Database connection established and tables synchronized.")
+            return True
+        except OperationalError as e:
+            print(f"[Backend] Database not ready (attempt {i+1}/{retries}): {e}")
+            if i < retries - 1:
+                time.sleep(delay)
+            else:
+                print("[Backend] CRITICAL: Could not connect to database after multiple attempts.")
+                return False
+
+init_db()
 
 app = FastAPI(title="unstress Backend")
 

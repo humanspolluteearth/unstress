@@ -5,6 +5,7 @@ import uuid
 from sqlalchemy.orm import Session
 from app.database import get_db
 import app.models as models
+from app.core.results import Result
 
 # Schema Definitions
 class GoalModel(BaseModel):
@@ -61,7 +62,7 @@ def sync_goal_stats(goal_obj: models.Goal, db_tasks: List[models.Task]):
 
 router = APIRouter()
 
-@router.get("", response_model=List[dict])
+@router.get("", response_model=Result[List[dict], str])
 async def get_goals(db: Session = Depends(get_db)):
     """Retrieves all goals with updated stats from the database."""
     goals = db.query(models.Goal).all()
@@ -98,59 +99,67 @@ async def get_goals(db: Session = Depends(get_db)):
             **stats
         }
         results.append(goal_dict)
-    return results
+    return Result.ok(results)
 
-@router.post("", response_model=Goal)
+@router.post("", response_model=Result[dict, str])
 async def create_goal(goal_data: GoalModel, db: Session = Depends(get_db)):
     """Creates a new goal in the database."""
-    new_goal = models.Goal(
-        id=str(uuid.uuid4()),
-        title=goal_data.title,
-        description=goal_data.description,
-        markdown_content=goal_data.markdown_content,
-        priority=goal_data.priority,
-        category=goal_data.category,
-        time_frame=goal_data.time_frame,
-        deadline=goal_data.deadline,
-        label_color=goal_data.label_color,
-        assignee_initials=goal_data.assignee_initials,
-        tags=goal_data.tags,
-        links=[str(l) for l in goal_data.links],
-        references=goal_data.references,
-        internal_tasks=goal_data.internal_tasks
-    )
-    db.add(new_goal)
-    db.commit()
-    db.refresh(new_goal)
-    
-    # Return with initial stats
-    stats = sync_goal_stats(new_goal, [])
-    return {**new_goal.__dict__, **stats}
+    try:
+        new_goal = models.Goal(
+            id=str(uuid.uuid4()),
+            title=goal_data.title,
+            description=goal_data.description,
+            markdown_content=goal_data.markdown_content,
+            priority=goal_data.priority,
+            category=goal_data.category,
+            time_frame=goal_data.time_frame,
+            deadline=goal_data.deadline,
+            label_color=goal_data.label_color,
+            assignee_initials=goal_data.assignee_initials,
+            tags=goal_data.tags,
+            links=[str(l) for l in goal_data.links],
+            references=goal_data.references,
+            internal_tasks=goal_data.internal_tasks
+        )
+        db.add(new_goal)
+        db.commit()
+        db.refresh(new_goal)
+        
+        # Return with initial stats
+        stats = sync_goal_stats(new_goal, [])
+        return Result.ok({**new_goal.__dict__, **stats})
+    except Exception as e:
+        db.rollback()
+        return Result.fail(str(e))
 
-@router.put("/{goal_id}", response_model=Goal)
+@router.put("/{goal_id}", response_model=Result[dict, str])
 async def update_goal(goal_id: uuid.UUID, goal_data: GoalModel, db: Session = Depends(get_db)):
     """Updates an existing goal in the database."""
     goal = db.query(models.Goal).filter(models.Goal.id == str(goal_id)).first()
     if not goal:
-        raise HTTPException(status_code=404, detail="Goal not found")
+        return Result.fail("Goal not found")
         
-    goal.title = goal_data.title
-    goal.description = goal_data.description
-    goal.markdown_content = goal_data.markdown_content
-    goal.priority = goal_data.priority
-    goal.category = goal_data.category
-    goal.time_frame = goal_data.time_frame
-    goal.deadline = goal_data.deadline
-    goal.label_color = goal_data.label_color
-    goal.assignee_initials = goal_data.assignee_initials
-    goal.tags = goal_data.tags
-    goal.links = [str(l) for l in goal_data.links]
-    goal.references = goal_data.references
-    goal.internal_tasks = goal_data.internal_tasks
-    
-    db.commit()
-    db.refresh(goal)
-    
-    external_tasks = db.query(models.Task).filter(models.Task.goal_id == goal.id).all()
-    stats = sync_goal_stats(goal, external_tasks)
-    return {**goal.__dict__, **stats}
+    try:
+        goal.title = goal_data.title
+        goal.description = goal_data.description
+        goal.markdown_content = goal_data.markdown_content
+        goal.priority = goal_data.priority
+        goal.category = goal_data.category
+        goal.time_frame = goal_data.time_frame
+        goal.deadline = goal_data.deadline
+        goal.label_color = goal_data.label_color
+        goal.assignee_initials = goal_data.assignee_initials
+        goal.tags = goal_data.tags
+        goal.links = [str(l) for l in goal_data.links]
+        goal.references = goal_data.references
+        goal.internal_tasks = goal_data.internal_tasks
+        
+        db.commit()
+        db.refresh(goal)
+        
+        external_tasks = db.query(models.Task).filter(models.Task.goal_id == goal.id).all()
+        stats = sync_goal_stats(goal, external_tasks)
+        return Result.ok({**goal.__dict__, **stats})
+    except Exception as e:
+        db.rollback()
+        return Result.fail(str(e))

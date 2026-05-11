@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Result } from '../../core/results';
 import { getBaseUrl, API_ENDPOINTS } from '../../core/apiConfig';
+import { ActionService } from '../../core/ActionService';
 
 export interface TimeBlock {
   id: string;
@@ -42,16 +43,14 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
   fetchBlocks: async () => {
     set({ isLoading: true });
     try {
-      const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}${API_ENDPOINTS.SCHEDULES}`);
-      const data = await response.json();
+      const result = await ActionService.getSchedules();
       
-      // The persistent API returns a raw list or a Result object depending on the implementation
-      // Standardizing on raw list for GET collections
-      const resultData = Array.isArray(data) ? data : (data.success ? data.data : []);
-
-      set({ blocks: resultData, isLoading: false });
-      return { success: true, data: resultData };
+      if (result.success && result.data) {
+        set({ blocks: result.data, isLoading: false });
+        return { success: true, data: result.data };
+      }
+      set({ error: result.error || 'Failed', isLoading: false });
+      return { success: false, error: result.error || 'Failed' };
     } catch (err) {
       set({ error: 'Network error', isLoading: false });
       return { success: false, error: 'Network error' };
@@ -60,7 +59,6 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
 
   createBlock: async (data) => {
     try {
-      const { ActionService } = await import('../../core/ActionService');
       const result = await ActionService.createScheduleEvent(data);
       if (result.success) {
         get().fetchBlocks();
@@ -78,7 +76,6 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     }));
 
     try {
-      const { ActionService } = await import('../../core/ActionService');
       const result = await ActionService.updateScheduleEvent(id, data);
       if (!result.success) {
         set({ blocks: previousBlocks });
@@ -100,7 +97,6 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     }));
 
     try {
-      const { ActionService } = await import('../../core/ActionService');
       const result = await ActionService.deleteScheduleEvent(id);
       if (!result.success) {
         set({ blocks: previousBlocks });

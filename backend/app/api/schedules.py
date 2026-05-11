@@ -6,6 +6,7 @@ import app.models as models
 from pydantic import BaseModel, validator
 from datetime import datetime, timezone
 import uuid
+from app.core.results import Result
 
 # --- Schemas ---
 
@@ -41,8 +42,8 @@ class EventUpdate(BaseModel):
 
 router = APIRouter()
 
-@router.get("", response_model=List[dict])
-@router.get("/", response_model=List[dict])
+@router.get("", response_model=Result[List[dict], str])
+@router.get("/", response_model=Result[List[dict], str])
 async def get_schedule(db: Session = Depends(get_db)):
     """Retrieves all scheduled events from the database."""
     events = db.query(models.ScheduledEvent).all()
@@ -57,50 +58,59 @@ async def get_schedule(db: Session = Depends(get_db)):
             "goal_id": e.goal_id
         } for e in events
     ]
-    return results
+    return Result.ok(results)
 
-@router.post("", response_model=dict)
-@router.post("/", response_model=dict)
+@router.post("", response_model=Result[dict, str])
+@router.post("/", response_model=Result[dict, str])
 async def create_event(data: EventCreate, db: Session = Depends(get_db)):
     """Creates a new event in the database."""
-    # Simple overlap check for conflict flag
-    existing_events = db.query(models.ScheduledEvent).all()
-    is_conflict = False
-    for e in existing_events:
-        if data.start_time < e.end_time and e.start_time < data.end_time:
-            is_conflict = True
-            break
-            
-    new_event = models.ScheduledEvent(
-        id=str(uuid.uuid4()),
-        title=data.title,
-        start_time=data.start_time,
-        end_time=data.end_time,
-        is_conflict=is_conflict,
-        goal_id=data.goal_id
-    )
-    db.add(new_event)
-    db.commit()
-    db.refresh(new_event)
+    try:
+        # Simple overlap check for conflict flag
+        existing_events = db.query(models.ScheduledEvent).all()
+        is_conflict = False
+        for e in existing_events:
+            if data.start_time < e.end_time and e.start_time < data.end_time:
+                is_conflict = True
+                break
+                
+        new_event = models.ScheduledEvent(
+            id=str(uuid.uuid4()),
+            title=data.title,
+            start_time=data.start_time,
+            end_time=data.end_time,
+            is_conflict=is_conflict,
+            goal_id=data.goal_id
+        )
+        db.add(new_event)
+        db.commit()
+        db.refresh(new_event)
 
-    return {
-        "id": new_event.id,
-        "title": new_event.title,
-        "start_time": new_event.start_time,
-        "end_time": new_event.end_time,
-        "item_type": "event",
-        "is_conflict": new_event.is_conflict,
-        "goal_id": new_event.goal_id
-    }
+        event_dict = {
+            "id": new_event.id,
+            "title": new_event.title,
+            "start_time": new_event.start_time,
+            "end_time": new_event.end_time,
+            "item_type": "event",
+            "is_conflict": new_event.is_conflict,
+            "goal_id": new_event.goal_id
+        }
+        return Result.ok(event_dict)
+    except Exception as e:
+        db.rollback()
+        return Result.fail(str(e))
 
-@router.delete("/{event_id}")
-@router.delete("/{event_id}/")
+@router.delete("/{event_id}", response_model=Result[dict, str])
+@router.delete("/{event_id}/", response_model=Result[dict, str])
 async def delete_event(event_id: str, db: Session = Depends(get_db)):
     """Deletes an event from the database."""
     event = db.query(models.ScheduledEvent).filter(models.ScheduledEvent.id == event_id).first()
     if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+        return Result.fail("Event not found")
     
-    db.delete(event)
-    db.commit()
-    return {"success": True, "status": "deleted"}
+    try:
+        db.delete(event)
+        db.commit()
+        return Result.ok({"success": True, "status": "deleted"})
+    except Exception as e:
+        db.rollback()
+        return Result.fail(str(e))

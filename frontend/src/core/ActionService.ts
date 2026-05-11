@@ -38,6 +38,32 @@ export interface ScheduleEventCreate {
   goal_id?: string;
 }
 
+export interface GoalCreate {
+  title: string;
+  description: string;
+  markdown_content?: string;
+  priority: string;
+  category: string;
+  time_frame: string;
+  deadline?: string;
+  label_color?: string;
+  assignee_initials?: string;
+  tags?: string[];
+  links?: string[];
+  references?: string[];
+  internal_tasks?: any[];
+}
+
+export interface HabitCreate {
+  name: string;
+  frequency: string;
+  unit?: string;
+  two_min_threshold: number;
+  normal_threshold: number;
+  hard_threshold: number;
+  impossible_threshold: number;
+}
+
 export class ActionService {
   private static async request<T, R>(method: string, endpoint: string, data?: T): Promise<Result<R>> {
     try {
@@ -59,7 +85,34 @@ export class ActionService {
     }
   }
 
+  // --- Goals ---
+
+  static async fetchGoals(): Promise<Result<any[]>> {
+    return this.request('GET', API_ENDPOINTS.GOALS);
+  }
+
+  static async createGoal(data: GoalCreate): Promise<Result<any>> {
+    return this.request('POST', API_ENDPOINTS.GOALS, data);
+  }
+
+  static async updateGoal(id: string, data: GoalCreate): Promise<Result<any>> {
+    return this.request('PUT', `${API_ENDPOINTS.GOALS}/${id}`, data);
+  }
+
   // --- Transactions ---
+
+  static async fetchTransactions(timeframe?: string): Promise<Result<any[]>> {
+    const url = timeframe ? `${API_ENDPOINTS.FINANCE}/transactions?timeframe=${timeframe}` : `${API_ENDPOINTS.FINANCE}/transactions`;
+    return this.request('GET', url);
+  }
+
+  static async fetchNetWorth(): Promise<Result<any[]>> {
+    return this.request('GET', `${API_ENDPOINTS.FINANCE}/net-worth`);
+  }
+
+  static async fetchSummaries(): Promise<Result<any>> {
+    return this.request('GET', `${API_ENDPOINTS.FINANCE}/summaries`);
+  }
 
   static async createTransaction(data: TransactionCreate): Promise<Result<any>> {
     return this.request('POST', `${API_ENDPOINTS.FINANCE}/transactions`, data);
@@ -75,6 +128,10 @@ export class ActionService {
 
   // --- Tasks ---
 
+  static async fetchTasks(): Promise<Result<any[]>> {
+    return this.request('GET', API_ENDPOINTS.TASKS);
+  }
+
   static async createTask(data: TaskCreate): Promise<Result<any>> {
     return this.request('POST', `${API_ENDPOINTS.TASKS}`, data);
   }
@@ -88,12 +145,18 @@ export class ActionService {
   }
 
   static async updateTaskStatus(id: string, status: string): Promise<Result<any>> {
-    // Note: The backend api/tasks.py doesn't have a specific status endpoint yet, 
-    // it uses update_task for general updates. Standardizing on PATCH /{id}.
     return this.request('PATCH', `${API_ENDPOINTS.TASKS}/${id}`, { status });
   }
 
   // --- Habits ---
+
+  static async fetchHabits(): Promise<Result<any[]>> {
+    return this.request('GET', API_ENDPOINTS.HABITS);
+  }
+
+  static async createHabit(data: HabitCreate): Promise<Result<any>> {
+    return this.request('POST', API_ENDPOINTS.HABITS, data);
+  }
 
   static async createHabitLog(data: HabitLogCreate): Promise<Result<any>> {
     return this.request('POST', `${API_ENDPOINTS.HABITS}/log`, data);
@@ -105,6 +168,10 @@ export class ActionService {
 
   // --- Schedules ---
 
+  static async getSchedules(): Promise<Result<any[]>> {
+    return this.request('GET', API_ENDPOINTS.SCHEDULES);
+  }
+
   static async createScheduleEvent(data: ScheduleEventCreate): Promise<Result<any>> {
     return this.request('POST', `${API_ENDPOINTS.SCHEDULES}`, data);
   }
@@ -115,16 +182,6 @@ export class ActionService {
 
   static async deleteScheduleEvent(id: string): Promise<Result<any>> {
     return this.request('DELETE', `${API_ENDPOINTS.SCHEDULES}/${id}`);
-  }
-
-  static async getSchedules(): Promise<Result<any[]>> {
-    try {
-      const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}${API_ENDPOINTS.SCHEDULES}`);
-      return await response.json();
-    } catch (err) {
-      return { success: false, error: 'Failed to fetch schedules' };
-    }
   }
 
   // --- Infrastructure ---

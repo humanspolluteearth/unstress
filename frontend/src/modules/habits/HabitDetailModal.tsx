@@ -53,8 +53,8 @@ export const HabitDetailModal: React.FC<HabitDetailModalProps> = ({ habit, isOpe
               type="text"
               required
               className="w-full bg-background border rounded-none px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
           </div>
 

@@ -22,42 +22,74 @@ const ModuleLoader = () => (
 );
 
 const SidecarHealthCheck: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isBackendHealthy, setIsBackendHealthy] = React.useState(false);
   const [port, setPort] = React.useState<number | null>((window as any).__BACKEND_PORT__ || 8000);
+  const [retryCount, setRetryCount] = React.useState(0);
   
   React.useEffect(() => {
-    if ((window as any).__BACKEND_PORT__) {
-      setPort((window as any).__BACKEND_PORT__);
-      return;
-    }
-
-    // Poll for the port being injected by Rust eval
-    const interval = setInterval(() => {
+    // 1. Resolve Port
+    const resolvePort = () => {
       const p = (window as any).__BACKEND_PORT__;
       if (p) {
         setPort(p);
-        clearInterval(interval);
+        return p;
       }
-    }, 100);
+      return port;
+    };
 
-    return () => clearInterval(interval);
-  }, []);
+    const currentPort = resolvePort();
+    
+    // 2. Poll for Health if port exists
+    if (currentPort && !isBackendHealthy) {
+      const checkHealth = async () => {
+        try {
+          const response = await fetch(`http://127.0.0.1:${currentPort}/`);
+          if (response.ok) {
+            console.log('[Sidecar] Backend is healthy and responding.');
+            setIsBackendHealthy(true);
+          } else {
+            throw new Error('NOT_OK');
+          }
+        } catch (err) {
+          console.warn(`[Sidecar] Health check failed (attempt ${retryCount + 1})...`);
+          setTimeout(() => setRetryCount(prev => prev + 1), 500);
+        }
+      };
+      checkHealth();
+    } else if (!currentPort) {
+      // Wait for port injection
+      const interval = setInterval(() => {
+        if ((window as any).__BACKEND_PORT__) {
+          setPort((window as any).__BACKEND_PORT__);
+          clearInterval(interval);
+        }
+      }, 100);
+      return () => clearInterval(interval);
+    }
+  }, [port, isBackendHealthy, retryCount]);
 
-  if (!port) {
+  if (!port || !isBackendHealthy) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center bg-black p-6 font-mono text-white">
         <div className="flex items-center gap-3 text-primary mb-4">
           <div className="w-3 h-3 bg-primary rounded-full animate-ping" />
-          <h2 className="text-sm font-bold tracking-tighter uppercase">Connecting to Sidecar...</h2>
+          <h2 className="text-sm font-bold tracking-tighter uppercase">
+            {!port ? 'Resolving Bridge...' : 'Initializing Sidecar...'}
+          </h2>
         </div>
         <p className="text-[10px] text-zinc-400 max-w-xs text-center leading-relaxed mb-6">
-          Waiting for the FastAPI backend bridge to initialize on localhost.
+          {!port 
+            ? 'Waiting for the secure backend port to be injected by the host process.'
+            : `Attempting to establish connection with FastAPI bridge on port ${port}.`}
         </p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 border border-primary text-primary text-[10px] font-bold uppercase hover:bg-primary/10 transition-all"
-        >
-          Force Reconnect
-        </button>
+        {(retryCount > 10 || !port) && (
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 border border-primary text-primary text-[10px] font-bold uppercase hover:bg-primary/10 transition-all"
+          >
+            Force Restart
+          </button>
+        )}
       </div>
     );
   }

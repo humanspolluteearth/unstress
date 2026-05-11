@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Result } from '../../core/results';
 import { getBaseUrl, API_ENDPOINTS } from '../../core/apiConfig';
+import { ActionService } from '../../core/ActionService';
 
 export interface HabitLog {
   timestamp: string;
@@ -43,9 +44,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
   fetchHabits: async () => {
     set({ isLoading: true });
     try {
-      const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}${API_ENDPOINTS.HABITS}`);
-      const result: Result<Habit[], string> = await response.json();
+      const result = await ActionService.fetchHabits();
       if (result.success && result.data) {
         set({ habits: result.data, isLoading: false });
         return result;
@@ -60,13 +59,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
 
   createHabit: async (data) => {
     try {
-      const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}${API_ENDPOINTS.HABITS}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const result: Result<Habit, string> = await response.json();
+      const result = await ActionService.createHabit(data);
       if (result.success) {
         await get().fetchHabits();
       }
@@ -78,13 +71,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
 
   logHabit: async (habitId, value) => {
     try {
-      const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}${API_ENDPOINTS.HABITS}/log`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ habit_id: habitId, value }),
-      });
-      const result = await response.json();
+      const result = await ActionService.createHabitLog({ habit_id: habitId, value });
       if (result.success) {
         await get().fetchHabits();
       }

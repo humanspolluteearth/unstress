@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import { Result } from '../../core/results';
-import { TaskCreate } from '../../core/ActionService';
+import { ActionService, TaskCreate } from '../../core/ActionService';
 import { getBaseUrl, API_ENDPOINTS } from '../../core/apiConfig';
 
 export interface Task {
@@ -42,27 +42,26 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   fetchTasks: async () => {
     set({ isLoading: true });
     try {
-      const baseUrl = getBaseUrl();
-      const response = await fetch(`${baseUrl}${API_ENDPOINTS.TASKS}`);
-      const data = await response.json();
+      const result = await ActionService.fetchTasks();
       
-      // Handle Result wrapper if backend returns it, otherwise raw list
-      const tasksList = Array.isArray(data) ? data : (data.success ? data.data : []);
-      
-      const mappedTasks: Task[] = tasksList.map((t: any) => ({
-        id: t.id,
-        title: t.title,
-        description: t.description,
-        status: t.status,
-        priority: t.priority,
-        tags: t.tags || [],
-        deadline: t.deadline,
-        projectLink: t.project_link,
-        goalId: t.goal_id
-      }));
+      if (result.success && result.data) {
+        const mappedTasks: Task[] = result.data.map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          description: t.description,
+          status: t.status,
+          priority: t.priority,
+          tags: t.tags || [],
+          deadline: t.deadline,
+          projectLink: t.project_link,
+          goalId: t.goal_id
+        }));
 
-      set({ tasks: mappedTasks, isLoading: false });
-      return { success: true, data: mappedTasks };
+        set({ tasks: mappedTasks, isLoading: false });
+        return { success: true, data: mappedTasks };
+      }
+      set({ error: result.error || 'Failed', isLoading: false });
+      return { success: false, error: result.error || 'Failed' };
     } catch (err) {
       set({ error: 'Network error', isLoading: false });
       return { success: false, error: 'Network error' };
@@ -71,7 +70,6 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   createTask: async (taskData) => {
     try {
-      const { ActionService } = await import('../../core/ActionService');
       const result = await ActionService.createTask(taskData);
       
       if (result.success) {
@@ -98,7 +96,6 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   updateTask: async (taskId, taskData) => {
     try {
-      const { ActionService } = await import('../../core/ActionService');
       const result = await ActionService.updateTask(taskId, taskData);
       
       if (result.success) {
@@ -127,7 +124,6 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   deleteTask: async (taskId) => {
     try {
-      const { ActionService } = await import('../../core/ActionService');
       const result = await ActionService.deleteTask(taskId);
       
       if (result.success) {
@@ -153,7 +149,6 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
     // 2. Perform Backend Call
     try {
-      const { ActionService } = await import('../../core/ActionService');
       const result = await ActionService.updateTaskStatus(taskId, newStatus);
 
       if (!result.success) {

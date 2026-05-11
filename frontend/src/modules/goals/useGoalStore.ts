@@ -37,15 +37,25 @@ export const useGoalStore = create<GoalState>((set, get) => ({
   fetchGoals: async () => {
     set({ isLoading: true });
     try {
-      const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/goals/`);
-      const result: Result<Goal[], string> = await response.json();
+      const result = await ActionService.fetchGoals();
       if (result.success && result.data) {
-        set({ goals: result.data, isLoading: false });
-        return result;
+        // Map backend Goal to frontend Goal
+        const mappedGoals: Goal[] = result.data.map((g: any) => ({
+          id: g.id,
+          name: g.title,
+          type: g.time_frame,
+          description: g.description,
+          is_current_focus: false, // This will be handled by focus module
+          progress: g.progress || 0,
+          priority: g.priority,
+          category: g.category,
+          deadline: g.deadline
+        }));
+        set({ goals: mappedGoals, isLoading: false });
+        return { success: true, data: mappedGoals };
       }
       set({ error: result.error || 'Failed', isLoading: false });
-      return result;
+      return { success: false, error: result.error || 'Failed' };
     } catch (err) {
       set({ error: 'Network error', isLoading: false });
       return { success: false, error: 'Network error' };
@@ -56,7 +66,7 @@ export const useGoalStore = create<GoalState>((set, get) => ({
     try {
       const result = await ActionService.createGoal(data);
       if (result.success) {
-        get().fetchGoals();
+        await get().fetchGoals();
       }
       return result;
     } catch (err) {
