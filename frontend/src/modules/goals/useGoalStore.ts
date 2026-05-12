@@ -45,7 +45,7 @@ export const useGoalStore = create<GoalState>((set, get) => ({
           name: g.title,
           type: g.time_frame,
           description: g.description,
-          is_current_focus: false, // This will be handled by focus module
+          is_current_focus: g.is_current_focus,
           progress: g.progress || 0,
           priority: g.priority,
           category: g.category,
@@ -77,7 +77,7 @@ export const useGoalStore = create<GoalState>((set, get) => ({
   setFocus: async (goalId) => {
     try {
       const port = (window as any).__BACKEND_PORT__ || 8000;
-      const response = await fetch(`http://localhost:${port}/goals/${goalId}/focus`, {
+      const response = await fetch(`http://localhost:${port}/api/goals/${goalId}/focus`, {
         method: 'POST',
       });
       const result = await response.json();
@@ -85,7 +85,7 @@ export const useGoalStore = create<GoalState>((set, get) => ({
         // Update locally
         const goals = get().goals.map(g => ({
           ...g,
-          is_focus: g.id === goalId
+          is_current_focus: g.id === goalId
         }));
         set({ goals });
       }

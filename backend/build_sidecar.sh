@@ -5,28 +5,34 @@ TARGET_TRIPLE=$(rustc -vV | sed -n 's|host: ||p')
 OUTPUT_NAME="backend-$TARGET_TRIPLE"
 BIN_DIR="../frontend/src-tauri/binaries"
 
-echo "Building sidecar for $TARGET_TRIPLE..."
+echo "Building sidecar for $TARGET_TRIPLE with PyInstaller..."
 
-# Ensure Nuitka is installed in venv
+# Ensure environment is ready
 if [ ! -d ".venv" ]; then
     python3 -m venv .venv
-    source .venv/bin/activate
-    pip install -r requirements.txt nuitka
-else
-    source .venv/bin/activate
-    pip install nuitka
 fi
 
-# Run Nuitka
-# --standalone: bundle all dependencies
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# Clean previous builds
+rm -rf build dist
+
+# Run PyInstaller via python module to ensure venv usage
 # --onefile: single executable for distribution
-# --include-package: ensure fastapi and uvicorn are bundled correctly
-python3 -m nuitka \
-    --standalone \
-    --onefile \
-    --include-package=app \
-    --output-dir=dist \
-    --output-filename="$OUTPUT_NAME" \
+# --hidden-import: ensure all used modules are included
+# --collect-all: bundles everything in the package
+python3 -m PyInstaller --onefile \
+    --name "$OUTPUT_NAME" \
+    --collect-all app \
+    --collect-all dateutil \
+    --hidden-import uvicorn \
+    --hidden-import fastapi \
+    --hidden-import sqlalchemy \
+    --hidden-import psycopg2 \
+    --hidden-import dateutil \
+    --hidden-import dateutil.relativedelta \
     app/main.py
 
 # Move to Tauri binaries folder

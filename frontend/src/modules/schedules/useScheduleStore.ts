@@ -70,13 +70,14 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
   },
 
   updateBlock: async (id, data) => {
+    const baseId = id.split('_')[0];
     const previousBlocks = get().blocks;
     set(state => ({
       blocks: state.blocks.map(b => b.id === id ? { ...b, ...data } : b)
     }));
 
     try {
-      const result = await ActionService.updateScheduleEvent(id, data);
+      const result = await ActionService.updateScheduleEvent(baseId, data);
       if (!result.success) {
         set({ blocks: previousBlocks });
       } else {
@@ -85,11 +86,12 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
       return result;
     } catch (err) {
       set({ blocks: previousBlocks });
-      return { success: false, error: 'Failed to update' };
+      return { success: false, error: 'Network error' };
     }
   },
 
   deleteBlock: async (id) => {
+    const baseId = id.split('_')[0];
     const previousBlocks = get().blocks;
     set(state => ({
       blocks: state.blocks.filter(b => b.id !== id),
@@ -97,14 +99,16 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
     }));
 
     try {
-      const result = await ActionService.deleteScheduleEvent(id);
+      const result = await ActionService.deleteScheduleEvent(baseId);
       if (!result.success) {
         set({ blocks: previousBlocks });
+      } else {
+        get().fetchBlocks();
       }
       return result;
     } catch (err) {
       set({ blocks: previousBlocks });
-      return { success: false, error: 'Failed to delete' };
+      return { success: false, error: 'Network error' };
     }
   }
 }));

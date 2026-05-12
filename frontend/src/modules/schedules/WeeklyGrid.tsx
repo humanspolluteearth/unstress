@@ -83,12 +83,15 @@ export const WeeklyGrid: React.FC<{ startDate: Date; onEdit: (id: string) => voi
 
             {/* Day Content */}
             {weekDays.map(day => {
-              const dateStr = day.toISOString().split('T')[0];
-              const dayBlocks = (blocks || []).filter(b => b.start_time?.startsWith(dateStr));
+              const dayStr = day.toLocaleDateString('en-CA');
+              const dayBlocks = (blocks || []).filter(b => {
+                if (!b.start_time) return false;
+                return new Date(b.start_time).toLocaleDateString('en-CA') === dayStr;
+              });
               const isToday = now.toDateString() === day.toDateString();
 
               return (
-                <div key={dateStr} className={clsx("relative h-[1920px]", isToday && "bg-primary/5")}>
+                <div key={dayStr} className={clsx("relative h-[1920px]", isToday && "bg-primary/5")}>
                   {dayBlocks.map(block => {
                     const start = new Date(block.start_time);
                     const end = new Date(block.end_time);

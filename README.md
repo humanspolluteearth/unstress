@@ -10,13 +10,20 @@ Ensure you have the necessary system dependencies installed:
 sudo pacman -S --needed base-devel curl wget openssl libsoup webkit2gtk-4.1 rust nodejs npm python postgresql
 ```
 
-### 1. Clone & Setup Frontend
+### 1. Build from Source (Packaging)
+To create an installer for your distribution (AppImage, .deb, or .rpm):
+
 ```bash
 cd frontend
-npm install
+# Build AppImage
+npm run tauri build -- --target appimage
+# Build .deb
+npm run tauri build -- --target deb
+# Build .rpm
+npm run tauri build -- --target rpm
 ```
 
-### 2. Setup Backend Sidecar
+### 2. Setup Backend Sidecar (Development)
 ```bash
 cd backend
 python -m venv .venv

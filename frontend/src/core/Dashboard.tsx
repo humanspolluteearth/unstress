@@ -28,7 +28,7 @@ export const Dashboard: React.FC = () => {
   const { blocks, fetchBlocks } = useScheduleStore();
   const { navigate } = useNavigationStore();
 
-  const [userName, setUserName] = useState(() => localStorage.getItem('user-name') || "Sayeem");
+  const [userName, setUserName] = useState(() => localStorage.getItem('user-name') || "User");
   const [intentText, setIntentText] = useState(() => localStorage.getItem('dashboard-intent') || "Stay intentional with your time and execute your plan with precision.");
 
   const greeting = useMemo(() => getTimeGreeting(), []);
@@ -43,9 +43,18 @@ export const Dashboard: React.FC = () => {
   const taskCountWord = useMemo(() => numberToWords(tasks.filter((t: any) => t.status !== 'Done').length), [tasks]);
   
   const habitStats = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const completed = habits.filter((h: any) => h.logs.some((l: any) => l.timestamp.startsWith(today))).length;
-    return { leftWord: numberToWords(habits.length - completed) };
+    const today = new Date().toLocaleDateString('en-CA');
+    const completedCount = habits.filter((h: any) => {
+      const todayLogs = h.logs.filter((l: any) => {
+        const logDate = new Date(l.timestamp).toLocaleDateString('en-CA');
+        return logDate === today;
+      });
+      const totalValue = todayLogs.reduce((sum: number, l: any) => sum + l.value, 0);
+      // Only count as completed if it hits the first threshold (2-min)
+      const threshold = h.two_min_threshold || 1;
+      return totalValue >= threshold;
+    }).length;
+    return { leftWord: numberToWords(Math.max(0, habits.length - completedCount)) };
   }, [habits]);
 
   const nextEvent = useMemo(() => {
@@ -71,7 +80,7 @@ export const Dashboard: React.FC = () => {
             contentEditable
             suppressContentEditableWarning
             onBlur={(e) => {
-              const newName = e.currentTarget.textContent || "Sayeem";
+              const newName = e.currentTarget.textContent || "User";
               setUserName(newName);
               localStorage.setItem('user-name', newName);
             }}

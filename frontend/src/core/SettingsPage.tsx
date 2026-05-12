@@ -12,7 +12,6 @@ export const SettingsPage: React.FC = () => {
   const [isBackupLoading, setIsBackupLoading] = useState(false);
 
   const THEMES: { id: Theme; label: string }[] = [
-    { id: 'light', label: 'Light' },
     { id: 'dark', label: 'Dark' },
     { id: 'amoled', label: 'Amoled' },
     { id: 'sepia', label: 'Sepia' },

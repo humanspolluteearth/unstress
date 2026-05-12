@@ -10,8 +10,11 @@ export const DailyGrid: React.FC<{ date: Date; onEdit: (id: string) => void }> =
   const containerRef = useRef<HTMLDivElement>(null);
   const [now, setNow] = useState(new Date());
   
-  const dateStr = date.toISOString().split('T')[0];
-  const dayBlocks = (blocks || []).filter(b => b.start_time?.startsWith(dateStr));
+  const dateStr = date.toLocaleDateString('en-CA');
+  const dayBlocks = (blocks || []).filter(b => {
+    if (!b.start_time) return false;
+    return new Date(b.start_time).toLocaleDateString('en-CA') === dateStr;
+  });
 
   useEffect(() => {
     const timer = setInterval(() => {

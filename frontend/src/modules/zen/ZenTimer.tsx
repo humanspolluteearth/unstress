@@ -20,7 +20,7 @@ export const ZenTimer: React.FC = () => {
   const [stats, setStats] = useState<{ total_hours: number } | null>(null);
   const [showStats, setShowStats] = useState(false);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<number | null>(null);
 
   // Audio Feedback: Standard Web Audio API Chime
   const playChime = () => {

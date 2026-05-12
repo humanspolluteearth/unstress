@@ -65,7 +65,7 @@ async fn perform_health_check(port: u16) -> bool {
     let client = reqwest::Client::new();
     let url = format!("http://127.0.0.1:{}/health", port);
     
-    for _ in 0..5 {
+    for _ in 0..20 {
         if let Ok(resp) = client.get(&url).send().await {
             if resp.status().is_success() {
                 return true;
@@ -77,34 +77,53 @@ async fn perform_health_check(port: u16) -> bool {
 }
 
 fn show_error_window<R: Runtime>(app_handle: &tauri::AppHandle<R>, error: String) {
+    let escaped_error = error.replace("\"", "&quot;").replace("\n", "<br>");
     let html = format!(
         r#"
+        <!DOCTYPE html>
         <html>
-            <body style="font-family: sans-serif; background: #1a1a1a; color: #ff5555; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; text-align: center;">
-                <h1 style="margin-bottom: 10px;">Critical Startup Error</h1>
-                <p style="background: #2a2a2a; padding: 15px; border-radius: 8px; width: 80%; word-break: break-all;">{}</p>
-                <button onclick="window.close()" style="margin-top: 20px; padding: 10px 20px; background: #ff5555; color: white; border: none; border-radius: 4px; cursor: pointer;">Close Application</button>
+            <head>
+                <style>
+                    body {{ font-family: sans-serif; background: #0a0a0a; color: #ff5555; padding: 40px; text-align: center; margin: 0; }}
+                    .container {{ display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }}
+                    .error-box {{ background: #1a1a1a; border: 1px solid #333; padding: 20px; text-align: left; margin: 20px 0; width: 80%; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #ccc; }}
+                    h1 {{ color: #fff; font-size: 20px; margin-bottom: 8px; }}
+                    p {{ color: #888; font-size: 14px; margin-bottom: 24px; }}
+                    button {{ padding: 10px 24px; background: #ff5555; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>Startup Failure</h1>
+                    <p>The backend sidecar failed to initialize.</p>
+                    <div class="error-box">{}</div>
+                    <button onclick="window.close()">Exit Application</button>
+                </div>
             </body>
         </html>
         "#,
-        error
+        escaped_error
     );
 
     let _ = tauri::WebviewWindowBuilder::new(
         app_handle,
         "error",
-        tauri::WebviewUrl::External(format!("data:text/html,{}", html).parse().unwrap())
+        tauri::WebviewUrl::External(format!("data:text/html,{}", percent_encoding::utf8_percent_encode(&html, percent_encoding::NON_ALPHANUMERIC)).parse().unwrap())
     )
     .title("Startup Error")
-    .inner_size(600.0, 400.0)
+    .inner_size(600.0, 450.0)
     .resizable(false)
     .build();
 }
 
 async fn handle_sidecar_startup<R: Runtime>(app_handle: tauri::AppHandle<R>) -> ProcessResult<(u16, CommandChild), String> {
     let shell = app_handle.shell();
-    let sidecar = match shell.sidecar("binaries/backend") {
-        Ok(s) => s,
+    
+    // Get app data directory for database storage
+    let data_dir = app_handle.path().app_data_dir().expect("failed to get app data dir");
+    
+    let sidecar = match shell.sidecar("backend") {
+        Ok(s) => s.env("UNSTRESS_DATA_DIR", data_dir.to_string_lossy().to_string()),
         Err(e) => return ProcessResult::fail(format!("Sidecar lookup failed: {}", e)),
     };
 
@@ -114,27 +133,36 @@ async fn handle_sidecar_startup<R: Runtime>(app_handle: tauri::AppHandle<R>) -> 
     };
 
     // Buffer to find the port
+    let mut captured_stderr = String::new();
     while let Some(event) = rx_events.recv().await {
-        if let CommandEvent::Stdout(line) = event {
-            let line_str = String::from_utf8_lossy(&line);
-            if line_str.starts_with("PORT:") {
-                let port_str = line_str.trim_start_matches("PORT:").trim();
-                if let Ok(port) = port_str.parse::<u16>() {
-                    // Perform Health Check
-                    if perform_health_check(port).await {
-                        return ProcessResult::ok((port, child));
-                    } else {
-                        return ProcessResult::fail(format!("Sidecar started on port {} but failed health check", port));
+        match event {
+            CommandEvent::Stdout(line) => {
+                let line_str = String::from_utf8_lossy(&line);
+                if line_str.starts_with("PORT:") {
+                    let port_str = line_str.trim_start_matches("PORT:").trim();
+                    if let Ok(port) = port_str.parse::<u16>() {
+                        // Perform Health Check
+                        if perform_health_check(port).await {
+                            return ProcessResult::ok((port, child));
+                        } else {
+                            return ProcessResult::fail(format!("Sidecar started on port {} but failed health check. Stderr: {}", port, captured_stderr));
+                        }
                     }
                 }
-            }
-            if line_str.starts_with("ERROR:") {
-                return ProcessResult::fail(line_str.to_string());
-            }
+            },
+            CommandEvent::Stderr(line) => {
+                captured_stderr.push_str(&String::from_utf8_lossy(&line));
+            },
+            _ => {}
         }
     }
 
-    ProcessResult::fail("Sidecar exited without reporting port".to_string())
+    // Fallback: If the stream closed, maybe it's already running on 8000?
+    if perform_health_check(8000).await {
+        return ProcessResult::ok((8000, child));
+    }
+
+    ProcessResult::fail(format!("Sidecar exited without reporting port. Stderr: {}", captured_stderr))
 }
 
 use chrono::{DateTime, Utc};

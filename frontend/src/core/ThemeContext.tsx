@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-export type Theme = 'light' | 'dark' | 'amoled' | 'sepia';
+export type Theme = 'dark' | 'amoled' | 'sepia';
 
 interface ThemeContextType {
   theme: Theme;
@@ -10,15 +10,15 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const THEMES: Theme[] = ['light', 'dark', 'amoled', 'sepia'];
+const THEMES: Theme[] = ['dark', 'amoled', 'sepia'];
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
     try {
       const saved = localStorage.getItem('theme') as Theme;
-      return THEMES.includes(saved) ? saved : 'dark';
+      return THEMES.includes(saved) ? saved : 'amoled';
     } catch {
-      return 'dark';
+      return 'amoled';
     }
   });
 
@@ -48,20 +48,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     try {
       const root = window.document.documentElement;
-      root.classList.remove('light', 'dark', 'amoled', 'sepia');
+      root.classList.remove('dark', 'amoled', 'sepia');
       
-      // Default hardcoded background for safety
-      root.style.backgroundColor = theme === 'light' ? '#ffffff' : '#000000';
+      // Default hardcoded background for safety (always dark-ish)
+      root.style.backgroundColor = '#000000';
 
-      if (theme !== 'light') {
-        root.classList.add(theme);
-      }
+      root.classList.add(theme);
       
       const body = window.document.body;
-      body.classList.remove('light', 'dark', 'amoled', 'sepia');
-      if (theme !== 'light') {
-        body.classList.add(theme);
-      }
+      body.classList.remove('dark', 'amoled', 'sepia');
+      body.classList.add(theme);
     } catch (err) {
       console.error('[Theme] Kernel Error during injection:', err);
     }

@@ -14,14 +14,19 @@ export interface Goal {
   progress: number;
   total_tasks: number;
   completed_tasks: number;
+  active_tasks_count?: number;
   is_current_focus: boolean;
   tags: string[];
   links: string[];
   references: string[];
   tasks: { id: string; text: string; completed: boolean }[];
+  external_tasks?: { id: string; title: string; status: string; priority: number; goal_id: string }[];
 }
 
-const API_BASE = "http://127.0.0.1:8000/api";
+const getApiBase = () => {
+  const port = (window as any).__BACKEND_PORT__ || 8000;
+  return `http://127.0.0.1:${port}/api`;
+};
 
 export class GoalService {
   private static async request<T>(method: string, url: string, data?: any): Promise<Result<T>> {
@@ -42,22 +47,22 @@ export class GoalService {
   }
 
   static async createGoal(data: Omit<Goal, 'id' | 'progress' | 'total_tasks' | 'completed_tasks'>): Promise<Result<any>> {
-    return this.request('POST', `${API_BASE}/goals`, data);
+    return this.request('POST', `${getApiBase()}/goals`, data);
   }
 
   static async getGoals(): Promise<Result<Goal[], string>> {
-    return this.request('GET', `${API_BASE}/goals`);
+    return this.request('GET', `${getApiBase()}/goals`);
   }
 
   static async updateGoal(id: string, data: Partial<Goal>): Promise<Result<Goal, string>> {
-    return this.request('PUT', `${API_BASE}/goals/${id}`, data);
+    return this.request('PUT', `${getApiBase()}/goals/${id}`, data);
   }
 
   static async deleteGoal(id: string): Promise<Result<boolean, string>> {
-    return this.request('DELETE', `${API_BASE}/goals/${id}`);
+    return this.request('DELETE', `${getApiBase()}/goals/${id}`);
   }
 
   static async setFocus(id: string): Promise<Result<boolean, string>> {
-    return this.request('POST', `${API_BASE}/goals/${id}/focus`);
+    return this.request('POST', `${getApiBase()}/goals/${id}/focus`);
   }
 }

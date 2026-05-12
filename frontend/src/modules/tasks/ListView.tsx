@@ -117,7 +117,6 @@ export const ListView: React.FC<ListViewProps> = ({ onEdit }) => {
             <tr>
               <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
                 <div className="flex flex-col items-center gap-2">
-                  <ListTodo size={32} className="opacity-20" />
                   <p>No tasks found. Create one to get started!</p>
                 </div>
               </td>

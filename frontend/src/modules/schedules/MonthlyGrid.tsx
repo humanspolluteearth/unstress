@@ -26,12 +26,15 @@ export const MonthlyGrid: React.FC<{ year: number; month: number; onEdit?: (id: 
       {calendarDays.map((date, i) => {
         if (!date) return <div key={i} className="bg-muted/10 h-24" />;
         
-        const dateStr = date.toISOString().split('T')[0];
-        const dayBlocks = blocks.filter(b => b.start_time.startsWith(dateStr));
+        const dayStr = date.toLocaleDateString('en-CA');
+        const dayBlocks = (blocks || []).filter(b => {
+          if (!b.start_time) return false;
+          return new Date(b.start_time).toLocaleDateString('en-CA') === dayStr;
+        });
         const hasConflict = dayBlocks.some(b => b.is_conflict);
 
         return (
-          <div key={dateStr} className="p-1 h-24 overflow-hidden relative hover:bg-muted/5 transition-colors">
+          <div key={dayStr} className="p-1 h-24 overflow-hidden relative hover:bg-muted/5 transition-colors">
             <span className="text-[10px] font-mono text-muted-foreground absolute top-1 right-2">
               {date.getDate()}
             </span>

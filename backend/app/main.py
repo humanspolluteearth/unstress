@@ -28,21 +28,38 @@ logger = logging.getLogger(__name__)
 # --- Database Persistence Activation with Retry Logic ---
 def init_db(retries=5, delay=2):
     """Wait for the database to be ready and initialize tables."""
-    logger.info("Attempting to connect to PostgreSQL...")
+    from sqlalchemy import inspect, text
+    db_url = engine.url
+    db_type = "PostgreSQL" if "postgresql" in str(db_url) else "SQLite"
+    logger.info(f"Attempting to connect to {db_type}...")
+    
     for i in range(retries):
         try:
             Base.metadata.create_all(bind=engine)
-            logger.info("Database connection established and tables synchronized.")
+            
+            # --- Lightweight Migration: Add missing columns ---
+            inspector = inspect(engine)
+            columns = [c["name"] for c in inspector.get_columns("schedule_events")]
+            
+            if "repeat_pattern" not in columns:
+                logger.info("Migrating database: Adding 'repeat_pattern' to 'schedule_events'")
+                with engine.begin() as conn:
+                    if db_type == "SQLite":
+                        conn.execute(text("ALTER TABLE schedule_events ADD COLUMN repeat_pattern VARCHAR"))
+                    else:
+                        conn.execute(text("ALTER TABLE schedule_events ADD COLUMN repeat_pattern VARCHAR"))
+            
+            logger.info(f"{db_type} connection established and tables synchronized.")
             return True
         except OperationalError as e:
             logger.warning(f"Database not ready (attempt {i+1}/{retries}): {e}")
             if i < retries - 1:
                 time.sleep(delay)
             else:
-                logger.error("CRITICAL: Could not connect to database after multiple attempts.")
+                logger.error(f"CRITICAL: Could not connect to {db_type} after multiple attempts.")
                 return False
 
-init_db()
+# init_db()  <-- Removed top-level call
 
 app = FastAPI(title="unstress Backend")
 
@@ -86,8 +103,21 @@ app.include_router(actions_router, prefix="/api/actions", tags=["infrastructure"
 async def root():
     return {"status": "unstress_api_monolith_active"}
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
 if __name__ == "__main__":
     import uvicorn
+    import sys
+    
     # Print port for Tauri sidecar detection
     print("PORT:8000", flush=True)
+    
+    try:
+        init_db()
+    except Exception as e:
+        print(f"DATABASE_INIT_ERROR: {e}", file=sys.stderr, flush=True)
+        # We continue to let the server start so it can report health errors if needed
+    
     uvicorn.run(app, host="127.0.0.1", port=8000)

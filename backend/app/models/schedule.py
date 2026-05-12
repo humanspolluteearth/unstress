@@ -11,4 +11,5 @@ class ScheduledEvent(Base):
     end_time = Column(DateTime(timezone=True), nullable=False)
     category = Column(String, default="general")
     is_conflict = Column(Boolean, default=False)
+    repeat_pattern = Column(String, nullable=True)  # Daily, Weekly, Monthly
     goal_id = Column(String, nullable=True)

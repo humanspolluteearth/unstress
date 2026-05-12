@@ -36,10 +36,19 @@ export const Blackboard: React.FC = () => {
     redoStackRef.current = [];
   }, []);
 
-  const initCanvas = useCallback(() => {
+  const initCanvas = useCallback((isResize = false) => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
     if (!canvas || !container) return;
+
+    // Capture existing content if resizing
+    let tempCanvas: HTMLCanvasElement | null = null;
+    if (isResize && contextRef.current) {
+      tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvas.width;
+      tempCanvas.height = canvas.height;
+      tempCanvas.getContext('2d')?.drawImage(canvas, 0, 0);
+    }
 
     const dpr = window.devicePixelRatio || 2;
     const rect = container.getBoundingClientRect();
@@ -60,21 +69,27 @@ export const Blackboard: React.FC = () => {
       context.fillRect(0, 0, rect.width, rect.height);
       
       contextRef.current = context;
-      historyRef.current = [];
-      redoStackRef.current = [];
-      saveState();
+
+      if (isResize && tempCanvas) {
+        // Redraw captured content
+        context.drawImage(tempCanvas, 0, 0, tempCanvas.width / dpr, tempCanvas.height / dpr);
+      } else {
+        historyRef.current = [];
+        redoStackRef.current = [];
+        saveState();
+      }
     }
   }, [saveState]);
 
   const undo = useCallback(() => {
-    if (historyRef.current.length <= 1 || !contextRef.current) return;
+    if (historyRef.current.length <= 1 || !contextRef.current || !canvasRef.current) return;
     redoStackRef.current.push(historyRef.current.pop()!);
     const prevState = historyRef.current[historyRef.current.length - 1];
     contextRef.current.putImageData(prevState, 0, 0);
   }, []);
 
   const redo = useCallback(() => {
-    if (redoStackRef.current.length === 0 || !contextRef.current) return;
+    if (redoStackRef.current.length === 0 || !contextRef.current || !canvasRef.current) return;
     const nextState = redoStackRef.current.pop()!;
     historyRef.current.push(nextState);
     contextRef.current.putImageData(nextState, 0, 0);
@@ -109,9 +124,10 @@ export const Blackboard: React.FC = () => {
   }, [undo, redo]);
 
   useEffect(() => {
-    initCanvas();
-    window.addEventListener('resize', initCanvas);
-    return () => window.removeEventListener('resize', initCanvas);
+    initCanvas(false);
+    const handleResize = () => initCanvas(true);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, [initCanvas]);
 
   useEffect(() => {

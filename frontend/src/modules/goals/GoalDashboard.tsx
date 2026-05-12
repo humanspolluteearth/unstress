@@ -116,12 +116,14 @@ export const GoalDashboard: React.FC = () => {
             ))}
           </div>
           {!isLoading && sortedGoals.length === 0 && (
-            <div className="h-64 border border-dashed border-white/10 flex flex-col items-center justify-center gap-4 text-center">
-              <Trophy size={48} className="text-white/5" />
-              <p className="text-white/20 text-xs font-black uppercase tracking-widest">No goals established in this tier</p>
-              <button 
+            <div className="text-center py-20 bg-muted/20 rounded-none border border-dashed border-muted/50 w-full mt-4">
+              <h3 className="text-xl font-bold text-muted-foreground">No {filter === 'all' ? '' : filter} goals established</h3>
+              <p className="text-sm text-muted-foreground/60 max-w-xs mx-auto">
+                Define your north star. Establish your first {filter === 'all' ? '' : filter} goal to begin your journey.
+              </p>
+              <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all border border-white/10"
+                className="mt-6 px-6 py-2 bg-primary text-primary-foreground rounded-none font-bold transition-all active:scale-95"
               >
                 Establish First Goal
               </button>

@@ -457,7 +457,7 @@ export const HabitChecklist: React.FC = () => {
 
       <AddHabitModal isOpen={isAdding} onClose={() => setIsAdding(false)} />
 
-      {filteredHabits.length === 0 && !isAdding && (
+      {view === 'daily' && filteredHabits.length === 0 && !isAdding && (
         <div className="text-center py-20 bg-muted/20 rounded-none border border-dashed border-muted/50">
           <h3 className="text-xl font-bold text-muted-foreground">No {view} habits defined</h3>
           <p className="text-sm text-muted-foreground/60 max-w-xs mx-auto">
