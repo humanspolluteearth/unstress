@@ -17,12 +17,34 @@ A high-performance, local-first life management system that transitions your pro
 
 ---
 
-### Features
-* **Unified Command Palette**: Keyboard-driven navigation and action execution.
-* **Modular Monolith**: Decoupled domains (Finance, Tasks, Goals) via an internal event broker.
-* **High-Density UI**: Minimalist, data-rich interface for rapid information scanning.
-* **Local-First Privacy**: Complete data ownership with local PostgreSQL storage.
-* **Focused Tools**: Integrated Zen timer and free-form blackboard for deep work.
+### Features & Hotkeys
+
+unstress is designed for keyboard-driven efficiency.
+
+| Action | Shortcut | Description |
+| :--- | :--- | :--- |
+| **Command Palette** | `Ctrl/Cmd + K` | Global search and quick-action menu. |
+| **Go to Dashboard** | `Alt + D` | Navigate to the main dashboard. |
+| **Go to Tasks** | `Alt + T` | Manage tasks and Kanban boards. |
+| **Go to Schedule** | `Alt + S` | View daily, weekly, or monthly calendars. |
+| **Go to Habits** | `Alt + H` | Track daily habits and routines. |
+| **Go to Finance** | `Alt + F` | Ledger management and financial tracking. |
+| **Go to Goals** | `Alt + G` | Long-term objective planning. |
+| **Go to Blackboard** | `Alt + B` | Free-form notes and brainstorming. |
+| **Go to Zen Timer** | `Alt + Z` | Focused work timer. |
+
+---
+
+### Core Modules
+
+* **Dashboard**: Central hub providing a high-density overview of your day.
+* **Tasks**: ListView and KanbanView for project management with quick-entry TaskModals.
+* **Schedules**: Flexible Daily/Weekly/Monthly grids for comprehensive event management.
+* **Habits**: Daily routines tracking with rapid completion checklists and data-backed logs.
+* **Finance**: Secure, local-first financial ledger with transaction management.
+* **Goals**: Long-term vision tracking with milestone definition and focused detail panels.
+* **Zen**: Minimalist, distraction-free focus timer.
+* **Blackboard**: Workspace for unstructured brainstorming and notes.
 
 ---
 
@@ -80,7 +102,12 @@ npm run tauri build -- --target rpm
 ---
 
 ### License
-Distributed under the MIT License. See `LICENSE` for more information.
+This project is licensed under the MIT License.
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ---
 
