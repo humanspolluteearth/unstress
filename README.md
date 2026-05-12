@@ -1,72 +1,91 @@
-# unstress
+<h1 align="center">unstress</h1>
 
-A high-performance, local-first **Life Management System** designed for speed, clarity, and agentic interoperability. **unstress** transitions your personal data from the cloud to your local machine, utilizing a modular monolith architecture for ultra-low latency.
+<p align="center">
+  <img src="https://via.placeholder.com/800x200?text=unstress+Banner" alt="unstress banner" />
+</p>
 
-## 🚀 Quick Start (Arch Linux)
+<p align="center">
+  <a href="https://github.com/humanspolluteearth/unstress/stargazers"><img src="https://img.shields.io/github/stars/humanspolluteearth/unstress?style=flat-square" alt="Stars"></a>
+  <a href="https://github.com/humanspolluteearth/unstress/blob/main/LICENSE"><img src="https://img.shields.io/github/license/humanspolluteearth/unstress?style=flat-square" alt="License"></a>
+  <img src="https://img.shields.io/badge/version-0.1.0-blue?style=flat-square" alt="Version">
+</p>
 
-Ensure you have the necessary system dependencies installed:
+---
 
+### One-Line Pitch
+A high-performance, local-first life management system that transitions your productivity data from the cloud to your local machine.
+
+---
+
+### Features
+* **Unified Command Palette**: Keyboard-driven navigation and action execution.
+* **Modular Monolith**: Decoupled domains (Finance, Tasks, Goals) via an internal event broker.
+* **High-Density UI**: Minimalist, data-rich interface for rapid information scanning.
+* **Local-First Privacy**: Complete data ownership with local PostgreSQL storage.
+* **Focused Tools**: Integrated Zen timer and free-form blackboard for deep work.
+
+---
+
+### Architecture
+**unstress** utilizes a client-server architecture where a Tauri-based Rust core handles system-level operations and a Python/FastAPI sidecar powers the modular business logic. Modules communicate through an internal asynchronous event bus, ensuring low latency and high maintainability. Data persists locally in a PostgreSQL instance, accessible via high-throughput localhost HTTP communication.
+
+---
+
+### Tech Stack
+* **Desktop Core**: [Tauri v2.0](https://tauri.app/) (Rust)
+* **Backend Sidecar**: [FastAPI](https://fastapi.tiangolo.com/) (Python)
+* **Persistence**: [PostgreSQL](https://www.postgresql.org/) + [SQLAlchemy](https://www.sqlalchemy.org/)
+* **Frontend**: [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+* **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+* **OS Target**: Optimized for Arch Linux, cross-platform build support.
+
+---
+
+### Build & Installation
+
+Ensure you have your system dependencies installed (e.g., `base-devel`, `rust`, `nodejs`, `python`, `postgresql`).
+
+**1. Clone the repository:**
 ```bash
-sudo pacman -S --needed base-devel curl wget openssl libsoup webkit2gtk-4.1 rust nodejs npm python postgresql
+git clone https://github.com/humanspolluteearth/unstress.git
+cd unstress
 ```
 
-### 1. Build from Source (Packaging)
-To create an installer for your distribution (AppImage, .deb, or .rpm):
-
-```bash
-cd frontend
-# Build AppImage
-npm run tauri build -- --target appimage
-# Build .deb
-npm run tauri build -- --target deb
-# Build .rpm
-npm run tauri build -- --target rpm
-```
-
-### 2. Setup Backend Sidecar (Development)
+**2. Setup Backend:**
 ```bash
 cd backend
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python scripts/init_db.py  # Initialize local PostgreSQL tables
+python scripts/init_db.py
 ```
 
-### 3. Launch Development Mode
+**3. Launch Development Server:**
 ```bash
-cd frontend
+cd ../frontend
+npm install
 npm run tauri dev
 ```
 
----
-
-## 🛠 Technology Stack
-
-- **Desktop Framework**: [Tauri v2.0](https://tauri.app/) (Rust Core)
-- **Backend Sidecar**: [FastAPI](https://fastapi.tiangolo.com/) (Python)
-- **Persistence**: [PostgreSQL](https://www.postgresql.org/) with [SQLAlchemy](https://www.sqlalchemy.org/)
-- **Frontend**: [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **State Management**: [Zustand](https://github.com/pmndrs/zustand)
-
----
-
-## 🏛 Architecture
-
-### High-Density UI Design Philosophy
-**unstress** follows a "High-Density" UI approach, inspired by modern command centers and professional tools. Instead of white-space-heavy mobile-first designs, we prioritize:
-- **Information Richness**: Maximizing visible data points for rapid scanning.
-- **Command-First Navigation**: Global command palettes (`cmdk`) for keyboard-driven workflows.
-- **Visual Feedback**: Real-time health reports and status lines reflecting system and financial state.
-
-### AI-Native Modular Monolith
-The backend is structured as a **Modular Monolith**. Domains (Finance, Tasks, Goals) are decoupled via an **Internal Event Broker**. This ensures:
-- **Decoupled Logic**: Modules communicate asynchronously, preventing circular dependencies.
-- **Agentic Readability**: Structured Pydantic schemas and the **Result Pattern** provide clear paths for LLM reasoning and debugging.
-- **Local-First Performance**: Bulk data stays on your machine, accessed via localhost HTTP for maximum throughput.
+**4. Build Packages:**
+```bash
+# AppImage
+npm run tauri build -- --target appimage
+# .deb
+npm run tauri build -- --target deb
+# .rpm
+npm run tauri build -- --target rpm
+```
 
 ---
 
-## ⚖️ License
+### License
+Distributed under the MIT License. See `LICENSE` for more information.
 
-Distributed under the **MIT License**. This project leverages several MIT and Apache 2.0 licensed libraries, making it fully compatible with both open-source and commercial use cases. See `LICENSE` for more information.
+---
+
+### Roadmap
+- [ ] Integration with hardware-level system monitoring.
+- [ ] Advanced AI-driven insights for financial trends.
+- [ ] Export/Import functionality for external calendar providers.
+- [ ] Enhanced offline synchronization protocols.
