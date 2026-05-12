@@ -9,8 +9,7 @@
 ---
 
 ### Notes.
-Alright folks, so here is another app and this too was built with the help of AI but not fully relied on. RDD (Review-Driven Development). It worked, atleast for this app. Making use of AI to build basic/simple apps like this is what I would consider a win but I still don't think I would want to use AI for low-level projects. This app was tough to build even with the help with AI but finally, it works now. Again this app was initially built only for personal use but since I made it and it works. It must be shared to the world, free of cost.
-
+This app like others was also built for personal use but since it's complete and works. I must share it to the world. I have always needed an app that could manage it all. From tasks to finances. Basic Functionality but enough for day-to-day and it doesn't cost money. Win-Win Situation.
 
 
 ### Features & Hotkeys
