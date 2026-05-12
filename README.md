@@ -1,10 +1,6 @@
 <h1 align="center">unstress</h1>
 
 <p align="center">
-  <img src="https://via.placeholder.com/800x200?text=unstress+Banner" alt="unstress banner" />
-</p>
-
-<p align="center">
   <a href="https://github.com/humanspolluteearth/unstress/stargazers"><img src="https://img.shields.io/github/stars/humanspolluteearth/unstress?style=flat-square" alt="Stars"></a>
   <a href="https://github.com/humanspolluteearth/unstress/blob/main/LICENSE"><img src="https://img.shields.io/github/license/humanspolluteearth/unstress?style=flat-square" alt="License"></a>
   <img src="https://img.shields.io/badge/version-0.1.0-blue?style=flat-square" alt="Version">
@@ -12,10 +8,10 @@
 
 ---
 
-### One-Line Pitch
-A high-performance, local-first life management system that transitions your productivity data from the cloud to your local machine.
+### Notes.
+Alright folks, so here is another app and this too was built with AI but not fully relied on. RDD (Review-Driven Development) is good. It worked, atleast for this app. Making use of AI to build basic/simple apps like this is what I would consider a win but I still don't think I would want to use AI for low-level projects. This app was tough to build even with the help with AI but finally, it works now. Again this app was initially built only for personal use but since I made it and it works. It must be shared to the world, free of cost.
 
----
+
 
 ### Features & Hotkeys
 
