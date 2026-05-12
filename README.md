@@ -9,7 +9,7 @@
 ---
 
 ### Notes.
-Alright folks, so here is another app and this too was built with AI but not fully relied on. RDD (Review-Driven Development) is good. It worked, atleast for this app. Making use of AI to build basic/simple apps like this is what I would consider a win but I still don't think I would want to use AI for low-level projects. This app was tough to build even with the help with AI but finally, it works now. Again this app was initially built only for personal use but since I made it and it works. It must be shared to the world, free of cost.
+Alright folks, so here is another app and this too was built with the help of AI but not fully relied on. RDD (Review-Driven Development). It worked, atleast for this app. Making use of AI to build basic/simple apps like this is what I would consider a win but I still don't think I would want to use AI for low-level projects. This app was tough to build even with the help with AI but finally, it works now. Again this app was initially built only for personal use but since I made it and it works. It must be shared to the world, free of cost.
 
 
 
