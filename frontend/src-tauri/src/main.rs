@@ -1,4 +1,4 @@
-use tauri::{Manager, Runtime};
+use tauri::{Manager, Runtime, Emitter};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::{CommandEvent, CommandChild};
 use serde::Serialize;
@@ -141,6 +141,7 @@ async fn handle_sidecar_startup<R: Runtime>(app_handle: tauri::AppHandle<R>) -> 
                 if line_str.starts_with("PORT:") {
                     let port_str = line_str.trim_start_matches("PORT:").trim();
                     if let Ok(port) = port_str.parse::<u16>() {
+                        println!("Backend reported port: {}", port);
                         // Perform Health Check
                         if perform_health_check(port).await {
                             return ProcessResult::ok((port, child));
@@ -151,7 +152,12 @@ async fn handle_sidecar_startup<R: Runtime>(app_handle: tauri::AppHandle<R>) -> 
                 }
             },
             CommandEvent::Stderr(line) => {
-                captured_stderr.push_str(&String::from_utf8_lossy(&line));
+                let err_line = String::from_utf8_lossy(&line);
+                eprintln!("[Sidecar Error] {}", err_line);
+                captured_stderr.push_str(&err_line);
+            },
+            CommandEvent::Terminated(payload) => {
+                eprintln!("[Sidecar Terminated] Exit Code: {:?}", payload.code);
             },
             _ => {}
         }
@@ -217,7 +223,9 @@ fn main() {
                         if let Some(main_window) = app_handle.get_webview_window("main") {
                             let js = format!("window.__BACKEND_PORT__ = {};", port);
                             let _ = main_window.eval(&js);
-                            println!("Backend successfully started on port {} with SIGTERM cleanup active.", port);
+                            // Also emit an event for the frontend to listen to
+                            let _ = main_window.emit("backend-ready", port);
+                            println!("Backend successfully started on port {} and injected into main window.", port);
                         }
                     }
                 } else {

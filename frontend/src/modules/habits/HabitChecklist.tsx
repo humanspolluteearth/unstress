@@ -33,6 +33,9 @@ export const HabitChecklist: React.FC = () => {
   const [isEditingInsight, setIsEditingInsight] = useState(false);
   const [insightValue, setInsightValue] = useState(weeklyInsight);
 
+  // Calculate current local date for every render to handle midnight boundary
+  const today = new Date().toLocaleDateString('en-CA'); 
+
   useEffect(() => {
     setInsightValue(weeklyInsight);
   }, [weeklyInsight]);
@@ -79,11 +82,28 @@ export const HabitChecklist: React.FC = () => {
       setLogValues({ ...logValues, [id]: 0 });
     }
   };
-  const filteredHabits = habits.filter(h => h.frequency === 'daily' || h.frequency === view);
-  const today = new Date().toLocaleDateString('en-CA'); // Local YYYY-MM-DD
+
+  // Diagnostic logging
+  useEffect(() => {
+    if (habits.length > 0) {
+      console.log(`[Habits] Today: ${today}`);
+      habits.forEach(h => {
+        const todayLogs = h.logs.filter(l => new Date(l.timestamp).toLocaleDateString('en-CA') === today);
+        if (todayLogs.length > 0) {
+          console.log(`[Habits] Habit "${h.name}" has ${todayLogs.length} logs for today.`);
+        }
+      });
+    }
+  }, [habits, today]);
 
   const calculatePoints = (habit: Habit, dateStr: string) => {
-    const logs = habit.logs.filter(l => l.timestamp.startsWith(dateStr));
+    const logs = habit.logs.filter(l => {
+      try {
+        return new Date(l.timestamp).toLocaleDateString('en-CA') === dateStr;
+      } catch (e) {
+        return false;
+      }
+    });
     const total = logs.reduce((sum, l) => sum + l.value, 0);
     
     if (habit.habit_type === 'binary' || habit.unit === 'check') {
@@ -117,20 +137,27 @@ export const HabitChecklist: React.FC = () => {
   const weeklyStats = {
     totalScore: totalWeeklyScore,
     impossibleCount: habits.reduce((acc, h) => {
-      return acc + h.logs.filter(l => {
-        const d = l.timestamp.split('T')[0];
-        const dayLogs = h.logs.filter(dl => dl.timestamp.startsWith(d));
-        return dayLogs.reduce((s, dl) => s + dl.value, 0) >= h.impossible_threshold;
+      const days = new Set(h.logs.map(l => new Date(l.timestamp).toLocaleDateString('en-CA')));
+      const hits = Array.from(days).filter(d => {
+        const dailyTotal = h.logs
+          .filter(l => new Date(l.timestamp).toLocaleDateString('en-CA') === d)
+          .reduce((sum, l) => sum + l.value, 0);
+        return dailyTotal >= h.impossible_threshold;
       }).length;
+      return acc + hits;
     }, 0), 
     mostConsistent: habits.sort((a, b) => calculateStreak(b) - calculateStreak(a))[0]?.name || 'None'
   };
+
+  const filteredHabits = habits.filter(h => h.frequency === 'daily' || h.frequency === view);
 
   const renderDaily = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {filteredHabits.map((habit) => {
         const streak = calculateStreak(habit);
-        const dailyTotal = habit.logs.filter(l => l.timestamp.startsWith(today)).reduce((acc, l) => acc + l.value, 0);
+        const dailyTotal = habit.logs
+          .filter(l => new Date(l.timestamp).toLocaleDateString('en-CA') === today)
+          .reduce((acc, l) => acc + l.value, 0);
         const active = calculatePoints(habit, today) > 0;
         const isBinary = habit.habit_type === 'binary' || habit.unit === 'check';
 

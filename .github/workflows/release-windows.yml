@@ -1,0 +1,63 @@
+name: "Windows Release"
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [windows-latest]
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: install python dependencies
+        run: |
+          cd backend
+          python -m pip install --upgrade pip
+          pip install pyinstaller -r requirements.txt
+
+      - name: build python sidecar
+        run: |
+          cd backend
+          pyinstaller backend-x86_64-unknown-linux-gnu.spec --noconfirm
+          # Ensure directory exists
+          mkdir -p ../frontend/src-tauri/binaries
+          # Move and rename for Windows target
+          mv dist/backend-x86_64-unknown-linux-gnu.exe ../frontend/src-tauri/binaries/backend-x86_64-pc-windows-msvc.exe
+        shell: bash
+
+      - name: install frontend dependencies
+        run: npm install
+        working-directory: frontend
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__ # tauri-action replaces this with the app version from tauri.conf.json
+          releaseName: "unstress v__VERSION__"
+          releaseBody: "Automated Windows release from GitHub Actions."
+          releaseDraft: true
+          prerelease: false
+          projectPath: frontend

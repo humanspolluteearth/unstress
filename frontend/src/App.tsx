@@ -38,6 +38,16 @@ const SidecarHealthCheck: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     const currentPort = resolvePort();
+
+    // Listen for the event from Rust in case of race conditions
+    let unlisten: (() => void) | null = null;
+    import('@tauri-apps/api/event').then(({ listen }) => {
+      listen<number>('backend-ready', (event) => {
+        console.log('[Sidecar] Received backend-ready event with port:', event.payload);
+        (window as any).__BACKEND_PORT__ = event.payload;
+        setPort(event.payload);
+      }).then(u => unlisten = u);
+    });
     
     // 2. Poll for Health if port exists
     if (currentPort && !isBackendHealthy) {
@@ -99,7 +109,7 @@ const SidecarHealthCheck: React.FC<{ children: React.ReactNode }> = ({ children 
 
 export const App: React.FC = () => {
   const { activePage } = useNavigationStore();
-  const isBoard = activePage === 'tasks' || activePage === 'schedule' || activePage === 'habits' || activePage === 'goals' || activePage === 'finance';
+  const isBoard = activePage === 'tasks' || activePage === 'schedule' || activePage === 'habits' || activePage === 'goals' || activePage === 'finance' || activePage === 'blackboard';
 
   const renderPage = () => {
     const pageClass = clsx(

@@ -3,6 +3,16 @@ import { Play, Pause, RotateCcw, BarChart2, ChevronLeft, X } from 'lucide-react'
 import { clsx } from 'clsx';
 import { getBaseUrl, API_ENDPOINTS } from '../../core/apiConfig';
 
+const InlineInput: React.FC<{ value: number, onChange: (v: number) => void }> = ({ value, onChange }) => (
+  <input 
+    type="number" 
+    value={value}
+    onChange={(e) => onChange(parseInt(e.target.value) || 1)}
+    className="bg-transparent border-b border-primary/40 focus:border-primary text-primary font-black px-1 outline-none transition-all text-center tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none inline-block"
+    style={{ width: `${Math.max(1, value.toString().length + 0.5)}ch` }}
+  />
+);
+
 /**
  * Immersive Zen Pomodoro Timer
  */
@@ -23,24 +33,40 @@ export const ZenTimer: React.FC = () => {
   const timerRef = useRef<number | null>(null);
 
   // Audio Feedback: Standard Web Audio API Chime
-  const playChime = () => {
+  const playChime = async (loud = false) => {
     try {
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
+      const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext);
+      const audioCtx = new AudioContextClass();
+      
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+      
+      const playTone = (freq: number, start: number, duration: number, volume: number) => {
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
 
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
 
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
-      oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.5); // A4
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime + start);
+        oscillator.frequency.exponentialRampToValueAtTime(freq / 2, audioCtx.currentTime + start + duration);
 
-      gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        gainNode.gain.setValueAtTime(volume, audioCtx.currentTime + start);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + start + duration);
 
-      oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 0.5);
+        oscillator.start(audioCtx.currentTime + start);
+        oscillator.stop(audioCtx.currentTime + start + duration);
+      };
+
+      if (loud) {
+        playTone(880, 0, 0.8, 0.15);
+        playTone(1109, 0.1, 0.8, 0.15);
+        playTone(1320, 0.2, 1.2, 0.2);
+      } else {
+        playTone(880, 0, 0.5, 0.1);
+      }
     } catch (e) {
       console.error('[Zen] Audio Failed:', e);
     }
@@ -52,7 +78,6 @@ export const ZenTimer: React.FC = () => {
         setTimer((prev) => prev - 1);
       }, 1000);
     } else if (timer === 0) {
-      playChime();
       handleTimerComplete();
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -62,7 +87,6 @@ export const ZenTimer: React.FC = () => {
     };
   }, [isActive, timer]);
 
-  // Handle ESC key in Focus Mode
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isFocusMode) {
@@ -94,14 +118,17 @@ export const ZenTimer: React.FC = () => {
       }
 
       if (newLoopCount < targetLoops) {
+        playChime(false);
         setIsBreak(true);
         setTimer(breakTime * 60);
       } else {
+        playChime(true);
         setIsActive(false);
         setIsFocusMode(false);
         alert('Protocol Complete. Systems Calibrated.');
       }
     } else {
+      playChime(false);
       setIsBreak(false);
       setTimer(focusTime * 60);
     }
@@ -187,16 +214,6 @@ export const ZenTimer: React.FC = () => {
       </div>
     );
   }
-
-  const InlineInput: React.FC<{ value: number, onChange: (v: number) => void }> = ({ value, onChange }) => (
-    <input 
-      type="number" 
-      value={value}
-      onChange={(e) => onChange(parseInt(e.target.value) || 1)}
-      className="bg-transparent border-b border-primary/40 focus:border-primary text-primary font-black px-1 outline-none transition-all text-center tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none inline-block"
-      style={{ width: `${Math.max(1, value.toString().length + 0.5)}ch` }}
-    />
-  );
 
   return (
     <div className="p-12 flex flex-col items-center justify-center min-h-full space-y-12 animate-in fade-in duration-500 overflow-hidden relative">

@@ -23,7 +23,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["appimage", "deb", "rpm"],
+    "targets": ["appimage"],
     "externalBin": [
       "binaries/backend"
     ],

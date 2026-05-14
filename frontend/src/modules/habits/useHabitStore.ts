@@ -138,20 +138,24 @@ export const useHabitStore = create<HabitState>((set, get) => ({
 
   calculateStreak: (habit: Habit) => {
     if (habit.logs.length === 0) return 0;
-    const logDates = new Set(habit.logs.map(l => l.timestamp.split('T')[0]));
+    
+    // Convert all log timestamps to local date strings (YYYY-MM-DD)
+    const logDates = new Set(habit.logs.map(l => new Date(l.timestamp).toLocaleDateString('en-CA')));
+    
+    // Sort dates in descending order (newest first)
     const sortedDates = Array.from(logDates).sort((a, b) => b.localeCompare(a));
     
-    let streak = 0;
     const today = new Date().toLocaleDateString('en-CA');
     const yesterdayDate = new Date();
     yesterdayDate.setDate(yesterdayDate.getDate() - 1);
     const yesterday = yesterdayDate.toLocaleDateString('en-CA');
 
-    let currentDateStr = sortedDates[0];
-    if (currentDateStr !== today && currentDateStr !== yesterday) return 0;
+    // If the latest log is neither today nor yesterday, the streak is broken
+    let latestLogDate = sortedDates[0];
+    if (latestLogDate !== today && latestLogDate !== yesterday) return 0;
 
-    streak = 1;
-    let curr = new Date(currentDateStr);
+    let streak = 1;
+    let curr = new Date(latestLogDate);
     while (true) {
       curr.setDate(curr.getDate() - 1);
       const d = curr.toLocaleDateString('en-CA');
