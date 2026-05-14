@@ -23,7 +23,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["appimage"],
+    "targets": ["appimage", "msi", "nsis"],
     "externalBin": [
       "binaries/backend"
     ],
