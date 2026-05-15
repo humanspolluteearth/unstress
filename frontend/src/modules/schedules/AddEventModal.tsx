@@ -17,10 +17,27 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose })
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
   const [repeat, setRepeat] = useState<'Daily' | 'Weekly' | 'Monthly' | ''>('');
+  const [repeatDays, setRepeatDays] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const toggleDay = (day: number) => {
+    setRepeatDays(prev => 
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort()
+    );
+  };
+
+  const DAYS = [
+    { label: 'S', value: 0 },
+    { label: 'M', value: 1 },
+    { label: 'T', value: 2 },
+    { label: 'W', value: 3 },
+    { label: 'T', value: 4 },
+    { label: 'F', value: 5 },
+    { label: 'S', value: 6 },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +57,8 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose })
       title,
       start_time: start.toISOString(),
       end_time: end.toISOString(),
-      repeat_pattern: repeat || null
+      repeat_pattern: repeat || null,
+      repeat_days: repeat === 'Weekly' && repeatDays.length > 0 ? repeatDays : null
     });
 
     setIsSubmitting(false);
@@ -50,6 +68,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose })
       // Reset
       setTitle('');
       setRepeat('');
+      setRepeatDays([]);
     } else {
       setError(result.error || 'Failed to create event');
     }

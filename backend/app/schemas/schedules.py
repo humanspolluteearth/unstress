@@ -60,4 +60,5 @@ class ScheduledItem(BaseModel):
     item_type: str
     is_conflict: bool = False
     repeat_pattern: Optional[str] = None
+    repeat_days: Optional[list] = None
     goal_id: Optional[str] = None

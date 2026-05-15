@@ -78,8 +78,8 @@ def expand_recurring_events(events: List[models.ScheduledEvent], days_ahead: int
             
     return expanded
 
-@router.get("", response_model=Result[List[dict], str])
-@router.get("/", response_model=Result[List[dict], str])
+@router.get("", response_model=Result[List[schemas.ScheduledItem], str])
+@router.get("/", response_model=Result[List[schemas.ScheduledItem], str])
 async def get_schedule(db: Session = Depends(get_db)):
     """Retrieves all scheduled events with expanded recurring instances."""
     try:

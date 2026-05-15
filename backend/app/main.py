@@ -39,15 +39,29 @@ def init_db(retries=5, delay=2):
             
             # --- Lightweight Migration: Add missing columns ---
             inspector = inspect(engine)
-            columns = [c["name"] for c in inspector.get_columns("schedule_events")]
             
-            if "repeat_pattern" not in columns:
+            # 1. schedule_events migrations
+            sched_columns = [c["name"] for c in inspector.get_columns("schedule_events")]
+            if "repeat_pattern" not in sched_columns:
                 logger.info("Migrating database: Adding 'repeat_pattern' to 'schedule_events'")
                 with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE schedule_events ADD COLUMN repeat_pattern VARCHAR"))
+            
+            if "repeat_days" not in sched_columns:
+                logger.info("Migrating database: Adding 'repeat_days' to 'schedule_events'")
+                with engine.begin() as conn:
+                    conn.execute(text("ALTER TABLE schedule_events ADD COLUMN repeat_days JSON"))
+
+            # 2. tasks migrations
+            task_columns = [c["name"] for c in inspector.get_columns("tasks")]
+            if "is_archived" not in task_columns:
+                logger.info("Migrating database: Adding 'is_archived' to 'tasks'")
+                with engine.begin() as conn:
+                    # Default to False for existing tasks
                     if db_type == "SQLite":
-                        conn.execute(text("ALTER TABLE schedule_events ADD COLUMN repeat_pattern VARCHAR"))
+                        conn.execute(text("ALTER TABLE tasks ADD COLUMN is_archived BOOLEAN DEFAULT 0"))
                     else:
-                        conn.execute(text("ALTER TABLE schedule_events ADD COLUMN repeat_pattern VARCHAR"))
+                        conn.execute(text("ALTER TABLE tasks ADD COLUMN is_archived BOOLEAN DEFAULT FALSE"))
             
             logger.info(f"{db_type} connection established and tables synchronized.")
             return True

@@ -34,7 +34,7 @@ export const WeeklyGrid: React.FC<{ startDate: Date; onEdit: (id: string) => voi
   const lineTop = (now.getHours() * HOUR_HEIGHT) + (now.getMinutes() / 60 * HOUR_HEIGHT);
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-background border rounded-none overflow-hidden h-full">
+    <div className="flex-1 flex flex-col min-h-0 bg-background border rounded-none overflow-hidden">
       {/* Header */}
       <div className="flex border-b bg-muted/30">
         <div className="w-16 border-r shrink-0" />

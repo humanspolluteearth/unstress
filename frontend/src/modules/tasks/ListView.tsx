@@ -1,3 +1,4 @@
+import React from 'react';
 import { useTaskStore, Task } from './useTaskStore';
 import { Tag, Calendar, ExternalLink, CheckCircle2, Clock, ListTodo, AlertCircle, Pencil, Trash2, Archive, RotateCcw } from 'lucide-react';
 import { CustomSelect } from '../../core/CustomSelect';
