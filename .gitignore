@@ -57,3 +57,6 @@ backend/build/*
 
 # Gemini CLI
 .gemini/
+
+# Tauri Sidecar Binaries
+frontend/src-tauri/binaries/
