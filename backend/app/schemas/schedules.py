@@ -7,6 +7,7 @@ class EventBase(BaseModel):
     start_time: datetime
     end_time: datetime
     repeat_pattern: Optional[str] = None
+    repeat_days: Optional[list] = None
     goal_id: Optional[str] = None
 
     @validator('start_time', 'end_time', pre=True)

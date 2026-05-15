@@ -35,6 +35,7 @@ class Task(Base):
     tags = Column(JSON, default=list)
     deadline = Column(String, nullable=True)
     project_link = Column(String, nullable=True)
+    is_archived = Column(Boolean, default=False)
     
     goal_id = Column(String, ForeignKey("goals.id"), nullable=True)
     goal = relationship("Goal", back_populates="tasks")

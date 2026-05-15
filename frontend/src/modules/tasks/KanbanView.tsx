@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTaskStore, Task } from './useTaskStore';
-import { ListTodo, Clock, CheckCircle2, GripVertical, MoreVertical, Tag, Calendar, ExternalLink, Pencil, Trash2 } from 'lucide-react';
+import { ListTodo, Clock, CheckCircle2, GripVertical, MoreVertical, Tag, Calendar, ExternalLink, Pencil, Trash2, Archive } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const COLUMNS: { id: Task['status']; title: string; icon: any; color: string }[] = [
@@ -15,7 +15,7 @@ interface KanbanViewProps {
 }
 
 export const KanbanView: React.FC<KanbanViewProps> = ({ onEdit }) => {
-  const { tasks, updateTaskStatus, deleteTask } = useTaskStore();
+  const { tasks, updateTaskStatus, deleteTask, archiveTask } = useTaskStore();
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
   const onDragStart = (e: React.DragEvent, id: string) => {
@@ -85,6 +85,13 @@ export const KanbanView: React.FC<KanbanViewProps> = ({ onEdit }) => {
                             className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors"
                           >
                             <Pencil size={14} />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); archiveTask(task.id); }}
+                            className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors"
+                            title="Archive Task"
+                          >
+                            <Archive size={14} />
                           </button>
                           <button 
                             onClick={(e) => handleDelete(e, task.id)}

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, DateTime
+from sqlalchemy import Column, String, Boolean, DateTime, JSON
 from .base import Base
 import uuid
 
@@ -12,4 +12,5 @@ class ScheduledEvent(Base):
     category = Column(String, default="general")
     is_conflict = Column(Boolean, default=False)
     repeat_pattern = Column(String, nullable=True)  # Daily, Weekly, Monthly
+    repeat_days = Column(JSON, nullable=True)      # [0, 1, 2, 3, 4, 5, 6] for Sun-Sat
     goal_id = Column(String, nullable=True)

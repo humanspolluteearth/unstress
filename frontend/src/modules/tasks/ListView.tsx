@@ -1,10 +1,11 @@
 import { useTaskStore, Task } from './useTaskStore';
-import { Tag, Calendar, ExternalLink, CheckCircle2, Clock, ListTodo, AlertCircle, Pencil, Trash2 } from 'lucide-react';
+import { Tag, Calendar, ExternalLink, CheckCircle2, Clock, ListTodo, AlertCircle, Pencil, Trash2, Archive, RotateCcw } from 'lucide-react';
 import { CustomSelect } from '../../core/CustomSelect';
 import { clsx } from 'clsx';
 
 interface ListViewProps {
   onEdit: (task: Task) => void;
+  isArchive?: boolean;
 }
 
 const STATUS_OPTIONS = [
@@ -14,13 +15,25 @@ const STATUS_OPTIONS = [
   { label: 'Funded', value: 'Funded', icon: <CheckCircle2 size={14} className="text-foreground" /> },
 ];
 
-export const ListView: React.FC<ListViewProps> = ({ onEdit }) => {
-  const { tasks, updateTaskStatus, deleteTask } = useTaskStore();
+export const ListView: React.FC<ListViewProps> = ({ onEdit, isArchive = false }) => {
+  const { tasks, archivedTasks, updateTaskStatus, deleteTask, archiveTask, updateTask } = useTaskStore();
+
+  const activeTasks = isArchive ? archivedTasks : tasks;
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this task?')) {
       await deleteTask(id);
     }
+  };
+
+  const handleArchive = async (id: string) => {
+    await archiveTask(id);
+  };
+
+  const handleUnarchive = async (id: string) => {
+    await updateTask(id, { is_archived: false } as any);
+    useTaskStore.getState().fetchTasks();
+    useTaskStore.getState().fetchArchivedTasks();
   };
 
   return (
@@ -37,16 +50,20 @@ export const ListView: React.FC<ListViewProps> = ({ onEdit }) => {
           </tr>
         </thead>
         <tbody className="">
-          {tasks.map((task) => (
+          {activeTasks.map((task) => (
             <tr key={task.id} className="hover:bg-muted/30 transition-colors group border-b border-border/50">
               <td className="px-6 py-4 whitespace-nowrap">
-                <CustomSelect
-                  compact
-                  value={task.status}
-                  onChange={(val) => updateTaskStatus(task.id, val)}
-                  options={STATUS_OPTIONS}
-                  className="w-36"
-                />
+                {isArchive ? (
+                   <span className="text-[10px] font-black uppercase bg-muted px-2 py-0.5 border text-muted-foreground">{task.status}</span>
+                ) : (
+                  <CustomSelect
+                    compact
+                    value={task.status}
+                    onChange={(val) => updateTaskStatus(task.id, val)}
+                    options={STATUS_OPTIONS}
+                    className="w-36"
+                  />
+                )}
               </td>
               <td className="px-6 py-4">
                 <div className="min-w-[200px]">
@@ -97,6 +114,24 @@ export const ListView: React.FC<ListViewProps> = ({ onEdit }) => {
                       <ExternalLink size={14} />
                     </a>
                   )}
+                  {!isArchive && (
+                    <button 
+                      onClick={() => handleArchive(task.id)}
+                      className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors"
+                      title="Archive Task"
+                    >
+                      <Archive size={14} />
+                    </button>
+                  )}
+                  {isArchive && (
+                    <button 
+                      onClick={() => handleUnarchive(task.id)}
+                      className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors"
+                      title="Restore Task"
+                    >
+                      <RotateCcw size={14} />
+                    </button>
+                  )}
                   <button 
                     onClick={() => onEdit(task)}
                     className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors"
@@ -113,11 +148,11 @@ export const ListView: React.FC<ListViewProps> = ({ onEdit }) => {
               </td>
             </tr>
           ))}
-          {tasks.length === 0 && (
+          {activeTasks.length === 0 && (
             <tr>
               <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
                 <div className="flex flex-col items-center gap-2">
-                  <p>No tasks found. Create one to get started!</p>
+                  <p>{isArchive ? 'Archive is empty.' : 'No tasks found. Create one to get started!'}</p>
                 </div>
               </td>
             </tr>

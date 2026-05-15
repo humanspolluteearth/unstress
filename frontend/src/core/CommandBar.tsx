@@ -9,6 +9,7 @@ const COMMAND_MAP: Record<string, string> = {
   'h': 'habits',
   'f': 'finance',
   't': 'tasks',
+  't-a': 'tasks-archive',
   's': 'schedule',
   'g': 'goals',
   'b': 'blackboard',

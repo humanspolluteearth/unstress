@@ -11,6 +11,7 @@ export interface TimeBlock {
   item_type: 'event' | 'task' | 'habit' | 'time_block';
   is_conflict?: boolean;
   repeat_pattern?: 'Daily' | 'Weekly' | 'Monthly' | null;
+  repeat_days?: number[] | null;
 }
 
 interface ScheduleState {

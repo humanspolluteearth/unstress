@@ -23,6 +23,16 @@ async def get_tasks(db: Session = Depends(get_db)):
         logger.error(f"Error fetching tasks: {e}")
         return Result.fail(str(e))
 
+@router.get("/archived", response_model=Result[List[schemas.Task], str])
+async def get_archived_tasks(db: Session = Depends(get_db)):
+    """Retrieves all archived tasks from the database."""
+    try:
+        tasks = db.query(models.Task).filter(models.Task.is_archived == True).all()
+        return Result.ok(tasks)
+    except Exception as e:
+        logger.error(f"Error fetching archived tasks: {e}")
+        return Result.fail(str(e))
+
 @router.post("", response_model=Result[schemas.Task, str])
 @router.post("/", response_model=Result[schemas.Task, str])
 async def create_task(data: schemas.TaskCreate, db: Session = Depends(get_db)):

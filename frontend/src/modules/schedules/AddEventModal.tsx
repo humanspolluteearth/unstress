@@ -140,6 +140,29 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ isOpen, onClose })
             options={repeatOptions}
           />
 
+          {repeat === 'Weekly' && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Repeat on Days</label>
+              <div className="flex justify-between gap-1">
+                {DAYS.map((day) => (
+                  <button
+                    key={day.value}
+                    type="button"
+                    onClick={() => toggleDay(day.value)}
+                    className={clsx(
+                      "w-8 h-8 rounded-none border text-[10px] font-bold transition-all",
+                      repeatDays.includes(day.value) 
+                        ? "bg-primary border-primary text-primary-foreground" 
+                        : "bg-muted/30 border-white/5 text-muted-foreground hover:border-primary/50"
+                    )}
+                  >
+                    {day.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"

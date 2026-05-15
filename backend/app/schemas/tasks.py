@@ -8,6 +8,7 @@ class TaskBase(BaseModel):
     tags: List[str] = []
     deadline: Optional[str] = None
     project_link: Optional[str] = None
+    is_archived: bool = False
     goal_id: Optional[str] = None
 
 class TaskCreate(TaskBase):
@@ -21,6 +22,7 @@ class TaskPatchRequest(BaseModel):
     tags: Optional[List[str]] = None
     deadline: Optional[str] = None
     project_link: Optional[str] = None
+    is_archived: Optional[bool] = None
     goal_id: Optional[str] = None
 
 class Task(TaskBase):

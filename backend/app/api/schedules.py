@@ -176,6 +176,41 @@ async def update_event(event_id: str, data: schemas.EventUpdate, db: Session = D
             "item_type": "event",
             "is_conflict": event.is_conflict,
             "repeat_pattern": event.repeat_pattern,
+            "repeat_days": event.repeat_days,
+            "goal_id": event.goal_id
+        }
+        return Result.ok(event_dict)
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating event {event_id}: {e}")
+        return Result.fail(str(e))
+
+@router.delete("/{event_id}", response_model=Result[dict, str])
+@router.delete("/{event_id}/", response_model=Result[dict, str])
+async def delete_event(event_id: str, db: Session = Depends(get_db)):
+    """Deletes an event from the database."""
+    event = db.query(models.ScheduledEvent).filter(models.ScheduledEvent.id == event_id).first()
+    if not event:
+        return Result.fail("Event not found")
+    
+    try:
+        db.delete(event)
+        db.commit()
+        return Result.ok({"success": True, "status": "deleted"})
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting event {event_id}: {e}")
+        return Result.fail(str(e))
+id}: {e}")
+        return Result.fail(str(e))
+        event_dict = {
+            "id": event.id,
+            "title": event.title,
+            "start_time": event.start_time,
+            "end_time": event.end_time,
+            "item_type": "event",
+            "is_conflict": event.is_conflict,
+            "repeat_pattern": event.repeat_pattern,
             "goal_id": event.goal_id
         }
         return Result.ok(event_dict)

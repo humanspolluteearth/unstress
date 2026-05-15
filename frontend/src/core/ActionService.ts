@@ -145,6 +145,10 @@ export class ActionService {
     return this.request('GET', API_ENDPOINTS.TASKS);
   }
 
+  static async fetchArchivedTasks(): Promise<Result<any[]>> {
+    return this.request('GET', `${API_ENDPOINTS.TASKS}/archived`);
+  }
+
   static async createTask(data: TaskCreate): Promise<Result<any>> {
     return this.request('POST', `${API_ENDPOINTS.TASKS}`, data);
   }

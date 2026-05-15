@@ -4,17 +4,25 @@ import { KanbanView } from './KanbanView';
 import { ListView } from './ListView';
 import { ScheduleView } from './ScheduleView';
 import { TaskModal } from './TaskModal';
-import { Plus, LayoutDashboard, List, Calendar, Filter, Loader2 } from 'lucide-react';
+import { Plus, LayoutDashboard, List, Calendar, Filter, Loader2, Archive } from 'lucide-react';
 import { clsx } from 'clsx';
 
-export const TaskDashboard: React.FC = () => {
-  const { viewMode, setViewMode, isLoading, error, fetchTasks } = useTaskStore();
+interface TaskDashboardProps {
+  isArchive?: boolean;
+}
+
+export const TaskDashboard: React.FC<TaskDashboardProps> = ({ isArchive = false }) => {
+  const { viewMode, setViewMode, isLoading, error, fetchTasks, fetchArchivedTasks } = useTaskStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(undefined);
 
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    if (isArchive) {
+      fetchArchivedTasks();
+    } else {
+      fetchTasks();
+    }
+  }, [fetchTasks, fetchArchivedTasks, isArchive]);
 
   const openAddModal = () => {
     setEditingTask(undefined);
@@ -27,6 +35,10 @@ export const TaskDashboard: React.FC = () => {
   };
 
   const renderView = () => {
+    if (isArchive) {
+      return <ListView onEdit={openEditModal} isArchive={true} />;
+    }
+    
     switch (viewMode) {
       case 'Kanban': return <KanbanView onEdit={openEditModal} />;
       case 'List': return <ListView onEdit={openEditModal} />;
@@ -39,48 +51,54 @@ export const TaskDashboard: React.FC = () => {
     <div className="p-6 space-y-6 flex flex-col flex-1 min-h-0 bg-background/50 overflow-auto">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Tasks</h2>
-          <p className="text-muted-foreground text-sm">Organize, track, and complete your goals.</p>
+          <h2 className="text-2xl font-bold tracking-tight">
+            {isArchive ? 'Task Archive' : 'Tasks'}
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            {isArchive ? 'Historical record of completed and archived operations.' : 'Organize, track, and complete your goals.'}
+          </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center bg-muted/50 p-1 rounded-none border">
+        {!isArchive && (
+          <div className="flex items-center gap-3">
+            <div className="flex items-center bg-muted/50 p-1 rounded-none border">
+              <button
+                onClick={() => setViewMode('Kanban')}
+                className={clsx(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-medium transition-all",
+                  viewMode === 'Kanban' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <LayoutDashboard size={14} /> Kanban
+              </button>
+              <button
+                onClick={() => setViewMode('List')}
+                className={clsx(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-medium transition-all",
+                  viewMode === 'List' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <List size={14} /> List
+              </button>
+              <button
+                onClick={() => setViewMode('Schedule')}
+                className={clsx(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-medium transition-all",
+                  viewMode === 'Schedule' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Calendar size={14} /> Schedule
+              </button>
+            </div>
+
             <button
-              onClick={() => setViewMode('Kanban')}
-              className={clsx(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-medium transition-all",
-                viewMode === 'Kanban' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
-              )}
+              onClick={openAddModal}
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-none text-sm font-semibold shadow-sm hover:bg-primary/90 transition-all active:scale-95"
             >
-              <LayoutDashboard size={14} /> Kanban
-            </button>
-            <button
-              onClick={() => setViewMode('List')}
-              className={clsx(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-medium transition-all",
-                viewMode === 'List' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <List size={14} /> List
-            </button>
-            <button
-              onClick={() => setViewMode('Schedule')}
-              className={clsx(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-none text-xs font-medium transition-all",
-                viewMode === 'Schedule' ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Calendar size={14} /> Schedule
+              <Plus size={18} /> Add Task
             </button>
           </div>
-
-          <button
-            onClick={openAddModal}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-none text-sm font-semibold shadow-sm hover:bg-primary/90 transition-all active:scale-95"
-          >
-            <Plus size={18} /> Add Task
-          </button>
-        </div>
+        )}
       </header>
 
       {error && (

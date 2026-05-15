@@ -13,26 +13,31 @@ export interface Task {
   tags: string[];
   deadline?: string;
   projectLink?: string;
+  isArchived: boolean;
   goalId?: string;
 }
 
-export type ViewMode = 'Kanban' | 'List' | 'Schedule';
+export type ViewMode = 'Kanban' | 'List' | 'Schedule' | 'Archive';
 
 interface TaskState {
   tasks: Task[];
+  archivedTasks: Task[];
   viewMode: ViewMode;
   isLoading: boolean;
   error: string | null;
   setViewMode: (mode: ViewMode) => void;
   fetchTasks: () => Promise<Result<Task[], string>>;
+  fetchArchivedTasks: () => Promise<Result<Task[], string>>;
   createTask: (task: TaskCreate) => Promise<Result<Task, string>>;
   updateTask: (taskId: string, task: TaskUpdate) => Promise<Result<Task, string>>;
   deleteTask: (taskId: string) => Promise<Result<void, string>>;
   updateTaskStatus: (taskId: string, newStatus: Task['status']) => Promise<Result<any, string>>;
+  archiveTask: (taskId: string) => Promise<Result<Task, string>>;
 }
 
 export const useTaskStore = create<TaskState>((set, get) => ({
   tasks: [],
+  archivedTasks: [],
   viewMode: 'Kanban',
   isLoading: false,
   error: null,
@@ -54,10 +59,41 @@ export const useTaskStore = create<TaskState>((set, get) => ({
           tags: t.tags || [],
           deadline: t.deadline,
           projectLink: t.project_link,
+          isArchived: t.is_archived,
           goalId: t.goal_id
         }));
 
         set({ tasks: mappedTasks, isLoading: false });
+        return { success: true, data: mappedTasks };
+      }
+      set({ error: result.error || 'Failed', isLoading: false });
+      return { success: false, error: result.error || 'Failed' };
+    } catch (err) {
+      set({ error: 'Network error', isLoading: false });
+      return { success: false, error: 'Network error' };
+    }
+  },
+
+  fetchArchivedTasks: async () => {
+    set({ isLoading: true });
+    try {
+      const result = await ActionService.fetchArchivedTasks();
+      
+      if (result.success && result.data) {
+        const mappedTasks: Task[] = result.data.map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          description: t.description,
+          status: t.status,
+          priority: t.priority,
+          tags: t.tags || [],
+          deadline: t.deadline,
+          projectLink: t.project_link,
+          isArchived: t.is_archived,
+          goalId: t.goal_id
+        }));
+
+        set({ archivedTasks: mappedTasks, isLoading: false });
         return { success: true, data: mappedTasks };
       }
       set({ error: result.error || 'Failed', isLoading: false });
@@ -83,6 +119,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
           tags: backendTask.tags || [],
           deadline: backendTask.deadline,
           projectLink: backendTask.project_link,
+          isArchived: backendTask.is_archived,
           goalId: backendTask.goal_id
         };
         set(state => ({ tasks: [newTask, ...state.tasks] }));
@@ -109,14 +146,45 @@ export const useTaskStore = create<TaskState>((set, get) => ({
           tags: backendTask.tags || [],
           deadline: backendTask.deadline,
           projectLink: backendTask.project_link,
+          isArchived: backendTask.is_archived,
           goalId: backendTask.goal_id
         };
         set(state => ({
-          tasks: state.tasks.map(t => t.id === taskId ? updatedTask : t)
+          tasks: state.tasks.map(t => t.id === taskId ? updatedTask : t),
+          archivedTasks: state.archivedTasks.map(t => t.id === taskId ? updatedTask : t)
         }));
         return { success: true, data: updatedTask };
       }
       return { success: false, error: result.error || 'Failed to update task' };
+    } catch (err) {
+      return { success: false, error: 'Network error' };
+    }
+  },
+
+  archiveTask: async (taskId) => {
+    try {
+      const result = await ActionService.updateTask(taskId, { is_archived: true } as any);
+      if (result.success) {
+        const backendTask = result.data;
+        const updatedTask: Task = {
+          id: backendTask.id,
+          title: backendTask.title,
+          description: backendTask.description,
+          status: backendTask.status,
+          priority: backendTask.priority,
+          tags: backendTask.tags || [],
+          deadline: backendTask.deadline,
+          projectLink: backendTask.project_link,
+          isArchived: backendTask.is_archived,
+          goalId: backendTask.goal_id
+        };
+        set(state => ({
+          tasks: state.tasks.filter(t => t.id !== taskId),
+          archivedTasks: [updatedTask, ...state.archivedTasks]
+        }));
+        return { success: true, data: updatedTask };
+      }
+      return { success: false, error: result.error || 'Failed to archive task' };
     } catch (err) {
       return { success: false, error: 'Network error' };
     }

@@ -107,9 +107,11 @@ const SidecarHealthCheck: React.FC<{ children: React.ReactNode }> = ({ children 
   return <>{children}</>;
 };
 
+export type PageId = 'dashboard' | 'goals' | 'schedule' | 'tasks' | 'tasks-archive' | 'habits' | 'finance' | 'settings' | 'blackboard' | 'zen';
+
 export const App: React.FC = () => {
   const { activePage } = useNavigationStore();
-  const isBoard = activePage === 'tasks' || activePage === 'schedule' || activePage === 'habits' || activePage === 'goals' || activePage === 'finance' || activePage === 'blackboard';
+  const isBoard = activePage === 'tasks' || activePage === 'tasks-archive' || activePage === 'schedule' || activePage === 'habits' || activePage === 'goals' || activePage === 'finance' || activePage === 'blackboard';
 
   const renderPage = () => {
     const pageClass = clsx(
@@ -125,6 +127,7 @@ export const App: React.FC = () => {
             case 'goals': return <div className={pageClass}><GoalDashboard /></div>;
             case 'schedule': return <div className={pageClass}><ScheduleGrid /></div>;
             case 'tasks': return <div className={pageClass}><TaskDashboard /></div>;
+            case 'tasks-archive': return <div className={pageClass}><TaskDashboard isArchive={true} /></div>;
             case 'habits': return <div className={pageClass}><HabitChecklist /></div>;
             case 'finance': return <div className={pageClass}><FinanceLedger /></div>;
             case 'blackboard': return <div className={pageClass}><Blackboard /></div>;
