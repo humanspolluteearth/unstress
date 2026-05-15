@@ -54,3 +54,6 @@ obj/
 *.bak
 backend/dist/*
 backend/build/*
+
+# Gemini CLI
+.gemini/
