@@ -33,6 +33,7 @@ class EventUpdate(BaseModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     repeat_pattern: Optional[str] = None
+    repeat_days: Optional[list] = None
     goal_id: Optional[str] = None
 
     @validator('start_time', 'end_time', pre=True)

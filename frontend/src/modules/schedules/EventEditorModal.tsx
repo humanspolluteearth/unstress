@@ -18,11 +18,28 @@ export const EventEditorModal: React.FC<EventEditorModalProps> = ({ isOpen, onCl
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [repeat, setRepeat] = useState<'Daily' | 'Weekly' | 'Monthly' | ''>('');
+  const [repeatDays, setRepeatDays] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const formRef = useRef<HTMLFormElement>(null);
+
+  const toggleDay = (day: number) => {
+    setRepeatDays(prev => 
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort()
+    );
+  };
+
+  const DAYS = [
+    { label: 'S', value: 0 },
+    { label: 'M', value: 1 },
+    { label: 'T', value: 2 },
+    { label: 'W', value: 3 },
+    { label: 'T', value: 4 },
+    { label: 'F', value: 5 },
+    { label: 'S', value: 6 },
+  ];
 
   useEffect(() => {
     if (block && isOpen) {
@@ -34,6 +51,7 @@ export const EventEditorModal: React.FC<EventEditorModalProps> = ({ isOpen, onCl
       setStartTime(start.toTimeString().slice(0, 5));
       setEndTime(end.toTimeString().slice(0, 5));
       setRepeat(block.repeat_pattern || '');
+      setRepeatDays(block.repeat_days || []);
       setIsEditing(true);
     }
   }, [block, isOpen]);
@@ -86,7 +104,8 @@ export const EventEditorModal: React.FC<EventEditorModalProps> = ({ isOpen, onCl
         title,
         start_time: start.toISOString(),
         end_time: end.toISOString(),
-        repeat_pattern: repeat || null
+        repeat_pattern: repeat || null,
+        repeat_days: repeat === 'Weekly' && repeatDays.length > 0 ? repeatDays : null
       });
 
       if (result.success) {
@@ -217,6 +236,29 @@ export const EventEditorModal: React.FC<EventEditorModalProps> = ({ isOpen, onCl
             onChange={(val: any) => setRepeat(val)}
             options={repeatOptions}
           />
+
+          {repeat === 'Weekly' && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Repeat on Days</label>
+              <div className="flex justify-between gap-1">
+                {DAYS.map((day) => (
+                  <button
+                    key={day.value}
+                    type="button"
+                    onClick={() => toggleDay(day.value)}
+                    className={clsx(
+                      "w-8 h-8 rounded-none border text-[10px] font-bold transition-all",
+                      repeatDays.includes(day.value) 
+                        ? "bg-primary border-primary text-primary-foreground" 
+                        : "bg-muted/30 border-white/5 text-muted-foreground hover:border-primary/50"
+                    )}
+                  >
+                    {day.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-4">
             <button
