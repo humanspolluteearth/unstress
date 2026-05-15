@@ -24,46 +24,80 @@ def expand_recurring_events(events: List[models.ScheduledEvent], days_ahead: int
     """Expands recurring events into individual instances for the UI."""
     expanded = []
     now = datetime.now(timezone.utc)
+    # Window: 30 days back, 60 days forward
+    start_window = now - timedelta(days=30)
     end_window = now + timedelta(days=days_ahead)
     
     for e in events:
-        start_time = ensure_utc(e.start_time)
-        end_time = ensure_utc(e.end_time)
+        base_start = ensure_utc(e.start_time)
+        base_end = ensure_utc(e.end_time)
         
-        # Always include the original/base event
-        expanded.append({
-            "id": e.id,
-            "title": e.title,
-            "start_time": start_time,
-            "end_time": end_time,
-            "item_type": "event",
-            "is_conflict": e.is_conflict,
-            "repeat_pattern": e.repeat_pattern,
-            "repeat_days": e.repeat_days,
-            "goal_id": e.goal_id
-        })
+        # Add the base event if it's within window
+        if base_start < end_window and base_end > start_window:
+            expanded.append({
+                "id": e.id,
+                "title": e.title,
+                "start_time": base_start,
+                "end_time": base_end,
+                "item_type": "event",
+                "is_conflict": e.is_conflict,
+                "repeat_pattern": e.repeat_pattern,
+                "repeat_days": e.repeat_days,
+                "goal_id": e.goal_id
+            })
         
         if not e.repeat_pattern:
             continue
+
+        # Parse repeat_days safely
+        r_days = []
+        if e.repeat_days:
+            try:
+                if isinstance(e.repeat_days, str):
+                    import json
+                    r_days = [int(x) for x in json.loads(e.repeat_days)]
+                else:
+                    r_days = [int(x) for x in e.repeat_days]
+            except Exception as ex:
+                logger.error(f"Error parsing repeat_days for event {e.id}: {ex}")
+                r_days = []
             
-        current_start = start_time
-        current_end = end_time
+        # Optimization: Jump near the start window
+        current_start = base_start
+        current_end = base_end
         
-        # Generate instances up to the end_window
+        if current_start < start_window:
+            if e.repeat_pattern == 'Daily':
+                diff = (start_window - current_start).days
+                current_start += timedelta(days=diff)
+                current_end += timedelta(days=diff)
+            elif e.repeat_pattern == 'Weekly':
+                diff_weeks = (start_window - current_start).days // 7
+                current_start += timedelta(weeks=diff_weeks)
+                current_end += timedelta(weeks=diff_weeks)
+            elif e.repeat_pattern == 'Monthly':
+                diff_months = (start_window.year - current_start.year) * 12 + (start_window.month - current_start.month)
+                if diff_months > 0:
+                    current_start += relativedelta(months=diff_months)
+                    current_end += relativedelta(months=diff_months)
+
+        # Generate instances within the window
         while current_start < end_window:
             if e.repeat_pattern == 'Daily':
                 current_start += timedelta(days=1)
                 current_end += timedelta(days=1)
             elif e.repeat_pattern == 'Weekly':
-                if e.repeat_days:
-                    # Move day by day and check if the weekday matches
+                if r_days:
+                    # For specific days, we move day-by-day
                     current_start += timedelta(days=1)
                     current_end += timedelta(days=1)
-                    # Python weekday: 0=Mon, 6=Sun. JS weekday: 0=Sun, 6=Sat.
+                    if current_start >= end_window: break
+                    
                     js_weekday = (current_start.weekday() + 1) % 7
-                    if js_weekday not in e.repeat_days:
+                    if js_weekday not in r_days:
                         continue
                 else:
+                    # Standard weekly recurrence
                     current_start += timedelta(weeks=1)
                     current_end += timedelta(weeks=1)
             elif e.repeat_pattern == 'Monthly':
@@ -74,18 +108,24 @@ def expand_recurring_events(events: List[models.ScheduledEvent], days_ahead: int
                 
             if current_start > end_window:
                 break
-                
-            expanded.append({
-                "id": f"{e.id}_{current_start.timestamp()}", # Unique ID for the instance
-                "title": e.title,
-                "start_time": current_start,
-                "end_time": current_end,
-                "item_type": "event",
-                "is_conflict": e.is_conflict,
-                "repeat_pattern": e.repeat_pattern,
-                "repeat_days": e.repeat_days,
-                "goal_id": e.goal_id
-            })
+            
+            # Avoid duplicating the base event
+            if current_start == base_start:
+                continue
+            
+            # Only add if within window
+            if current_start > start_window:
+                expanded.append({
+                    "id": f"{e.id}_{current_start.timestamp()}",
+                    "title": e.title,
+                    "start_time": current_start,
+                    "end_time": current_end,
+                    "item_type": "event",
+                    "is_conflict": e.is_conflict,
+                    "repeat_pattern": e.repeat_pattern,
+                    "repeat_days": e.repeat_days,
+                    "goal_id": e.goal_id
+                })
             
     return expanded
 
