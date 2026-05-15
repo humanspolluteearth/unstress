@@ -72,7 +72,7 @@ export const ScheduleGrid: React.FC = () => {
 
   return (
     <div 
-      className="p-6 space-y-6 flex flex-col flex-1 min-h-0 bg-background/50 overflow-hidden relative"
+      className="p-6 space-y-6 flex flex-col flex-1 min-h-0 bg-background/50 overflow-auto relative"
       onClick={(e) => {
         // Only clear if we clicked the actual container background
         if (e.target === e.currentTarget) setSelectedBlockId(null);
